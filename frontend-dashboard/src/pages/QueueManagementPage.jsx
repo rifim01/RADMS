@@ -37,9 +37,12 @@ export default function QueueManagementPage() {
   return (
     <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Manajemen Antrian</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola antrian driver di titik penjemputan</p>
+        <div className="flex items-center gap-3">
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Manajemen Antrian</h1>
+            <p className="text-gray-500 text-sm mt-1">Kelola antrian driver di titik penjemputan</p>
+          </div>
         </div>
         <button
           onClick={() => setQueue(QUEUE_DATA)}

@@ -8,9 +8,12 @@ import StatusBadge from '../components/StatusBadge'
 export default function NationalDashboard() {
   return (
     <div className="space-y-6 fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard Nasional</h1>
-        <p className="text-gray-500 text-sm mt-1">Ringkasan operasional seluruh bandara - 10 Juni 2026</p>
+      <div className="flex items-center gap-3">
+        <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard Nasional</h1>
+          <p className="text-gray-500 text-sm mt-1">Ringkasan operasional seluruh bandara - 10 Juni 2026</p>
+        </div>
       </div>
 
       {/* Stats Cards */}

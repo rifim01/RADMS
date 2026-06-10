@@ -2,6 +2,103 @@
 // MOCK DATA - RADMS (RIFIM Airport Driver Management System)
 // ============================================================
 
+// ---------------------------------------------------------------------------
+// Attendance mock data for all 7 branches (GVIZ-parsed format)
+// columns: timestamp, date, time, nama, idCabang, status (Masuk/Pulang)
+// ---------------------------------------------------------------------------
+function daysAgo(n) {
+  const d = new Date('2026-06-10')
+  d.setDate(d.getDate() - n)
+  return d.toISOString().slice(0, 10)
+}
+
+function mkRec(date, time, nama, idCabang, statusIn) {
+  return {
+    timestamp: `${date} ${time}:00`,
+    date,
+    time,
+    nama,
+    idCabang,
+    status: statusIn,
+  }
+}
+
+export const MOCK_ATTENDANCE_DATA = [
+  // ---- ID Rifim Airport Batam ----
+  mkRec('2026-06-10', '06:45', 'Andi Saputra',      'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-10', '15:00', 'Andi Saputra',      'ID Rifim Airport Batam', 'Pulang'),
+  mkRec('2026-06-10', '07:10', 'Budi Kurniawan',    'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-10', '07:03', 'Citra Dewi',        'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-10', '07:20', 'Dian Permata',      'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-10', '13:02', 'Edi Prasetyo',      'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-09', '06:55', 'Andi Saputra',      'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-09', '15:05', 'Andi Saputra',      'ID Rifim Airport Batam', 'Pulang'),
+  mkRec('2026-06-09', '07:30', 'Budi Kurniawan',    'ID Rifim Airport Batam', 'Masuk'),
+  mkRec('2026-06-09', '07:01', 'Citra Dewi',        'ID Rifim Airport Batam', 'Masuk'),
+  mkRec(daysAgo(2),   '06:50', 'Andi Saputra',      'ID Rifim Airport Batam', 'Masuk'),
+  mkRec(daysAgo(2),   '07:40', 'Budi Kurniawan',    'ID Rifim Airport Batam', 'Masuk'),
+  mkRec(daysAgo(3),   '08:30', 'Dian Permata',      'ID Rifim Airport Batam', 'Masuk'),
+
+  // ---- ID Rifim Airport Jambi ----
+  mkRec('2026-06-10', '06:58', 'Fajar Nugroho',     'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec('2026-06-10', '07:08', 'Gita Rahayu',       'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec('2026-06-10', '07:35', 'Hendra Wijaya',     'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec('2026-06-10', '10:03', 'Indah Lestari',     'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec('2026-06-09', '07:00', 'Fajar Nugroho',     'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec('2026-06-09', '15:02', 'Fajar Nugroho',     'ID Rifim Airport Jambi', 'Pulang'),
+  mkRec('2026-06-09', '07:22', 'Gita Rahayu',       'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec(daysAgo(2),   '06:48', 'Fajar Nugroho',     'ID Rifim Airport Jambi', 'Masuk'),
+  mkRec(daysAgo(3),   '07:12', 'Hendra Wijaya',     'ID Rifim Airport Jambi', 'Masuk'),
+
+  // ---- ID Rifim Airport Balikpapan (WITA) ----
+  // WITA is +1 hour from WIB; local time 07:45 WITA = 06:45 WIB → Hadir Pagi
+  mkRec('2026-06-10', '07:45', 'Joko Santoso',      'ID Rifim Airport Balikpapan', 'Masuk'),
+  mkRec('2026-06-10', '08:10', 'Kartika Sari',      'ID Rifim Airport Balikpapan', 'Masuk'),
+  mkRec('2026-06-10', '07:55', 'Lukman Hakim',      'ID Rifim Airport Balikpapan', 'Masuk'),
+  mkRec('2026-06-10', '08:45', 'Maya Kusuma',       'ID Rifim Airport Balikpapan', 'Masuk'),
+  mkRec('2026-06-09', '07:50', 'Joko Santoso',      'ID Rifim Airport Balikpapan', 'Masuk'),
+  mkRec('2026-06-09', '15:55', 'Joko Santoso',      'ID Rifim Airport Balikpapan', 'Pulang'),
+  mkRec(daysAgo(2),   '07:48', 'Kartika Sari',      'ID Rifim Airport Balikpapan', 'Masuk'),
+
+  // ---- ID Rifim Airport Manado (WITA) ----
+  mkRec('2026-06-10', '07:52', 'Nanda Pratama',     'ID Rifim Airport Manado', 'Masuk'),
+  mkRec('2026-06-10', '08:03', 'Olivia Sianturi',   'ID Rifim Airport Manado', 'Masuk'),
+  mkRec('2026-06-10', '08:40', 'Paulus Mambrasar',  'ID Rifim Airport Manado', 'Masuk'),
+  mkRec('2026-06-09', '07:55', 'Nanda Pratama',     'ID Rifim Airport Manado', 'Masuk'),
+  mkRec('2026-06-09', '15:52', 'Nanda Pratama',     'ID Rifim Airport Manado', 'Pulang'),
+  mkRec(daysAgo(2),   '08:00', 'Olivia Sianturi',   'ID Rifim Airport Manado', 'Masuk'),
+
+  // ---- ID Rifim Airport Pekanbaru ----
+  mkRec('2026-06-10', '06:53', 'Qory Andini',       'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec('2026-06-10', '07:02', 'Rizal Mahendra',    'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec('2026-06-10', '07:15', 'Sari Anggraini',    'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec('2026-06-10', '09:00', 'Taufik Hidayat',    'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec('2026-06-09', '07:00', 'Qory Andini',       'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec('2026-06-09', '15:10', 'Qory Andini',       'ID Rifim Airport Pekanbaru', 'Pulang'),
+  mkRec('2026-06-09', '07:20', 'Rizal Mahendra',    'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec(daysAgo(2),   '06:47', 'Qory Andini',       'ID Rifim Airport Pekanbaru', 'Masuk'),
+  mkRec(daysAgo(3),   '07:10', 'Sari Anggraini',    'ID Rifim Airport Pekanbaru', 'Masuk'),
+
+  // ---- ID Rifim Batam ----
+  mkRec('2026-06-10', '06:40', 'Umar Hasbullah',    'ID Rifim Batam', 'Masuk'),
+  mkRec('2026-06-10', '07:03', 'Vina Oktaviani',    'ID Rifim Batam', 'Masuk'),
+  mkRec('2026-06-10', '13:05', 'Wawan Setiawan',    'ID Rifim Batam', 'Masuk'),
+  mkRec('2026-06-10', '14:30', 'Xavier Simanjuntak','ID Rifim Batam', 'Masuk'),
+  mkRec('2026-06-09', '06:55', 'Umar Hasbullah',    'ID Rifim Batam', 'Masuk'),
+  mkRec('2026-06-09', '15:00', 'Umar Hasbullah',    'ID Rifim Batam', 'Pulang'),
+  mkRec(daysAgo(2),   '07:00', 'Vina Oktaviani',    'ID Rifim Batam', 'Masuk'),
+
+  // ---- ID Rifim Jambi Luar ----
+  mkRec('2026-06-10', '06:52', 'Yeni Puspita',      'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec('2026-06-10', '07:10', 'Zainudin Arifin',   'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec('2026-06-10', '07:40', 'Agus Triyanto',     'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec('2026-06-10', '10:05', 'Bagas Wicaksono',   'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec('2026-06-09', '06:58', 'Yeni Puspita',      'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec('2026-06-09', '15:05', 'Yeni Puspita',      'ID Rifim Jambi Luar', 'Pulang'),
+  mkRec(daysAgo(2),   '07:05', 'Zainudin Arifin',   'ID Rifim Jambi Luar', 'Masuk'),
+  mkRec(daysAgo(3),   '07:35', 'Agus Triyanto',     'ID Rifim Jambi Luar', 'Masuk'),
+]
+
 export const AIRPORTS = [
   {
     id: 'apt-1',
