@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+    overscroll-behavior: none;
+    overflow-x: hidden;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Card base */
+  .card {
+    @apply bg-slate-800/60 border border-slate-700/50 rounded-2xl;
+  }
+
+  /* Input base */
+  .input {
+    @apply w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-3 px-4
+           placeholder:text-slate-600 focus:outline-none focus:border-blue-500
+           focus:ring-1 focus:ring-blue-500 transition-colors;
+  }
+
+  /* Button base */
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500
+           text-white font-semibold rounded-xl py-3 px-6 transition-colors
+           disabled:bg-slate-700 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600
+           text-white font-medium rounded-xl py-3 px-6 transition-colors;
+  }
+
+  .btn-danger {
+    @apply flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500
+           text-white font-semibold rounded-xl py-3 px-6 transition-colors;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+/* Leaflet map overrides */
+.leaflet-container {
+  background: #0f172a !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(0.85) saturate(0.9);
+}
+
+.leaflet-popup-content-wrapper {
+  @apply bg-white border-0 shadow-xl rounded-xl !important;
+  border-radius: 12px !important;
+}
+
+.leaflet-popup-tip {
+  @apply bg-white !important;
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(71, 85, 105, 0.5) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(71, 85, 105, 0.4) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(30, 41, 59, 0.95) !important;
+  color: white !important;
+}
+
+/* Prevent pull-to-refresh on mobile */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* Status bar color for PWA */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}
