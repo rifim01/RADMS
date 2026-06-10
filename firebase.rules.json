@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read":  false,
+    ".write": false,
+
+    "drivers": {
+      ".read": "auth != null",
+      "$driverId": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (auth.uid === $driverId || auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+      }
+    },
+
+    "queue": {
+      "$airportId": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (auth.token.role === 'STAFF' || auth.token.role === 'SUPERVISOR' || auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+      }
+    },
+
+    "staff": {
+      ".read":  "auth != null",
+      "$staffId": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+      }
+    },
+
+    "notifications": {
+      ".read":  "auth != null",
+      "$notifId": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN' || auth.token.role === 'SUPERVISOR')"
+      }
+    },
+
+    "airports": {
+      ".read":  "auth != null",
+      "$airportId": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+      }
+    },
+
+    "tracking": {
+      "$airportId": {
+        ".read":  "auth != null && (auth.token.airportId === $airportId || auth.token.role === 'NATIONAL_ADMIN')",
+        "$driverId": {
+          ".write": "auth != null && (auth.uid === $driverId || auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+        }
+      }
+    },
+
+    "emergencies": {
+      ".read":  "auth != null && (auth.token.role === 'SUPERVISOR' || auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')",
+      "$driverId": {
+        ".write": "auth != null && auth.uid === $driverId"
+      }
+    },
+
+    "kpi": {
+      ".read":  "auth != null",
+      "$airportId": {
+        ".write": "auth != null && (auth.token.role === 'ADMIN' || auth.token.role === 'NATIONAL_ADMIN')"
+      }
+    }
+  }
+}
