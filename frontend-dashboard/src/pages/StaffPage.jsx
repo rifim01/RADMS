@@ -1,20 +1,33 @@
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Pencil, Trash2, Search, RefreshCw, ExternalLink } from 'lucide-react'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
 import { STAFF as INITIAL_STAFF, AIRPORTS } from '../services/mockData'
+import { fetchAllStaff } from '../services/sheetsService'
 import { formatDate } from '../utils/formatters'
 
 const emptyForm = {
   name: '', nik: '', phone: '', email: '',
-  role: 'Staff', airportId: 'apt-1', status: 'active',
+  role: 'Staff', airportId: AIRPORTS[0]?.id || '', status: 'active',
 }
 
 export default function StaffPage() {
   const [staff, setStaff] = useState(INITIAL_STAFF)
+  const [dataSource, setDataSource] = useState('mock')
+  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filterAirport, setFilterAirport] = useState('all')
+
+  useEffect(() => { loadStaff() }, [])
+
+  async function loadStaff() {
+    setLoading(true)
+    const { data, source } = await fetchAllStaff(INITIAL_STAFF)
+    setStaff(data)
+    setDataSource(source)
+    setLoading(false)
+  }
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -97,13 +110,35 @@ export default function StaffPage() {
   return (
     <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Data Staf</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola data staf operasional bandara</p>
+        <div className="flex items-center gap-3">
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Data Staf</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-gray-500 text-sm">Kelola data staf operasional bandara</p>
+              {dataSource === 'google_sheets'
+                ? <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Google Sheets</span>
+                : <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">Demo Mode</span>
+              }
+            </div>
+          </div>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition font-medium">
-          <Plus className="w-4 h-4" /> Tambah Staf
-        </button>
+        <div className="flex gap-2">
+          <button onClick={loadStaff} disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm rounded-lg transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </button>
+          <a href="https://docs.google.com/spreadsheets/d/1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw"
+            target="_blank" rel="noreferrer"
+            className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm rounded-lg transition"
+          >
+            <ExternalLink className="w-4 h-4" /> Sheet
+          </a>
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition font-medium">
+            <Plus className="w-4 h-4" /> Tambah Staf
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3">

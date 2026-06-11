@@ -94,9 +94,12 @@ export default function AirportsPage() {
   return (
     <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Data Bandara</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola data bandara yang terdaftar dalam sistem</p>
+        <div className="flex items-center gap-3">
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Data Bandara / Cabang</h1>
+            <p className="text-gray-500 text-sm mt-1">7 cabang RIFIM aktif di seluruh Indonesia</p>
+          </div>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition font-medium">
           <Plus className="w-4 h-4" /> Tambah Bandara
