@@ -5,14 +5,30 @@ import NationalMap from '../maps/NationalMap'
 import { AIRPORTS, NATIONAL_STATS } from '../services/mockData'
 import StatusBadge from '../components/StatusBadge'
 
+const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
 export default function NationalDashboard() {
   return (
     <div className="space-y-6 fade-in">
-      <div className="flex items-center gap-3">
-        <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard Nasional</h1>
-          <p className="text-gray-500 text-sm mt-1">Ringkasan operasional seluruh bandara - 10 Juni 2026</p>
+      {/* RIFIM Banner */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e3a5f] via-[#1a4f8a] to-[#0ea5e9] p-6 shadow-lg">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }}
+        />
+        <div className="relative flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <img src="/rifim-logo.svg" alt="RIFIM" className="h-12 bg-white rounded-lg px-2 py-1" />
+            <div>
+              <h1 className="text-2xl font-bold text-white">Dashboard Nasional</h1>
+              <p className="text-sky-200 text-sm mt-1">{today}</p>
+              <p className="text-sky-300 text-xs mt-0.5">PT. Rifim Gemilang — Operasional Seluruh Indonesia</p>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            {AIRPORTS.filter(a => a.lat !== 0).map(a => (
+              <span key={a.id} className="text-xs bg-white/20 text-white px-2 py-1 rounded-lg font-medium">{a.code}</span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -108,12 +124,15 @@ export default function NationalDashboard() {
 
       {/* Airport Summary Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">Ringkasan Bandara</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Ringkasan Cabang RIFIM</h3>
+          <span className="text-xs text-gray-400">{AIRPORTS.length} cabang aktif</span>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm divide-y divide-gray-100">
             <thead className="bg-gray-50">
               <tr>
-                {['Kode', 'Bandara', 'Kota', 'Driver Online', 'Antrian', 'Staf Aktif', 'Penjemputan', 'Status'].map(h => (
+                {['ID Cabang', 'Bandara', 'Kota', 'TZ', 'Driver Online', 'Antrian', 'Staf', 'Penjemputan', 'Status'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -121,9 +140,12 @@ export default function NationalDashboard() {
             <tbody className="divide-y divide-gray-50">
               {AIRPORTS.map(apt => (
                 <tr key={apt.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-blue-600">{apt.code}</td>
+                  <td className="px-4 py-3 text-xs font-medium text-blue-700 max-w-[180px] truncate" title={apt.id}>{apt.id}</td>
                   <td className="px-4 py-3 font-medium text-gray-800">{apt.name}</td>
                   <td className="px-4 py-3 text-gray-600">{apt.city}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${apt.tz === 'WITA' ? 'bg-yellow-100 text-yellow-700' : 'bg-sky-100 text-sky-700'}`}>{apt.tz}</span>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="font-semibold text-emerald-600">{apt.driversOnline}</span>
                   </td>

@@ -24,13 +24,18 @@ export default function AirportDashboard() {
 
   return (
     <div className="space-y-6 fade-in">
-      <div className="flex items-center gap-3">
-        <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard Bandara</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            <span className="font-semibold text-blue-600">{airport.fullName}</span> — 10 Juni 2026
-          </p>
+      {/* RIFIM Banner */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e3a5f] via-[#1a4f8a] to-[#0ea5e9] p-5 shadow-lg">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }}
+        />
+        <div className="relative flex items-center gap-4 flex-wrap">
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-10 bg-white rounded-lg px-2 py-1" />
+          <div>
+            <h1 className="text-xl font-bold text-white">Dashboard Bandara</h1>
+            <p className="text-sky-200 text-sm mt-0.5">{airport.id}</p>
+            <p className="text-sky-300 text-xs">{airport.fullName} &bull; {airport.city} &bull; <span className={`font-bold ${airport.tz === 'WITA' ? 'text-yellow-300' : 'text-sky-200'}`}>{airport.tz}</span></p>
+          </div>
         </div>
       </div>
 

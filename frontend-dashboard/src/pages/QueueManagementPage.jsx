@@ -36,20 +36,31 @@ export default function QueueManagementPage() {
 
   return (
     <div className="space-y-6 fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Manajemen Antrian</h1>
-            <p className="text-gray-500 text-sm mt-1">Kelola antrian driver di titik penjemputan</p>
+      {/* RIFIM Banner */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e3a5f] via-[#0f4c8a] to-[#0ea5e9] p-5 shadow-lg">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }}
+        />
+        <div className="relative flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <img src="/rifim-logo.svg" alt="RIFIM" className="h-10 bg-white rounded-lg px-2 py-1" />
+            <div>
+              <h1 className="text-xl font-bold text-white">Manajemen Antrian</h1>
+              <p className="text-sky-200 text-sm mt-0.5">RIFIM Driver Queue System — FIFO</p>
+              <div className="flex gap-2 mt-1">
+                <span className="text-xs bg-yellow-400/30 text-yellow-200 px-2 py-0.5 rounded-full">{statusCounts.WAITING} Menunggu</span>
+                <span className="text-xs bg-blue-400/30 text-blue-200 px-2 py-0.5 rounded-full">{statusCounts.CALLED} Dipanggil</span>
+                <span className="text-xs bg-green-400/30 text-green-200 px-2 py-0.5 rounded-full">{statusCounts.PICKUP} Jemput</span>
+              </div>
+            </div>
           </div>
+          <button
+            onClick={() => setQueue(QUEUE_DATA)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg transition"
+          >
+            <RefreshCw className="w-4 h-4" /> Reset Antrian
+          </button>
         </div>
-        <button
-          onClick={() => setQueue(QUEUE_DATA)}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
-        >
-          <RefreshCw className="w-4 h-4" /> Reset Antrian
-        </button>
       </div>
 
       {/* Status Summary Cards */}
