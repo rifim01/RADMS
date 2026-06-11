@@ -1,7 +1,10 @@
 /**
- * Google Sheets data service
- * Fetches Driver, Staff, and Attendance data from Google Sheets via GVIZ API
- * Falls back to mock data if sheets are not publicly accessible
+ * Google Sheets data service — GVIZ API
+ * Columns as they actually exist in the sheets:
+ *
+ * Driver Airport  : A=No, B=ID Driver, C=Nama Driver, D=Cabang
+ * Driver External : A=NO, B=ID Driver, C=Nama,        D=Id Cabang
+ * Staff           : (see fetchStaff — share header when available)
  */
 
 export const SHEET_IDS = {
@@ -11,30 +14,19 @@ export const SHEET_IDS = {
   ABSENSI:         '1FU5hKMpYn1qhsl4-xZYUZrXDhTOV6aRRewYEs6gIkxA',
 }
 
-// Exact sheet tab names as they appear in each Google Sheets file
 export const SHEET_NAMES = {
-  // DATABASE STAFF → sheet: MASTER DATA STAFF
-  STAFF: 'MASTER DATA STAFF',
-
-  // Database Driver Airport → one sheet per branch
+  STAFF:              'MASTER DATA STAFF',
   AIRPORT_BATAM:      'ID Rifim Airport Batam',
   AIRPORT_JAMBI:      'ID Rifim Airport Jambi',
   AIRPORT_BALIKPAPAN: 'ID Rifim Airport Balikpapan',
   AIRPORT_MANADO:     'ID Rifim Airport Manado',
   AIRPORT_PEKANBARU:  'ID Rifim Airport Pekanbaru',
-
-  // Database Driver External → one sheet per external branch
   EXTERNAL_BATAM:     'ID Rifim Batam',
   EXTERNAL_JAMBI:     'ID Rifim Jambi Luar',
 }
 
-function gvizUrl(sheetId, sheetName = '') {
-  const base = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`
-  return sheetName ? `${base}&sheet=${encodeURIComponent(sheetName)}` : base
-}
-
-async function fetchGviz(sheetId, sheetName = '') {
-  const url = gvizUrl(sheetId, sheetName)
+async function fetchGviz(sheetId, sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const text = await res.text()
@@ -42,95 +34,112 @@ async function fetchGviz(sheetId, sheetName = '') {
   return JSON.parse(json)
 }
 
-function rowValues(row) {
-  return (row.c || []).map(cell => {
-    if (!cell) return ''
-    if (cell.v === null || cell.v === undefined) return ''
-    return String(cell.v).trim()
-  })
+function cellVal(cell) {
+  if (!cell || cell.v === null || cell.v === undefined) return ''
+  return String(cell.v).trim()
 }
 
-// ─── Airport Drivers ───────────────────────────────────────────────────────
-// Each sheet in DRIVER_AIRPORT file maps to one branch
+// ─── Driver Airport ────────────────────────────────────────────────────────
+// Columns: A=No  B=ID Driver  C=Nama Driver  D=Cabang
 const AIRPORT_SHEETS = [
-  { sheetName: SHEET_NAMES.AIRPORT_BATAM,      branchId: 'ID Rifim Airport Batam' },
-  { sheetName: SHEET_NAMES.AIRPORT_JAMBI,      branchId: 'ID Rifim Airport Jambi' },
-  { sheetName: SHEET_NAMES.AIRPORT_BALIKPAPAN, branchId: 'ID Rifim Airport Balikpapan' },
-  { sheetName: SHEET_NAMES.AIRPORT_MANADO,     branchId: 'ID Rifim Airport Manado' },
-  { sheetName: SHEET_NAMES.AIRPORT_PEKANBARU,  branchId: 'ID Rifim Airport Pekanbaru' },
+  SHEET_NAMES.AIRPORT_BATAM,
+  SHEET_NAMES.AIRPORT_JAMBI,
+  SHEET_NAMES.AIRPORT_BALIKPAPAN,
+  SHEET_NAMES.AIRPORT_MANADO,
+  SHEET_NAMES.AIRPORT_PEKANBARU,
 ]
 
-async function fetchDriversFromSheet(sheetId, sheetName, branchId) {
-  const data = await fetchGviz(sheetId, sheetName)
-  const rows = data.table.rows || []
-  return rows.slice(1).map((row, i) => {
-    const v = rowValues(row)
+async function fetchAirportSheet(sheetName) {
+  const data = await fetchGviz(SHEET_IDS.DRIVER_AIRPORT, sheetName)
+  const rows = (data.table?.rows || []).slice(1)
+  return rows.map(row => {
+    const c = row.c || []
+    const driverId = cellVal(c[1])
+    const name     = cellVal(c[2])
+    const branch   = cellVal(c[3]) || sheetName
+    if (!name) return null
     return {
-      id:           v[0] || `${branchId}-${i}`,
-      name:         v[1] || '',
-      nik:          v[2] || '',
-      phone:        v[3] || '',
-      vehicle:      v[4] || '',
-      plateNumber:  v[5] || '',
-      airportId:    v[6] || branchId,
-      status:       (v[7] || 'offline').toLowerCase(),
-      joinDate:     v[8] || '',
-      rating:       parseFloat(v[9]) || 4.0,
-      totalPickups: parseInt(v[10]) || 0,
-      lastLat:      parseFloat(v[11]) || 0,
-      lastLng:      parseFloat(v[12]) || 0,
-      type:         'airport',
+      id:          driverId || `${sheetName}-${name}`,
+      nik:         driverId,
+      name,
+      airportId:   branch,
+      phone:       '',
+      vehicle:     '',
+      plateNumber: '',
+      status:      'offline',
+      type:        'airport',
     }
-  }).filter(d => d.name)
+  }).filter(Boolean)
 }
 
 export async function fetchDriverAirport() {
   const results = await Promise.all(
-    AIRPORT_SHEETS.map(({ sheetName, branchId }) =>
-      fetchDriversFromSheet(SHEET_IDS.DRIVER_AIRPORT, sheetName, branchId).catch(() => [])
-    )
+    AIRPORT_SHEETS.map(s => fetchAirportSheet(s).catch(() => []))
   )
   return results.flat()
 }
 
-// ─── External Drivers ──────────────────────────────────────────────────────
+// ─── Driver External ───────────────────────────────────────────────────────
+// Columns: A=NO  B=ID Driver  C=Nama  D=Id Cabang
 const EXTERNAL_SHEETS = [
-  { sheetName: SHEET_NAMES.EXTERNAL_BATAM, branchId: 'ID Rifim Batam' },
-  { sheetName: SHEET_NAMES.EXTERNAL_JAMBI, branchId: 'ID Rifim Jambi Luar' },
+  SHEET_NAMES.EXTERNAL_BATAM,
+  SHEET_NAMES.EXTERNAL_JAMBI,
 ]
+
+async function fetchExternalSheet(sheetName) {
+  const data = await fetchGviz(SHEET_IDS.DRIVER_EXTERNAL, sheetName)
+  const rows = (data.table?.rows || []).slice(1)
+  return rows.map(row => {
+    const c = row.c || []
+    const driverId = cellVal(c[1])
+    const name     = cellVal(c[2])
+    const branch   = cellVal(c[3]) || sheetName
+    if (!name) return null
+    return {
+      id:          driverId || `${sheetName}-${name}`,
+      nik:         driverId,
+      name,
+      airportId:   branch,
+      phone:       '',
+      vehicle:     '',
+      plateNumber: '',
+      status:      'offline',
+      type:        'external',
+    }
+  }).filter(Boolean)
+}
 
 export async function fetchDriverExternal() {
   const results = await Promise.all(
-    EXTERNAL_SHEETS.map(({ sheetName, branchId }) =>
-      fetchDriversFromSheet(SHEET_IDS.DRIVER_EXTERNAL, sheetName, branchId)
-        .then(rows => rows.map(d => ({ ...d, type: 'external' })))
-        .catch(() => [])
-    )
+    EXTERNAL_SHEETS.map(s => fetchExternalSheet(s).catch(() => []))
   )
   return results.flat()
 }
 
 // ─── Staff ─────────────────────────────────────────────────────────────────
+// Columns assumed: A=No B=ID C=Nama D=NIK E=Telepon F=Email G=Jabatan H=Cabang I=Status
+// Update if actual headers differ
 export async function fetchStaff() {
   const data = await fetchGviz(SHEET_IDS.DATABASE_STAFF, SHEET_NAMES.STAFF)
-  const rows = data.table.rows || []
-  return rows.slice(1).map((row, i) => {
-    const v = rowValues(row)
+  const rows = (data.table?.rows || []).slice(1)
+  return rows.map((row, i) => {
+    const c = row.c || []
+    const name = cellVal(c[2]) || cellVal(c[1])
+    if (!name) return null
     return {
-      id:        v[0] || `stf-gs-${i}`,
-      name:      v[1] || '',
-      nik:       v[2] || '',
-      phone:     v[3] || '',
-      email:     v[4] || '',
-      role:      v[5] || 'Staff',
-      airportId: v[6] || '',
-      status:    (v[7] || 'active').toLowerCase(),
-      joinDate:  v[8] || '',
+      id:        cellVal(c[1]) || `stf-${i}`,
+      name,
+      nik:       cellVal(c[3]) || '',
+      phone:     cellVal(c[4]) || '',
+      email:     cellVal(c[5]) || '',
+      role:      cellVal(c[6]) || 'Staff',
+      airportId: cellVal(c[7]) || '',
+      status:    (cellVal(c[8]) || 'active').toLowerCase(),
     }
-  }).filter(s => s.name)
+  }).filter(Boolean)
 }
 
-// ─── Combined fetch with fallback ──────────────────────────────────────────
+// ─── Combined with fallback ─────────────────────────────────────────────────
 export async function fetchAllDrivers(mockDrivers) {
   try {
     const [airport, external] = await Promise.all([
@@ -141,7 +150,7 @@ export async function fetchAllDrivers(mockDrivers) {
     if (combined.length === 0) throw new Error('Empty result')
     return { data: combined, source: 'google_sheets' }
   } catch (err) {
-    console.warn('Google Sheets driver fetch failed, using mock data:', err.message)
+    console.warn('Sheets driver fetch failed, using mock:', err.message)
     return { data: mockDrivers, source: 'mock' }
   }
 }
@@ -152,7 +161,7 @@ export async function fetchAllStaff(mockStaff) {
     if (staff.length === 0) throw new Error('Empty result')
     return { data: staff, source: 'google_sheets' }
   } catch (err) {
-    console.warn('Google Sheets staff fetch failed, using mock data:', err.message)
+    console.warn('Sheets staff fetch failed, using mock:', err.message)
     return { data: mockStaff, source: 'mock' }
   }
 }
