@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
-  <rect x="1" y="1" width="118" height="38" rx="6" ry="6" fill="white" stroke="#dc2626" stroke-width="2"/>
-  <text x="60" y="27" font-family="Arial, sans-serif" font-size="20" font-weight="900" fill="#dc2626" text-anchor="middle" letter-spacing="3">RIFIM</text>
+<svg viewBox="0 0 220 64" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="60" height="60" rx="6" fill="#CC1B1B"/>
+  <text x="31" y="28" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" fill="white">RI</text>
+  <text x="31" y="52" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="20" fill="white">FIM</text>
+  <text x="74" y="26" font-family="Arial,sans-serif" font-weight="700" font-size="15" fill="#1a1a1a">PT. RIFIM</text>
+  <text x="74" y="44" font-family="Arial,sans-serif" font-weight="400" font-size="11" fill="#444444">INTERNATIONAL</text>
+  <text x="74" y="58" font-family="Arial,sans-serif" font-weight="400" font-size="11" fill="#444444">GEMILANG</text>
 </svg>

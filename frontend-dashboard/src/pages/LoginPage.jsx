@@ -42,17 +42,24 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+    <div className="min-h-screen flex bg-gradient-to-br from-red-950 via-red-900 to-slate-900">
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between flex-1 p-12 text-white">
         <div className="flex items-center gap-3">
-          <img src="/rifim-logo.svg" alt="RIFIM" className="h-12" />
+          <svg viewBox="0 0 220 64" xmlns="http://www.w3.org/2000/svg" className="h-12 w-auto">
+            <rect x="2" y="2" width="60" height="60" rx="6" fill="#CC1B1B"/>
+            <text x="31" y="28" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontWeight="900" fontSize="18" fill="white">RI</text>
+            <text x="31" y="52" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontWeight="900" fontSize="20" fill="white">FIM</text>
+            <text x="74" y="26" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="15" fill="white">PT. RIFIM</text>
+            <text x="74" y="44" fontFamily="Arial,sans-serif" fontWeight="400" fontSize="11" fill="rgba(255,255,255,0.8)">INTERNATIONAL</text>
+            <text x="74" y="58" fontFamily="Arial,sans-serif" fontWeight="400" fontSize="11" fill="rgba(255,255,255,0.8)">GEMILANG</text>
+          </svg>
         </div>
 
         <div>
           <h1 className="text-4xl font-bold leading-tight mb-4">
             Kelola Driver Bandara<br />
-            <span className="text-blue-400">Lebih Efisien</span>
+            <span className="text-red-300">Lebih Efisien</span>
           </h1>
           <p className="text-slate-300 text-lg leading-relaxed max-w-md">
             Sistem manajemen driver bandara terpadu untuk memantau antrian, kehadiran, dan kinerja driver secara real-time.
@@ -65,7 +72,7 @@ export default function LoginPage() {
               { label: 'Penjemputan/Hari', value: '300+' },
             ].map(stat => (
               <div key={stat.label} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-blue-300">{stat.value}</p>
+                <p className="text-2xl font-bold text-red-300">{stat.value}</p>
                 <p className="text-sm text-slate-300 mt-1">{stat.label}</p>
               </div>
             ))}
@@ -138,7 +145,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? 'Memproses...' : 'Masuk'}
             </button>

@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         return { success: false, error: msg };
       }
 
-      await ensureAuth();
+      try { await ensureAuth() } catch { /* Anonymous auth optional; RTDB will work if enabled */ }
 
       const driverData = {
         id: foundDriver.id || foundDriver.nik,
