@@ -56,3 +56,28 @@ export async function findDriverByNik(nik) {
   const clean = nik.replace(/\D/g, '')
   return drivers.find(d => d.nik.replace(/\D/g, '') === clean) || null
 }
+
+// ─── Staff lookup for validation ──────────────────────────────────────────────
+const STAFF_SHEET_ID = '1fcraqPKwqLaqPHZnpZB8dHCjZ0gj8NJMf5H30Sm7aZA'
+
+export async function findStaffById(staffId) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${STAFF_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
+    const res = await fetch(url)
+    const text = await res.text()
+    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
+    const rows = (json.table?.rows || []).slice(1)
+    for (const row of rows) {
+      const c = row.c || []
+      const id = c[4]?.v ? String(c[4].v).trim() : ''  // kolom E = ID Staff
+      const nama = c[1]?.v ? String(c[1].v).trim() : ''  // kolom B = Nama
+      const cabang = c[3]?.v ? String(c[3].v).trim() : ''  // kolom D = ID CABANG
+      if (id && id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
+        return { id, nama, cabang }
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}

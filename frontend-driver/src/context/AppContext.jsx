@@ -22,6 +22,7 @@ import {
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
+import { listenDriverTrips, ensureAuth } from '../services/firebaseService.js';
 
 const AppContext = createContext(null);
 
@@ -82,6 +83,23 @@ export function AppProvider({ children }) {
         setLocation(loc);
         checkAndUpdateGeofence(loc.lat, loc.lng);
       }
+
+      // Listen to real trips from Firebase
+      let unsubTrips = () => {};
+      ensureAuth().then(() => {
+        unsubTrips = listenDriverTrips(driver.id, (trips) => {
+          if (trips.length > 0) {
+            setHistory(trips);
+          }
+          // If no Firebase trips yet, keep mock data as fallback
+        });
+      }).catch(() => {
+        // If auth fails, keep mock data
+      });
+
+      return () => {
+        unsubTrips();
+      };
     }
   }, [driver?.id]);
 
