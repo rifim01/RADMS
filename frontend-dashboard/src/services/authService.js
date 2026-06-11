@@ -1,26 +1,50 @@
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
+import { fetchUsers } from './sheetsService'
 
-// Role mapping by email — extend this list as needed
-const EMAIL_ROLES = {
-  'admin@radms.id':       { role: 'super_admin',  name: 'Super Admin RIFIM',     airportId: null,                          avatar: 'SA' },
-  'super@rifim.com':      { role: 'super_admin',  name: 'Super Admin RIFIM',     airportId: null,                          avatar: 'SA' },
-  'rifim01@adminrifim.org': { role: 'super_admin', name: 'Admin RIFIM',           airportId: null,                          avatar: 'AR' },
+// Static role mapping for known admin accounts
+const STATIC_ROLES = {
+  'admin@radms.id':           { role: 'super_admin', name: 'Super Admin RIFIM', airportId: null, avatar: 'SA' },
+  'super@rifim.com':          { role: 'super_admin', name: 'Super Admin RIFIM', airportId: null, avatar: 'SA' },
+  'rifim01@adminrifim.org':   { role: 'super_admin', name: 'Admin RIFIM',       airportId: null, avatar: 'AR' },
+  'pipin@adminrifim.org':     { role: 'super_admin', name: 'Govinda',           airportId: null, avatar: 'GV' },
 }
 
-function getRoleData(email) {
+// Convert jabatan from USERS sheet to internal role
+function jabatanToRole(jabatan) {
+  const j = (jabatan || '').toUpperCase()
+  if (j === 'ADMIN')        return 'super_admin'
+  if (j === 'KOORDINATOR')  return 'coordinator'
+  return 'staff'
+}
+
+async function getRoleData(email) {
   const lower = email.toLowerCase()
-  if (EMAIL_ROLES[lower]) return EMAIL_ROLES[lower]
-  // Default fallback based on email pattern
-  if (lower.includes('coord')) return { role: 'coordinator', name: email, airportId: null, avatar: 'CO' }
-  if (lower.includes('staff')) return { role: 'staff',       name: email, airportId: null, avatar: 'ST' }
-  return { role: 'super_admin', name: email, airportId: null, avatar: email.slice(0,2).toUpperCase() }
+  if (STATIC_ROLES[lower]) return STATIC_ROLES[lower]
+
+  // Try to fetch role from USERS sheet
+  try {
+    const users = await fetchUsers()
+    const found = users.find(u => u.email === lower)
+    if (found) {
+      return {
+        role:      jabatanToRole(found.jabatan),
+        name:      found.nama || email,
+        airportId: found.cabang || null,
+        jabatan:   found.jabatan,
+        avatar:    (found.nama || email).slice(0, 2).toUpperCase(),
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Fallback
+  return { role: 'staff', name: email, airportId: null, avatar: email.slice(0, 2).toUpperCase() }
 }
 
 export const authService = {
   async login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email.trim(), password)
-    const roleData = getRoleData(cred.user.email)
+    const roleData = await getRoleData(cred.user.email)
     const userData = {
       id:        cred.user.uid,
       email:     cred.user.email,
@@ -45,13 +69,14 @@ export const authService = {
   },
 
   onAuthChange(callback) {
-    return onAuthStateChanged(auth, (firebaseUser) => {
+    return onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const stored = localStorage.getItem('radms_user')
-        const userData = stored ? JSON.parse(stored) : {
-          id:    firebaseUser.uid,
-          email: firebaseUser.email,
-          ...getRoleData(firebaseUser.email),
+        let userData = stored ? JSON.parse(stored) : null
+        if (!userData || userData.email !== firebaseUser.email) {
+          const roleData = await getRoleData(firebaseUser.email)
+          userData = { id: firebaseUser.uid, email: firebaseUser.email, ...roleData }
+          localStorage.setItem('radms_user', JSON.stringify(userData))
         }
         callback(userData)
       } else {

@@ -1,7 +1,9 @@
 import { AIRPORT_BRANCHES, SHIFT_WINDOWS, SHEET_IDS } from './airportConfig'
 
 // ---------------------------------------------------------------------------
-// GVIZ fetch & parse
+// ABSENSI sheet columns (RIFIM ERP ABSENSI):
+// A=Timestamp  B=Nama Staff  C=Bandara  D=Tipe Absen (masuk/pulang/khusus)
+// E=Koordinat GPS  F=Status Jarak  G=Bukti Foto
 // ---------------------------------------------------------------------------
 
 export async function fetchAttendanceData() {
@@ -13,52 +15,90 @@ export async function fetchAttendanceData() {
 }
 
 export function parseGvizResponse(rawText) {
-  // Strip /*O_o*/ prefix and google.visualization.Query.setResponse(...) wrapper
   const jsonStart = rawText.indexOf('{')
-  const jsonEnd = rawText.lastIndexOf('}')
+  const jsonEnd   = rawText.lastIndexOf('}')
   if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid GVIZ response')
-  const jsonStr = rawText.substring(jsonStart, jsonEnd + 1)
-  const data = JSON.parse(jsonStr)
+  const data = JSON.parse(rawText.substring(jsonStart, jsonEnd + 1))
 
   const rows = data?.table?.rows ?? []
   const records = []
 
   for (const row of rows) {
     if (!row.c) continue
-    const cells = row.c
+    const c = row.c
 
-    const timestamp = cells[0]?.v ?? null
-    const nama      = cells[1]?.v ?? ''
-    const idCabang  = cells[2]?.v ?? ''
-    const status    = cells[3]?.v ?? ''
+    const rawTs      = c[0]?.v ?? null
+    const nama       = String(c[1]?.v ?? '').trim()
+    const bandara    = String(c[2]?.v ?? '').trim()
+    const tipeAbsen  = String(c[3]?.v ?? '').trim().toLowerCase() // masuk / pulang / khusus
+    const koordinat  = String(c[4]?.v ?? '').trim()
+    const statusJarak = String(c[5]?.v ?? '').trim()             // Dalam Radius / Di Luar Radius
+    const buktiFoto  = String(c[6]?.v ?? '').trim()
 
-    if (!timestamp || !nama) continue
+    if (!rawTs || !nama) continue
 
-    // Parse timestamp: "6/10/2026 7:02:15" or Google Date format
-    let parsedDate = null
-    let timeStr = null
-
-    if (typeof timestamp === 'string') {
-      // "M/D/YYYY H:MM:SS"
-      const match = timestamp.match(/(\d+)\/(\d+)\/(\d{4})\s+(\d+):(\d+)(?::(\d+))?/)
-      if (match) {
-        const [, month, day, year, hours, minutes] = match
-        parsedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-      }
-    } else if (typeof timestamp === 'object' && timestamp !== null) {
-      // Google Date(year,month,day,h,m,s) — months are 0-based
-      const d = new Date(timestamp)
-      parsedDate = d.toISOString().slice(0, 10)
-      timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    }
-
+    const { date: parsedDate, time: timeStr } = parseTimestamp(rawTs)
     if (!parsedDate || !timeStr) continue
 
-    records.push({ timestamp, date: parsedDate, time: timeStr, nama, idCabang, status })
+    // Parse GPS coords  "lat,lng"
+    let lat = null, lng = null
+    const coords = koordinat.split(',')
+    if (coords.length === 2) {
+      lat = parseFloat(coords[0])
+      lng = parseFloat(coords[1])
+    }
+
+    const dalamRadius = statusJarak.toLowerCase().startsWith('dalam radius')
+
+    records.push({
+      timestamp: rawTs,
+      date: parsedDate,
+      time: timeStr,
+      nama,
+      bandara,        // "ID Rifim Airport Batam" etc.
+      tipeAbsen,      // "masuk" | "pulang" | "khusus"
+      koordinat,
+      lat,
+      lng,
+      dalamRadius,
+      statusJarak,
+      buktiFoto,
+    })
   }
 
   return records
+}
+
+function parseTimestamp(raw) {
+  // Format from sheet: "7/6/2026, 19.02.42" or "M/D/YYYY, HH.MM.SS"
+  if (typeof raw === 'string') {
+    // Try "D/M/YYYY, HH.MM.SS" (Indonesian format with dot separators)
+    let m = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2})\.(\d{2})/)
+    if (m) {
+      const [, day, month, year, hours, minutes] = m
+      return {
+        date: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+        time: `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`,
+      }
+    }
+    // Try "M/D/YYYY H:MM" (US format)
+    m = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/)
+    if (m) {
+      const [, month, day, year, hours, minutes] = m
+      return {
+        date: `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+        time: `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`,
+      }
+    }
+  }
+  if (typeof raw === 'object' && raw !== null) {
+    const d = new Date(raw)
+    return {
+      date: d.toISOString().slice(0, 10),
+      time: `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,
+    }
+  }
+  return { date: null, time: null }
 }
 
 // ---------------------------------------------------------------------------
@@ -75,18 +115,14 @@ function isBatamBranch(branchId) {
 }
 
 export function determineAttendanceStatus(timeStr, branchId) {
-  const branch = AIRPORT_BRANCHES[branchId]
-  const isWITA = branch?.tz === 'WITA'
+  const branch   = AIRPORT_BRANCHES[branchId]
+  const isWITA   = branch?.tz === 'WITA'
   const isExempt = branch?.deductionExempt ?? false
-  const isBatam = isBatamBranch(branchId)
+  const isBatam  = isBatamBranch(branchId)
 
-  // For WITA branches: local time is 1 hour ahead of WIB.
-  // Shift windows are defined in WIB terms, so to compare we subtract 60 mins
-  // to convert WITA local time → WIB equivalent.
   let totalMins = timeToMins(timeStr)
-  if (isWITA) totalMins -= 60
+  if (isWITA) totalMins -= 60 // convert WITA → WIB for comparison
 
-  // Build list of windows to check (Batam uses SIANG_BATAM instead of SIANG)
   const shiftKeys = isBatam
     ? ['PAGI', 'MIDDLE', 'SIANG_BATAM']
     : ['PAGI', 'MIDDLE', 'SIANG']
@@ -99,22 +135,15 @@ export function determineAttendanceStatus(timeStr, branchId) {
     const lateEnd   = timeToMins(w.lateEnd)
 
     if (totalMins >= start && totalMins <= windowEnd) {
-      return {
-        status: 'Hadir',
-        shift: w.label,
-        minutesLate: 0,
-        deduction: 0,
-      }
+      return { status: 'Hadir', shift: w.label, minutesLate: 0, deduction: 0 }
     }
-
     if (totalMins >= lateStart && totalMins <= lateEnd) {
-      const minutesLate = totalMins - timeToMins(w.start)
-      const deduction = isExempt ? 0 : calculateDeduction(minutesLate, branchId)
+      const minutesLate = totalMins - start
       return {
         status: 'Terlambat',
         shift: w.label,
         minutesLate,
-        deduction,
+        deduction: isExempt ? 0 : calculateDeduction(minutesLate),
       }
     }
   }
@@ -122,10 +151,7 @@ export function determineAttendanceStatus(timeStr, branchId) {
   return { status: 'Khusus', shift: '-', minutesLate: 0, deduction: 0 }
 }
 
-export function calculateDeduction(minutesLate, branchId) {
-  const branch = AIRPORT_BRANCHES[branchId]
-  if (branch?.deductionExempt) return 0
-  // Simple tiered deduction (adjust as needed)
+export function calculateDeduction(minutesLate) {
   if (minutesLate <= 5)  return 0
   if (minutesLate <= 15) return 25000
   if (minutesLate <= 30) return 50000
@@ -133,7 +159,7 @@ export function calculateDeduction(minutesLate, branchId) {
 }
 
 // ---------------------------------------------------------------------------
-// Process raw records
+// Process: group by (nama + date), pair masuk/pulang, compute status
 // ---------------------------------------------------------------------------
 
 export function processAttendanceRecords(rawData) {
@@ -142,19 +168,37 @@ export function processAttendanceRecords(rawData) {
   for (const rec of rawData) {
     const key = `${rec.nama}__${rec.date}`
     if (!map[key]) {
-      map[key] = { nama: rec.nama, idCabang: rec.idCabang, date: rec.date, masuk: null, pulang: null }
+      map[key] = {
+        nama:       rec.nama,
+        bandara:    rec.bandara,
+        date:       rec.date,
+        masuk:      null,
+        pulang:     null,
+        khusus:     null,
+        dalamRadius: rec.dalamRadius,
+        buktiFoto:  rec.buktiFoto,
+        koordinat:  rec.koordinat,
+      }
     }
-    if (rec.status === 'Masuk' && !map[key].masuk) {
-      map[key].masuk = rec.time
-    } else if (rec.status === 'Pulang' && !map[key].pulang) {
-      map[key].pulang = rec.time
-    }
+    const entry = map[key]
+    if (rec.tipeAbsen === 'masuk'  && !entry.masuk)  entry.masuk  = rec.time
+    if (rec.tipeAbsen === 'pulang' && !entry.pulang) entry.pulang = rec.time
+    if (rec.tipeAbsen === 'khusus' && !entry.khusus) entry.khusus = rec.time
+    // update radius from latest record
+    if (!entry.dalamRadius) entry.dalamRadius = rec.dalamRadius
+    entry.buktiFoto = rec.buktiFoto || entry.buktiFoto
   }
 
   return Object.values(map).map(entry => {
-    const statusInfo = entry.masuk
-      ? determineAttendanceStatus(entry.masuk, entry.idCabang)
+    const checkInTime = entry.masuk || entry.khusus
+    const statusInfo  = checkInTime
+      ? determineAttendanceStatus(checkInTime, entry.bandara)
       : { status: 'Tidak Hadir', shift: '-', minutesLate: 0, deduction: 0 }
+
+    // Override: if outside radius → flag it
+    if (!entry.dalamRadius && statusInfo.status === 'Hadir') {
+      statusInfo.status = 'Di Luar Radius'
+    }
 
     return { ...entry, ...statusInfo }
   })
@@ -165,14 +209,13 @@ export function processAttendanceRecords(rawData) {
 // ---------------------------------------------------------------------------
 
 export function getLast7DaysData(records, branchId) {
-  const today = new Date()
-  const cutoff = new Date(today)
+  const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - 6)
   const cutoffStr = cutoff.toISOString().slice(0, 10)
 
   return records.filter(r => {
-    const matchBranch = !branchId || r.idCabang === branchId
-    const matchDate = r.date >= cutoffStr
+    const matchBranch = !branchId || r.bandara === branchId
+    const matchDate   = r.date >= cutoffStr
     return matchBranch && matchDate
   })
 }

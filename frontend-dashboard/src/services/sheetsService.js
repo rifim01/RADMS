@@ -139,7 +139,28 @@ export async function fetchStaff() {
   }).filter(Boolean)
 }
 
-// ─── Combined with fallback ─────────────────────────────────────────────────
+// ─── Users (Staff login role mapping) ────────────────────────────────────
+// USERS sheet columns: A=Email  B=Password  C=Nama  D=Cabang  E=Jabatan  F=Role
+export async function fetchUsers() {
+  try {
+    const data = await fetchGviz(SHEET_IDS.ABSENSI, 'USERS')
+    const rows = (data.table?.rows || []).slice(1)
+    return rows.map(row => {
+      const c = row.c || []
+      const email = cellVal(c[0]).toLowerCase()
+      if (!email) return null
+      return {
+        email,
+        nama:    cellVal(c[2]),
+        cabang:  cellVal(c[3]),
+        jabatan: cellVal(c[4]),
+        role:    cellVal(c[5]) || 'staff',
+      }
+    }).filter(Boolean)
+  } catch {
+    return []
+  }
+}
 export async function fetchAllDrivers(mockDrivers) {
   try {
     const [airport, external] = await Promise.all([
