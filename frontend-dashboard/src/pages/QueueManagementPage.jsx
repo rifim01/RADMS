@@ -15,7 +15,7 @@ const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES)
 export default function QueueManagementPage() {
   const { user } = useAuth()
   const [branchId, setBranchId] = useState(
-    user.role === 'super_admin' ? (BRANCH_KEYS[0] || 'all') : user.airportId
+    user.role === 'super_admin' ? (BRANCH_KEYS[0] || 'all') : (user.airportId || BRANCH_KEYS[0] || 'all')
   )
   const [queue, setQueue] = useState([])
   const [filterStatus, setFilterStatus] = useState('all')

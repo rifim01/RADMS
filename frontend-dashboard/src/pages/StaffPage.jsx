@@ -5,19 +5,23 @@ import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
 import { STAFF as INITIAL_STAFF, AIRPORTS } from '../services/mockData'
 import { fetchAllStaff } from '../services/sheetsService'
+import { useAuth } from '../context/AuthContext'
 import { formatDate } from '../utils/formatters'
 
 const emptyForm = {
   name: '', nik: '', phone: '', email: '',
-  role: 'Staff', airportId: AIRPORTS[0]?.id || '', status: 'active',
+  role: 'Staff', airportId: '', status: 'active',
 }
 
 export default function StaffPage() {
+  const { user } = useAuth()
   const [staff, setStaff] = useState(INITIAL_STAFF)
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterAirport, setFilterAirport] = useState('all')
+  const [filterAirport, setFilterAirport] = useState(
+    user.role === 'super_admin' ? 'all' : (user.airportId || 'all')
+  )
 
   useEffect(() => { loadStaff() }, [])
 
@@ -33,9 +37,12 @@ export default function StaffPage() {
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState(null)
 
+  const branchList = [...new Set(staff.map(s => s.airportId).filter(Boolean))].sort()
+
   const filtered = staff.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.email.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = !search ||
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.email || '').toLowerCase().includes(search.toLowerCase())
     const matchAirport = filterAirport === 'all' || s.airportId === filterAirport
     return matchSearch && matchAirport
   })
@@ -110,7 +117,9 @@ export default function StaffPage() {
         <div className="flex items-center gap-3">
           <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Data Staf</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Data Staf — {user.role === 'super_admin' ? 'Semua Cabang' : (user.airportId || 'Semua Cabang')}
+            </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-gray-500 text-sm">Kelola data staf operasional bandara</p>
               {dataSource === 'google_sheets'
@@ -149,14 +158,17 @@ export default function StaffPage() {
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <select
-          value={filterAirport}
-          onChange={e => setFilterAirport(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">Semua Bandara</option>
-          {AIRPORTS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
+        {user.role === 'super_admin' ? (
+          <select value={filterAirport} onChange={e => setFilterAirport(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">Semua Cabang</option>
+            {branchList.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        ) : (
+          <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">
+            {user.airportId || 'Semua Cabang'}
+          </span>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

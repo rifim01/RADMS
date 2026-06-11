@@ -161,6 +161,7 @@ export default function AttendancePage() {
   // ---------------------------------------------------------------------------
   const filterByBranch = useCallback((processed) => {
     if (!user || user.role === 'super_admin') return processed
+    if (!user.airportId) return processed  // no branch info → show all
     return processed.filter(r => r.idCabang === user.airportId)
   }, [user?.role, user?.airportId])
 
