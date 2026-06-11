@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node -e \"const {execSync}=require('child_process');const dir=process.env.VERCEL_PROJECT_ID==='prj_NfcN1dxUxTVAPgoe7xQvH8BsCnOh'?'frontend-dashboard':'frontend-driver';execSync('cd '+dir+' && npm install && npm run build && cp -r dist ../public',{stdio:'inherit'});\"",
+  "buildCommand": "bash build.sh",
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
