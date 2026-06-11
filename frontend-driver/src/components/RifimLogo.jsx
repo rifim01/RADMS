@@ -1,67 +1,89 @@
 import React from 'react'
 
-// Bold 3D-style RIFIM logo matching actual brand identity
-// [RI red square] FIM bold red — PT. RIFIM INTERNATIONAL GEMILANG
+// RIFIM Logo — gabungan elemen terbaik dari semua variasi brand:
+// [RI] kotak merah dengan border tebal (kanan bawah),
+// FIM bold dengan panah merah ke atas (kiri bawah / kanan bawah),
+// shadow + depth (kiri atas), PT. RIFIM INTERNATIONAL GEMILANG
 export default function RifimLogo({ className = '', variant = 'dark' }) {
-  // variant: 'dark' = logo on dark/red bg (white RI), 'light' = logo on white bg (red RI)
-  const boxFill   = '#CC0000'
-  const boxFill2  = '#AA0000'
-  const rimColor  = variant === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'
-  const fimColor  = variant === 'dark' ? 'white' : '#CC0000'
-  const subColor  = variant === 'dark' ? 'rgba(255,255,255,0.7)' : '#888'
+  const isDark = variant === 'dark'
+  const fimColor    = isDark ? 'white' : '#CC0000'
+  const subtitleCol = isDark ? 'rgba(255,255,255,0.65)' : '#888'
+  const arrowColor  = isDark ? '#ff4444' : '#CC0000'
 
   return (
-    <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <svg viewBox="0 0 310 92" xmlns="http://www.w3.org/2000/svg" className={className}>
       <defs>
-        <linearGradient id="boxGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#EE1111"/>
-          <stop offset="100%" stopColor="#990000"/>
+        {/* Box gradient: bright red top, dark red bottom */}
+        <linearGradient id={`rfBg${variant}`} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0%" stopColor="#FF1111"/>
+          <stop offset="50%" stopColor="#CC0000"/>
+          <stop offset="100%" stopColor="#880000"/>
         </linearGradient>
-        <linearGradient id="fimGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={variant === 'dark' ? '#ffffff' : '#DD1111'}/>
-          <stop offset="100%" stopColor={variant === 'dark' ? '#dddddd' : '#880000'}/>
+        {/* FIM gradient */}
+        <linearGradient id={`rfFim${variant}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={isDark ? '#ffffff' : '#EE1111'}/>
+          <stop offset="100%" stopColor={isDark ? '#cccccc' : '#880000'}/>
         </linearGradient>
-        <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
-          <feDropShadow dx="2" dy="3" stdDeviation="3" floodColor="rgba(0,0,0,0.4)"/>
+        {/* Drop shadow */}
+        <filter id={`rfSh${variant}`} x="-15%" y="-15%" width="130%" height="135%">
+          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.55)"/>
+        </filter>
+        {/* Inner glow for RI text */}
+        <filter id={`rfGl${variant}`} x="-5%" y="-5%" width="110%" height="120%">
+          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.4)"/>
         </filter>
       </defs>
 
-      {/* Red square badge */}
-      <rect x="2" y="2" width="82" height="82" rx="6" fill="url(#boxGrad)" filter="url(#shadow)"/>
-      {/* Inner highlight rim */}
-      <rect x="5" y="5" width="76" height="76" rx="4" fill="none" stroke={rimColor} strokeWidth="1.5"/>
-      {/* RI text */}
+      {/* ── Outer box border (like bottom-right style) ── */}
+      <rect x="1" y="1" width="86" height="86" rx="5" fill="none" stroke="#CC0000" strokeWidth="3"/>
+
+      {/* ── Red filled inner box ── */}
+      <rect x="5" y="5" width="78" height="78" rx="3" fill={`url(#rfBg${variant})`} filter={`url(#rfSh${variant})`}/>
+
+      {/* ── Highlight top-left corner (3D depth like kiri-atas) ── */}
+      <rect x="5" y="5" width="78" height="12" rx="3" fill="rgba(255,255,255,0.12)"/>
+      <rect x="5" y="5" width="10" height="78" rx="3" fill="rgba(255,255,255,0.08)"/>
+
+      {/* ── RI Text ── */}
       <text
-        x="43" y="64"
+        x="44" y="64"
         textAnchor="middle"
         fontFamily="Impact,Arial Black,Arial,sans-serif"
         fontWeight="900"
-        fontSize="52"
+        fontSize="50"
         fill="white"
-        filter="url(#shadow)"
+        filter={`url(#rfGl${variant})`}
+        letterSpacing="-1"
       >RI</text>
 
-      {/* Vertical divider line */}
-      <line x1="88" y1="8" x2="88" y2="78" stroke={fimColor} strokeWidth="2" opacity="0.4"/>
+      {/* ── Vertical divider ── */}
+      <line x1="91" y1="10" x2="91" y2="78" stroke={fimColor} strokeWidth="2.5" opacity="0.35"/>
 
-      {/* FIM text */}
+      {/* ── FIM Text ── */}
       <text
-        x="98" y="72"
+        x="100" y="74"
         fontFamily="Impact,Arial Black,Arial,sans-serif"
         fontWeight="900"
-        fontSize="66"
-        fill="url(#fimGrad)"
-        filter="url(#shadow)"
+        fontSize="68"
+        fill={`url(#rfFim${variant})`}
+        filter={`url(#rfSh${variant})`}
+        letterSpacing="-1"
       >FIM</text>
 
-      {/* Company name */}
+      {/* ── Red arrow (panah pertumbuhan dari kiri-bawah & kanan-bawah) ── */}
+      <g transform="translate(261,12)" filter={`url(#rfSh${variant})`}>
+        <line x1="0" y1="22" x2="22" y2="0" stroke={arrowColor} strokeWidth="3" strokeLinecap="round"/>
+        <polygon points="22,0 14,0 22,8" fill={arrowColor}/>
+      </g>
+
+      {/* ── Company name ── */}
       <text
-        x="2" y="87"
+        x="2" y="90"
         fontFamily="Arial,Helvetica,sans-serif"
-        fontWeight="500"
+        fontWeight="600"
         fontSize="9"
-        fill={subColor}
-        letterSpacing="0.8"
+        fill={subtitleCol}
+        letterSpacing="0.6"
       >PT. RIFIM INTERNATIONAL GEMILANG</text>
     </svg>
   )
