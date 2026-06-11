@@ -1,19 +1,22 @@
 #!/bin/bash
 set -e
 
-# Route build to correct app based on Vercel project ID
-# Dashboard: prj_NfcN1dxUxTVAPgoe7xQvH8BsCnOh
-# Driver:    prj_dny34CacqE4gNyMgxfXq5yptPRyG
-
+# Route build based on Vercel project ID
 if [ "$VERCEL_PROJECT_ID" = "prj_NfcN1dxUxTVAPgoe7xQvH8BsCnOh" ]; then
   echo ">>> Building frontend-dashboard..."
-  cd frontend-dashboard
+  APP="frontend-dashboard"
 else
   echo ">>> Building frontend-driver..."
-  cd frontend-driver
+  APP="frontend-driver"
 fi
 
+cd "$APP"
 npm install
 npm run build
-cp -r dist ../public
-echo ">>> Build complete."
+
+# Wipe then copy build output to /public at repo root
+mkdir -p ../public
+rm -rf ../public/*
+cp -r dist/* ../public/
+
+echo ">>> Done. Files: $(ls ../public | head -5)"
