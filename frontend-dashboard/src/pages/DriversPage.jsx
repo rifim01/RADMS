@@ -170,7 +170,7 @@ export default function DriversPage() {
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        {user.role === 'super_admin' && (
+        {user.role === 'super_admin' ? (
           <select
             value={filterAirport}
             onChange={e => setFilterAirport(e.target.value)}
@@ -181,6 +181,10 @@ export default function DriversPage() {
               <option key={b} value={b}>{b}</option>
             ))}
           </select>
+        ) : (
+          <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">
+            {user.airportId || 'Semua Cabang'}
+          </span>
         )}
         <div className="ml-auto text-sm text-gray-500 flex items-center">
           Total: <span className="font-semibold text-gray-800 ml-1">{filtered.length}</span> driver
