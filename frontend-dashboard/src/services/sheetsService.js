@@ -117,24 +117,24 @@ export async function fetchDriverExternal() {
 }
 
 // ─── Staff ─────────────────────────────────────────────────────────────────
-// Columns assumed: A=No B=ID C=Nama D=NIK E=Telepon F=Email G=Jabatan H=Cabang I=Status
-// Update if actual headers differ
+// Columns: A=Email  B=Nama  C=Gaji Staff  D=ID CABANG  E=ID Staff  F=Jabatan  G=Deposit
 export async function fetchStaff() {
   const data = await fetchGviz(SHEET_IDS.DATABASE_STAFF, SHEET_NAMES.STAFF)
   const rows = (data.table?.rows || []).slice(1)
   return rows.map((row, i) => {
     const c = row.c || []
-    const name = cellVal(c[2]) || cellVal(c[1])
+    const name = cellVal(c[1])
     if (!name) return null
     return {
-      id:        cellVal(c[1]) || `stf-${i}`,
-      name,
-      nik:       cellVal(c[3]) || '',
-      phone:     cellVal(c[4]) || '',
-      email:     cellVal(c[5]) || '',
-      role:      cellVal(c[6]) || 'Staff',
-      airportId: cellVal(c[7]) || '',
-      status:    (cellVal(c[8]) || 'active').toLowerCase(),
+      id:        cellVal(c[4]) || `stf-${i}`,   // E: ID Staff (RIF0125, etc.)
+      name,                                       // B: Nama
+      email:     cellVal(c[0]) || '',             // A: Email
+      gaji:      cellVal(c[2]) || '',             // C: Gaji Staff
+      airportId: cellVal(c[3]) || '',             // D: ID CABANG
+      staffId:   cellVal(c[4]) || '',             // E: ID Staff
+      role:      cellVal(c[5]) || 'Staff',        // F: Jabatan
+      deposit:   cellVal(c[6]) || '',             // G: Deposit
+      status:    'active',
     }
   }).filter(Boolean)
 }

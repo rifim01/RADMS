@@ -78,23 +78,20 @@ export default function StaffPage() {
 
   const columns = [
     { header: '#', key: 'id', render: (_, row) => <span className="text-gray-400 text-xs">{filtered.indexOf(row) + 1}</span> },
+    { header: 'ID Staff', key: 'staffId', render: v => <span className="font-mono text-xs font-semibold text-blue-600">{v}</span> },
     { header: 'Nama Staf', key: 'name', render: v => <span className="font-medium text-gray-800">{v}</span> },
-    { header: 'NIK', key: 'nik', render: v => <span className="font-mono text-xs text-gray-500">{v}</span> },
-    { header: 'Email', key: 'email', render: v => <span className="text-gray-600">{v}</span> },
-    { header: 'Telepon', key: 'phone', render: v => <span className="text-gray-600">{v}</span> },
+    { header: 'Email', key: 'email', render: v => <span className="text-gray-500 text-xs">{v}</span> },
     { header: 'Jabatan', key: 'role', render: v => (
       <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-        v === 'Airport Coordinator'
-          ? 'bg-purple-100 text-purple-700 border-purple-200'
-          : 'bg-gray-100 text-gray-600 border-gray-200'
+        v === 'KOORDINATOR'   ? 'bg-purple-100 text-purple-700 border-purple-200'
+        : v === 'ADMIN'       ? 'bg-red-100 text-red-700 border-red-200'
+        : v === 'PICKUP POINT'? 'bg-blue-100 text-blue-700 border-blue-200'
+        :                       'bg-gray-100 text-gray-600 border-gray-200'
       }`}>{v}</span>
     )},
-    { header: 'Bandara', key: 'airportId', render: v => {
-      const a = AIRPORTS.find(ap => ap.id === v)
-      return <span className="text-gray-600">{a?.code} — {a?.city}</span>
-    }},
+    { header: 'Cabang', key: 'airportId', render: v => <span className="text-gray-600 text-xs">{v}</span> },
+    { header: 'Gaji', key: 'gaji', render: v => <span className="text-gray-600 text-xs">{v}</span> },
     { header: 'Status', key: 'status', render: v => <StatusBadge status={v} /> },
-    { header: 'Bergabung', key: 'joinDate', render: v => <span className="text-gray-500 text-xs">{formatDate(v)}</span> },
     { header: 'Aksi', key: 'id', render: (_, row) => (
       <div className="flex items-center gap-1">
         <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
