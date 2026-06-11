@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { unlockAudio } from './services/soundService.js'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import { AppProvider } from './context/AppContext.jsx'
 import SplashScreen from './pages/SplashScreen.jsx'
@@ -172,6 +173,10 @@ export default function App() {
   const handleSplashComplete = () => {
     sessionStorage.setItem('radms_splash_seen', '1')
     setShowSplash(false)
+    unlockAudio()
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
   }
 
   if (showSplash) {

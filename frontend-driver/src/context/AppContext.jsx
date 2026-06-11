@@ -23,6 +23,7 @@ import {
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
 import { listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
+import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
 
@@ -165,6 +166,17 @@ export function AppProvider({ children }) {
   }, []);
 
   const addSystemNotification = useCallback((title, message, type = 'SYSTEM') => {
+    // Play sound based on notification type
+    if (type === 'CALLED')   playCalled()
+    else if (type === 'PANIC') playPanic()
+    else if (type === 'GEOFENCE') playSuccess()
+    else playNotification()
+
+    // Browser Notification API if permitted
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body: message, icon: '/icon-192.svg', badge: '/icon-192.svg' })
+    }
+
     const newNotif = {
       id: `notif-${Date.now()}`,
       title,

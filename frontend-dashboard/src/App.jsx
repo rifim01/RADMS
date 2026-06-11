@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { unlockAudio } from './services/soundService'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ROLE_REDIRECTS } from './services/authService'
 
@@ -25,6 +26,13 @@ import SettingsPage from './pages/SettingsPage'
 function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { user } = useAuth()
+
+  useEffect(() => {
+    unlockAudio()
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-50 flex">

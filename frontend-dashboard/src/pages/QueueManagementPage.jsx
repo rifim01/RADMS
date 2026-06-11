@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { PhoneCall, CheckCircle, Trash2, RefreshCw, AlertTriangle } from 'lucide-react'
 import { ref, onValue, off, update, set, serverTimestamp } from 'firebase/database'
 import { db } from '../firebase/config'
@@ -8,6 +8,7 @@ import { AIRPORTS } from '../services/mockData'
 import { AIRPORT_BRANCHES } from '../services/airportConfig'
 import { useAuth } from '../context/AuthContext'
 import { formatTime } from '../utils/formatters'
+import { playCalled, playNotification, unlockAudio } from '../services/soundService'
 
 const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES)
 
@@ -19,8 +20,9 @@ export default function QueueManagementPage() {
   const [queue, setQueue] = useState([])
   const [filterStatus, setFilterStatus] = useState('all')
   const [showResetModal, setShowResetModal] = useState(false)
+  const prevQueueLen = useRef(0)
 
-  // Listen Firebase RTDB
+  // Listen Firebase RTDB — play sound when new driver joins
   useEffect(() => {
     if (!branchId || branchId === 'all') {
       setQueue([])
@@ -30,10 +32,18 @@ export default function QueueManagementPage() {
     const unsub = onValue(r, snap => {
       const val = snap.val() || {}
       const entries = Object.values(val).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+      // Play sound when queue grows (new driver joins)
+      if (entries.length > prevQueueLen.current) {
+        playNotification()
+      }
+      prevQueueLen.current = entries.length
       setQueue(entries)
     })
     return () => off(r)
   }, [branchId])
+
+  // Unlock audio on first interaction
+  useEffect(() => { unlockAudio() }, [])
 
   const filtered = queue.filter(q => {
     const matchStatus = filterStatus === 'all' || q.status === filterStatus
@@ -42,6 +52,7 @@ export default function QueueManagementPage() {
 
   function updateStatus(driverId, newStatus) {
     if (!branchId || branchId === 'all') return
+    if (newStatus === 'CALLED') playCalled()
     update(ref(db, `queue/${branchId}/${driverId}`), {
       status: newStatus,
       calledAt: newStatus === 'CALLED' ? serverTimestamp() : null,

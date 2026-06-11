@@ -1,0 +1,7 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="80" fill="#CC1B1B"/>
+  <rect x="30" y="30" width="210" height="210" rx="20" fill="white" opacity="0.95"/>
+  <text x="135" y="200" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="140" fill="#CC1B1B">RI</text>
+  <text x="270" y="320" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="160" fill="white">FIM</text>
+  <text x="256" y="460" text-anchor="middle" font-family="Arial,sans-serif" font-weight="400" font-size="38" fill="rgba(255,255,255,0.8)" letter-spacing="2">PT. RIFIM</text>
+</svg>
