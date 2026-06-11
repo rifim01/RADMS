@@ -4,102 +4,90 @@ import { CreditCard, User, AlertCircle, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import RifimLogo from '../components/RifimLogo.jsx';
 
-// Background dramatik merah (kanan atas) + elemen bandara (kiri bawah)
+// Light/bright airport background
 function HeroBg() {
   return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 280"
+    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 260"
       preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        {/* Dark dramatic sky — kanan atas */}
         <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#060208"/>
-          <stop offset="40%"  stopColor="#1c0205"/>
-          <stop offset="100%" stopColor="#4a0000"/>
+          <stop offset="0%"   stopColor="#bfdbfe"/>
+          <stop offset="50%"  stopColor="#dbeafe"/>
+          <stop offset="100%" stopColor="#eff6ff"/>
         </linearGradient>
-        {/* Center spotlight — kanan atas */}
-        <radialGradient id="hSpot" cx="50%" cy="0%" r="80%">
-          <stop offset="0%"   stopColor="#ff2200" stopOpacity="0.35"/>
-          <stop offset="100%" stopColor="#ff2200" stopOpacity="0"/>
-        </radialGradient>
-        {/* Ground glow */}
-        <radialGradient id="hGnd" cx="50%" cy="100%" r="60%">
-          <stop offset="0%"   stopColor="#CC0000" stopOpacity="0.5"/>
-          <stop offset="100%" stopColor="#CC0000" stopOpacity="0"/>
-        </radialGradient>
-        {/* Brush stroke texture — kanan atas */}
-        <filter id="hBlur"><feGaussianBlur stdDeviation="2.5"/></filter>
-        <filter id="hBlur2"><feGaussianBlur stdDeviation="1"/></filter>
+        <linearGradient id="hGround" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e2e8f0"/>
+          <stop offset="100%" stopColor="#cbd5e1"/>
+        </linearGradient>
+        <linearGradient id="hTerminal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f1f5f9"/>
+          <stop offset="100%" stopColor="#e2e8f0"/>
+        </linearGradient>
+        <filter id="hBlur"><feGaussianBlur stdDeviation="2"/></filter>
+        <filter id="hShadow"><feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.1)"/></filter>
       </defs>
 
       {/* Sky */}
-      <rect width="400" height="280" fill="url(#hSky)"/>
-      {/* Spotlight from top */}
-      <ellipse cx="200" cy="-20" rx="250" ry="160" fill="url(#hSpot)"/>
-      {/* Ground glow */}
-      <ellipse cx="200" cy="300" rx="280" ry="100" fill="url(#hGnd)"/>
+      <rect width="400" height="260" fill="url(#hSky)"/>
 
-      {/* Brush stroke BG (kanan atas style) */}
-      <ellipse cx="200" cy="140" rx="185" ry="115" fill="#1a0000" opacity="0.55" filter="url(#hBlur)"/>
+      {/* Clouds */}
+      <ellipse cx="60"  cy="40" rx="38" ry="14" fill="white" opacity="0.9" filter="url(#hBlur)"/>
+      <ellipse cx="85"  cy="34" rx="28" ry="10" fill="white" opacity="0.95"/>
+      <ellipse cx="310" cy="50" rx="45" ry="16" fill="white" opacity="0.85" filter="url(#hBlur)"/>
+      <ellipse cx="340" cy="44" rx="32" ry="12" fill="white"/>
 
-      {/* Runway surface (kiri bawah + tengah bawah) */}
-      <polygon points="140,280 260,280 225,155 175,155" fill="#0e0000" opacity="0.8"/>
-      {/* Runway centerline */}
-      {Array.from({length:11},(_,i)=>(
-        <rect key={i} x="199" y={158+i*11} width="2" height="7" rx="1"
-          fill="#CC0000" opacity={0.15+i*0.07}/>
+      {/* Ground */}
+      <rect x="0" y="195" width="400" height="65" fill="url(#hGround)"/>
+
+      {/* Runway */}
+      <rect x="140" y="192" width="120" height="68" fill="#94a3b8" opacity="0.4"/>
+      <rect x="197" y="196" width="6" height="60" fill="#CC0000" opacity="0.5" rx="2"/>
+      {[0,1,2,3].map(i => (
+        <rect key={i} x="198" y={201 + i*12} width="4" height="7" rx="1" fill="white" opacity="0.7"/>
       ))}
-      {/* Edge lights kiri */}
-      {Array.from({length:8},(_,i)=>(
-        <circle key={i} cx={178-i*4} cy={160+i*15} r="2.5"
-          fill="#ff3300" opacity={0.3+i*0.08} filter="url(#hBlur2)"/>
+      {/* Runway lights */}
+      {[0,1,2,3].map(i => (
+        <circle key={`l${i}`} cx={147} cy={200 + i*14} r="2.5" fill="#CC0000" opacity="0.7"/>
       ))}
-      {/* Edge lights kanan */}
-      {Array.from({length:8},(_,i)=>(
-        <circle key={i} cx={222+i*4} cy={160+i*15} r="2.5"
-          fill="#ff3300" opacity={0.3+i*0.08} filter="url(#hBlur2)"/>
+      {[0,1,2,3].map(i => (
+        <circle key={`r${i}`} cx={253} cy={200 + i*14} r="2.5" fill="#CC0000" opacity="0.7"/>
       ))}
 
-      {/* Control tower siluet (kiri bawah) */}
-      <rect x="48" y="110" width="9" height="60" fill="#0d0000" opacity="0.85"/>
-      <rect x="42" y="106" width="21" height="11" rx="2" fill="#0d0000" opacity="0.85"/>
-      <rect x="50" y="96" width="5" height="14" fill="#0d0000" opacity="0.85"/>
-      {/* Tower light */}
-      <circle cx="52" cy="96" r="2" fill="#ff6600" opacity="0.6" filter="url(#hBlur2)"/>
-
-      {/* Terminal siluet kiri */}
-      <rect x="5" y="160" width="100" height="50" rx="3" fill="#0a0000" opacity="0.75"/>
-      <rect x="15" y="150" width="80" height="15" rx="2" fill="#0a0000" opacity="0.75"/>
-      {/* Terminal windows */}
-      {[18,30,42,54,66,78,87].map((x,i)=>(
-        <rect key={i} x={x} y={168} width="7" height="10" rx="1"
-          fill="#ff4400" opacity="0.1"/>
+      {/* Terminal */}
+      <rect x="30" y="115" width="220" height="85" rx="3" fill="url(#hTerminal)" filter="url(#hShadow)"/>
+      <rect x="30" y="115" width="220" height="5"  rx="3" fill="#CC0000" opacity="0.7"/>
+      {/* Windows row 1 */}
+      {[42,64,86,108,130,152,174,196,218].map((x,i) => (
+        <rect key={i} x={x} y={128} width={14} height={16} rx="2" fill="#bfdbfe" opacity="0.8"/>
       ))}
+      {/* Windows row 2 */}
+      {[42,64,86,108,130,152,174,196,218].map((x,i) => (
+        <rect key={i} x={x} y={153} width={14} height={16} rx="2" fill="#bfdbfe" opacity="0.5"/>
+      ))}
+      {/* Entrance */}
+      <rect x="115" y="165" width="50" height="35" rx="2" fill="#f8fafc" stroke="#e2e8f0"/>
 
-      {/* Terminal siluet kanan */}
-      <rect x="295" y="170" width="100" height="40" rx="3" fill="#0a0000" opacity="0.7"/>
+      {/* Control tower */}
+      <rect x="296" y="90"  width="10" height="110" rx="2" fill="#e2e8f0"/>
+      <rect x="289" y="87"  width="24" height="12"  rx="2" fill="#cbd5e1"/>
+      <rect x="293" y="76"  width="16" height="13"  rx="2" fill="#e2e8f0"/>
+      <rect x="293" y="78"  width="6"  height="9"   rx="1" fill="#93c5fd" opacity="0.7"/>
+      <rect x="301" y="78"  width="6"  height="9"   rx="1" fill="#93c5fd" opacity="0.7"/>
+      <circle cx="301" cy="74" r="3"   fill="#CC0000" opacity="0.85"/>
+      <circle cx="301" cy="74" r="5.5" fill="#CC0000" opacity="0.2"/>
 
-      {/* Airplane siluet (kiri bawah / tengah bawah) */}
-      <g transform="translate(295,90) rotate(-12)" opacity="0.4">
-        <ellipse cx="0" cy="0" rx="30" ry="5.5" fill="#ddd"/>
-        <polygon points="-8,-5 -8,5 18,0" fill="#ccc"/>
-        <line x1="-12" y1="0" x2="-32" y2="-18" stroke="#ccc" strokeWidth="2.5"/>
-        <line x1="-12" y1="0" x2="-32" y2="18"  stroke="#ccc" strokeWidth="2.5"/>
-        <line x1="12"  y1="0" x2="25"  y2="-7"  stroke="#ccc" strokeWidth="1.5"/>
+      {/* Airplane */}
+      <g transform="translate(100,148) rotate(-5)" filter="url(#hShadow)">
+        <ellipse cx="0" cy="0" rx="40" ry="7" fill="#f1f5f9"/>
+        <rect x="-40" y="-2" width="80" height="4" rx="2" fill="#CC0000" opacity="0.75"/>
+        <polygon points="-8,-7 -8,7 -38,18 -38,-18" fill="#e2e8f0" opacity="0.9"/>
+        <polygon points="-8,-7 -8,7 -38,18 -38,-18" fill="#CC0000" opacity="0.1"/>
+        <polygon points="30,-7 40,-7 40,-24 26,-10" fill="#e2e8f0"/>
+        <ellipse cx="-40" cy="0" rx="5" ry="4" fill="#dde4ec"/>
       </g>
 
-      {/* Red speed lines (kanan atas) */}
-      <line x1="0"   y1="180" x2="400" y2="130" stroke="#CC0000" strokeWidth="0.8" opacity="0.12"/>
-      <line x1="0"   y1="220" x2="400" y2="180" stroke="#CC0000" strokeWidth="0.5" opacity="0.08"/>
-      <line x1="200" y1="0"   x2="150" y2="280" stroke="#CC0000" strokeWidth="0.4" opacity="0.06"/>
-
-      {/* Red arrow diagonal (kiri bawah / kanan bawah) */}
-      <g transform="translate(330,50)" opacity="0.5">
-        <line x1="0" y1="40" x2="35" y2="5" stroke="#ff2200" strokeWidth="2.5" strokeLinecap="round"/>
-        <polygon points="35,5 27,5 35,13" fill="#ff2200"/>
-      </g>
-
-      {/* Vignette */}
-      <rect width="400" height="280" fill="black" opacity="0.25"/>
+      {/* Red accent swoosh */}
+      <path d="M0,230 Q100,218 200,225 Q300,232 400,220" fill="none" stroke="#CC0000" strokeWidth="1.5" opacity="0.18"/>
     </svg>
   )
 }
@@ -131,28 +119,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Hero area */}
-      <div className="relative flex-shrink-0 h-64 overflow-hidden">
+      <div className="relative flex-shrink-0 h-60 overflow-hidden">
         <HeroBg />
-        {/* Bingkai merah (tengah bawah style) */}
-        <div className="absolute inset-4 border border-red-700/40 rounded-2xl pointer-events-none"/>
+        {/* Red top accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 to-red-800"/>
+        {/* Subtle frame */}
+        <div className="absolute inset-3 border border-red-300/40 rounded-2xl pointer-events-none"/>
         {/* Logo + tagline */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3">
-          <RifimLogo className="h-16 w-auto" variant="dark"/>
+          <RifimLogo className="h-16 w-auto" variant="light"/>
           <div className="flex items-center gap-4 mt-1">
             {['INTEGRITAS','INOVASI','KUALITAS'].map(v => (
-              <span key={v} className="text-red-300/80 text-[9px] tracking-widest font-semibold uppercase">{v}</span>
+              <span key={v} className="text-red-700/70 text-[9px] tracking-widest font-bold uppercase">{v}</span>
             ))}
           </div>
         </div>
       </div>
 
       {/* Login card */}
-      <div className="flex-1 flex flex-col bg-white rounded-t-3xl -mt-4 px-6 pt-8 pb-8 shadow-2xl">
+      <div className="flex-1 flex flex-col bg-white rounded-t-3xl -mt-4 px-6 pt-8 pb-8 shadow-xl">
         <div className="mb-6">
-          <h2 className="text-gray-900 text-2xl font-bold">Masuk</h2>
-          <p className="text-gray-400 text-sm mt-1">Masuk ke akun driver Anda</p>
+          <h2 className="text-slate-800 text-2xl font-bold">Masuk</h2>
+          <p className="text-slate-400 text-sm mt-1">Masuk ke akun driver Anda</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -164,37 +154,37 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="block text-gray-500 text-xs font-medium mb-2 ml-1">ID Driver (NIK)</label>
+            <label className="block text-slate-500 text-xs font-medium mb-2 ml-1">ID Driver (NIK)</label>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-gray-400"/>
-                <div className="w-px h-5 bg-gray-200"/>
+                <CreditCard className="w-5 h-5 text-slate-400"/>
+                <div className="w-px h-5 bg-slate-200"/>
               </div>
               <input type="text" inputMode="numeric" value={nik}
                 onChange={e => setNik(e.target.value.replace(/\D/g,'').slice(0,20))}
                 placeholder="Masukkan NIK / ID Driver"
-                className="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-gray-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-400 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-slate-300 focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition-colors"
                 disabled={loading}/>
             </div>
           </div>
 
           <div>
-            <label className="block text-gray-500 text-xs font-medium mb-2 ml-1">Nama Lengkap</label>
+            <label className="block text-slate-500 text-xs font-medium mb-2 ml-1">Nama Lengkap</label>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <User className="w-5 h-5 text-gray-400"/>
-                <div className="w-px h-5 bg-gray-200"/>
+                <User className="w-5 h-5 text-slate-400"/>
+                <div className="w-px h-5 bg-slate-200"/>
               </div>
               <input type="text" value={nama}
                 onChange={e => setNama(e.target.value)}
                 placeholder="Nama sesuai data RIFIM"
-                className="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-gray-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-400 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-slate-300 focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition-colors"
                 disabled={loading}/>
             </div>
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full flex items-center justify-center gap-2 text-white font-bold rounded-xl py-4 mt-4 transition-all text-base shadow-lg shadow-red-900/40 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 text-white font-bold rounded-xl py-4 mt-4 transition-all text-base shadow-lg shadow-red-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: 'linear-gradient(135deg,#FF1111 0%,#880000 100%)' }}>
             {loading ? (
               <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
@@ -205,16 +195,16 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 bg-red-50 border border-red-100 rounded-xl p-4">
-          <p className="text-red-700 text-xs font-semibold mb-2">Cara Login:</p>
-          <ul className="text-xs text-gray-500 space-y-1">
-            <li>• <span className="text-gray-700 font-medium">ID Driver</span> = NIK terdaftar di sistem RIFIM</li>
-            <li>• <span className="text-gray-700 font-medium">Nama</span> = nama sesuai data (minimal kata pertama)</li>
+        <div className="mt-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p className="text-slate-700 text-xs font-semibold mb-2">Cara Login:</p>
+          <ul className="text-xs text-slate-500 space-y-1">
+            <li>• <span className="text-slate-700 font-medium">ID Driver</span> = NIK terdaftar di sistem RIFIM</li>
+            <li>• <span className="text-slate-700 font-medium">Nama</span> = nama sesuai data (minimal kata pertama)</li>
             <li>• Hubungi koordinator jika lupa NIK Anda</li>
           </ul>
         </div>
 
-        <p className="text-center text-gray-300 text-xs mt-auto pt-6">
+        <p className="text-center text-slate-300 text-xs mt-auto pt-6">
           &copy; 2025 PT. RIFIM INTERNATIONAL GEMILANG
         </p>
       </div>

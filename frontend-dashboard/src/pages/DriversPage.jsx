@@ -18,7 +18,7 @@ export default function DriversPage() {
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterAirport, setFilterAirport] = useState(user.role === 'super_admin' ? 'all' : user.airportId)
+  const [filterAirport, setFilterAirport] = useState(user.role === 'super_admin' ? 'all' : (user.airportId || 'all'))
 
   useEffect(() => {
     loadDrivers()
@@ -36,10 +36,14 @@ export default function DriversPage() {
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState(null)
 
+  // Build unique branch list from loaded data (not from mock AIRPORTS)
+  const branchList = [...new Set(drivers.map(d => d.airportId).filter(Boolean))].sort()
+
   const filtered = drivers.filter(d => {
-    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.plateNumber.toLowerCase().includes(search.toLowerCase()) ||
-      d.nik.includes(search)
+    const matchSearch = !search ||
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      (d.plateNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+      (d.nik || '').includes(search)
     const matchAirport = filterAirport === 'all' || d.airportId === filterAirport
     return matchSearch && matchAirport
   })
@@ -91,9 +95,10 @@ export default function DriversPage() {
     { header: 'Telepon', key: 'phone', render: v => <span className="text-gray-600">{v}</span> },
     { header: 'Kendaraan', key: 'vehicle', render: v => <span className="text-gray-600">{v}</span> },
     { header: 'Plat', key: 'plateNumber', render: v => <span className="font-mono text-xs font-semibold text-gray-700">{v}</span> },
-    { header: 'Bandara', key: 'airportId', render: v => {
+    { header: 'Cabang', key: 'airportId', render: v => {
       const a = AIRPORTS.find(ap => ap.id === v)
-      return <span className="text-gray-600">{a?.code} — {a?.city}</span>
+      const label = a ? `${a.code} — ${a.city}` : (v || '-')
+      return <span className="text-gray-600 text-xs">{label}</span>
     }},
     { header: 'Status', key: 'status', render: v => <StatusBadge status={v} /> },
     { header: 'Rating', key: 'rating', render: v => <span className="text-yellow-500 font-medium">★ {v}</span> },
@@ -171,9 +176,9 @@ export default function DriversPage() {
             onChange={e => setFilterAirport(e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">Semua Bandara</option>
-            {AIRPORTS.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+            <option value="all">Semua Cabang</option>
+            {branchList.map(b => (
+              <option key={b} value={b}>{b}</option>
             ))}
           </select>
         )}
