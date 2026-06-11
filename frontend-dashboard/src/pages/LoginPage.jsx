@@ -172,7 +172,7 @@ export default function LoginPage() {
   const navigate   = useNavigate()
   const { login }  = useAuth()
   const [email,    setEmail]    = useState('rifim01@adminrifim.org')
-  const [password, setPassword] = useState('')
+  const [password, setPassword] = useState('Admin@Rifim2025')
   const [showPass, setShowPass] = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
