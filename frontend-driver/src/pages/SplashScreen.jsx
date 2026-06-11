@@ -73,7 +73,7 @@ export default function SplashScreen({ onComplete }) {
             PT. RIFIM INTERNATIONAL GEMILANG
           </p>
           <p className="text-slate-500 text-xs mt-1">
-            Bandara Sultan Hasanuddin Makassar
+            Melayani Dunia, Menggerakkan Negeri
           </p>
         </div>
 
