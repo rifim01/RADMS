@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <!-- Red square background -->
+  <rect x="2" y="2" width="52" height="52" rx="4" fill="#CC2222"/>
+  <!-- RI text inside red box -->
+  <text x="28" y="38" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="28" fill="white" text-anchor="middle" letter-spacing="-1">RI</text>
+  <!-- FIM text outside box -->
+  <text x="64" y="38" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="28" fill="#CC2222" text-anchor="start" letter-spacing="-1">FIM</text>
+  <!-- Tagline -->
+  <text x="58" y="50" font-family="Arial, sans-serif" font-weight="400" font-size="7" fill="#555555" text-anchor="start" letter-spacing="0.3">PT. RIFIM INTERNATIONAL GEMILANG</text>
+</svg>

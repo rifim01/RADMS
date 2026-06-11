@@ -47,14 +47,12 @@ export default function Sidebar({ collapsed, onClose }) {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-8 flex-shrink-0 brightness-0 invert" />
           {!collapsed && (
             <div className="overflow-hidden">
-              <p className="font-bold text-white text-sm leading-tight">RADMS</p>
-              <p className="text-[10px] text-slate-400 leading-tight">RIFIM Driver Management</p>
+              <p className="font-bold text-white text-xs leading-tight">Airport Driver Management</p>
+              <p className="text-[10px] text-slate-400 leading-tight">RADMS v1.0</p>
             </div>
           )}
           <button

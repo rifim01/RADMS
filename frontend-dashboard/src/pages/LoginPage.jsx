@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Plane, Lock, Mail, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLE_REDIRECTS } from '../services/authService'
 
@@ -18,11 +18,18 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const user = login(email.trim(), password)
+      const user = await login(email.trim(), password)
       const redirect = ROLE_REDIRECTS[user.role] || '/'
       navigate(redirect, { replace: true })
     } catch (err) {
-      setError(err.message)
+      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+        ? 'Email atau password salah'
+        : err.code === 'auth/user-not-found'
+        ? 'Akun tidak ditemukan'
+        : err.code === 'auth/too-many-requests'
+        ? 'Terlalu banyak percobaan. Coba lagi nanti.'
+        : err.message
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -39,13 +46,7 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between flex-1 p-12 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-            <Plane className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-xl">RADMS</p>
-            <p className="text-xs text-blue-300">RIFIM Airport Driver Management</p>
-          </div>
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-12 brightness-0 invert" />
         </div>
 
         <div>
@@ -59,9 +60,9 @@ export default function LoginPage() {
 
           <div className="mt-8 grid grid-cols-3 gap-4">
             {[
-              { label: 'Bandara Aktif', value: '3' },
-              { label: 'Total Driver', value: '75+' },
-              { label: 'Penjemputan/Hari', value: '227+' },
+              { label: 'Cabang Aktif', value: '7' },
+              { label: 'Total Driver', value: '100+' },
+              { label: 'Penjemputan/Hari', value: '300+' },
             ].map(stat => (
               <div key={stat.label} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
                 <p className="text-2xl font-bold text-blue-300">{stat.value}</p>
@@ -79,13 +80,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Plane className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">RADMS</p>
-              <p className="text-xs text-slate-500">RIFIM Driver Management</p>
-            </div>
+            <img src="/rifim-logo.svg" alt="RIFIM" className="h-10" />
           </div>
 
           <h2 className="text-2xl font-bold text-slate-800 mb-1">Selamat Datang</h2>

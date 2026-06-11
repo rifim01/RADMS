@@ -1,55 +1,37 @@
-// ============================================================
-// AUTH SERVICE - Mock authentication with localStorage
-// ============================================================
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { auth } from '../firebase/config'
 
-const USERS = [
-  {
-    id: 'usr-001',
-    email: 'super@rifim.com',
-    password: 'admin123',
-    name: 'Super Admin RIFIM',
-    role: 'super_admin',
-    airportId: null,
-    avatar: 'SA',
-  },
-  {
-    id: 'usr-002',
-    email: 'coord@rifim.com',
-    password: 'coord123',
-    name: 'Koordinator Makassar',
-    role: 'coordinator',
-    airportId: 'apt-1',
-    avatar: 'KM',
-  },
-  {
-    id: 'usr-003',
-    email: 'staff@rifim.com',
-    password: 'staff123',
-    name: 'Staff Makassar',
-    role: 'staff',
-    airportId: 'apt-1',
-    avatar: 'SM',
-  },
-]
+// Role mapping by email — extend this list as needed
+const EMAIL_ROLES = {
+  'admin@radms.id':       { role: 'super_admin',  name: 'Super Admin RIFIM',     airportId: null,                          avatar: 'SA' },
+  'super@rifim.com':      { role: 'super_admin',  name: 'Super Admin RIFIM',     airportId: null,                          avatar: 'SA' },
+  'rifim01@adminrifim.org': { role: 'super_admin', name: 'Admin RIFIM',           airportId: null,                          avatar: 'AR' },
+}
 
-export const ROLE_LABELS = {
-  super_admin: 'Super Admin',
-  coordinator: 'Airport Coordinator',
-  staff: 'Staff',
+function getRoleData(email) {
+  const lower = email.toLowerCase()
+  if (EMAIL_ROLES[lower]) return EMAIL_ROLES[lower]
+  // Default fallback based on email pattern
+  if (lower.includes('coord')) return { role: 'coordinator', name: email, airportId: null, avatar: 'CO' }
+  if (lower.includes('staff')) return { role: 'staff',       name: email, airportId: null, avatar: 'ST' }
+  return { role: 'super_admin', name: email, airportId: null, avatar: email.slice(0,2).toUpperCase() }
 }
 
 export const authService = {
-  login(email, password) {
-    const user = USERS.find(u => u.email === email && u.password === password)
-    if (!user) {
-      throw new Error('Email atau password salah')
+  async login(email, password) {
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password)
+    const roleData = getRoleData(cred.user.email)
+    const userData = {
+      id:        cred.user.uid,
+      email:     cred.user.email,
+      ...roleData,
     }
-    const { password: _pw, ...safeUser } = user
-    localStorage.setItem('radms_user', JSON.stringify(safeUser))
-    return safeUser
+    localStorage.setItem('radms_user', JSON.stringify(userData))
+    return userData
   },
 
-  logout() {
+  async logout() {
+    await signOut(auth)
     localStorage.removeItem('radms_user')
   },
 
@@ -61,16 +43,39 @@ export const authService = {
   isAuthenticated() {
     return !!this.getCurrentUser()
   },
+
+  onAuthChange(callback) {
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const stored = localStorage.getItem('radms_user')
+        const userData = stored ? JSON.parse(stored) : {
+          id:    firebaseUser.uid,
+          email: firebaseUser.email,
+          ...getRoleData(firebaseUser.email),
+        }
+        callback(userData)
+      } else {
+        localStorage.removeItem('radms_user')
+        callback(null)
+      }
+    })
+  },
 }
 
 export const ROLE_REDIRECTS = {
-  super_admin: '/national-dashboard',
-  coordinator: '/airport-dashboard',
-  staff: '/queue',
+  super_admin:  '/national-dashboard',
+  coordinator:  '/airport-dashboard',
+  staff:        '/queue',
+}
+
+export const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  coordinator: 'Airport Coordinator',
+  staff:       'Staff',
 }
 
 export const ROLE_PERMISSIONS = {
-  super_admin: ['national_dashboard', 'airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'staff', 'airports', 'settings'],
-  coordinator: ['airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'settings'],
-  staff: ['queue', 'drivers', 'attendance', 'settings'],
+  super_admin:  ['national_dashboard', 'airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'staff', 'airports', 'settings'],
+  coordinator:  ['airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'settings'],
+  staff:        ['queue', 'drivers', 'attendance', 'settings'],
 }
