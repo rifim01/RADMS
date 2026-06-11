@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigation, Crosshair, Layers, Users, RefreshCw } from 'lucide-react';
+import { ref, onValue, off } from 'firebase/database';
+import { db } from '../firebase/config.js';
 import Header from '../components/Header.jsx';
 import { useApp } from '../context/AppContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -25,10 +27,23 @@ export default function MapPage() {
     inGeofence,
     geofenceDistance,
     airport,
-    onlineDrivers,
     startTracking,
     locationError,
   } = useApp();
+  const [onlineDrivers, setOnlineDrivers] = useState([]);
+
+  // Listen to Firebase RTDB for nearby drivers in same branch
+  useEffect(() => {
+    const r = ref(db, 'drivers');
+    const unsub = onValue(r, snap => {
+      const val = snap.val() || {};
+      const nearby = Object.entries(val)
+        .filter(([id, d]) => d.location?.branchId === driver?.airportId && d.location?.isOnline && id !== driver?.id)
+        .map(([id, d]) => ({ id, ...d.location }));
+      setOnlineDrivers(nearby);
+    });
+    return () => off(r);
+  }, [driver?.airportId, driver?.id]);
 
   const airportCenter = airport
     ? [airport.lat, airport.lng]

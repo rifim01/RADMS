@@ -1,20 +1,40 @@
+import { useState, useEffect } from 'react'
 import { Car, ClipboardList, Users, CheckCircle, AlertCircle } from 'lucide-react'
 import StatsCard from '../components/StatsCard'
 import BarChart from '../charts/BarChart'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
-import { AIRPORTS, DRIVERS, QUEUE_DATA, REPORT_DATA } from '../services/mockData'
+import { QUEUE_DATA, REPORT_DATA } from '../services/mockData'
+import { fetchAllDrivers } from '../services/sheetsService'
 import { formatRelativeTime } from '../utils/formatters'
+
+const BRANCH_LABELS = {
+  "ID Rifim Airport Batam":      "Bandara Hang Nadim — Batam",
+  "ID Rifim Airport Jambi":      "Bandara Sultan Thaha — Jambi",
+  "ID Rifim Airport Balikpapan": "Bandara SAMS Sepinggan — Balikpapan",
+  "ID Rifim Airport Manado":     "Bandara Sam Ratulangi — Manado",
+  "ID Rifim Airport Pekanbaru":  "Bandara Sultan Syarif Kasim II — Pekanbaru",
+  "ID Rifim Batam":              "Area Batam (Eksternal)",
+  "ID Rifim Jambi Luar":         "Area Jambi Luar (Eksternal)",
+}
 
 export default function AirportDashboard() {
   const { user } = useAuth()
+  const [aptDrivers, setAptDrivers] = useState([])
 
-  const airport = user.airportId
-    ? AIRPORTS.find(a => a.id === user.airportId)
-    : AIRPORTS[0]
+  const currentBranchId = user.airportId || Object.keys(BRANCH_LABELS)[0]
+  const branchLabel = BRANCH_LABELS[currentBranchId] || currentBranchId
 
-  const aptDrivers = DRIVERS.filter(d => d.airportId === airport.id)
-  const aptQueue = QUEUE_DATA.filter(q => q.airportId === airport.id)
+  useEffect(() => {
+    fetchAllDrivers([]).then(({ data }) => {
+      const filtered = user.airportId
+        ? data.filter(d => d.airportId === user.airportId)
+        : data
+      setAptDrivers(filtered)
+    }).catch(() => {})
+  }, [user.airportId])
+
+  const aptQueue = QUEUE_DATA.filter(q => q.airportId === currentBranchId)
 
   const onlineDrivers = aptDrivers.filter(d => d.status === 'online')
   const activeQueue = aptQueue.filter(q => ['WAITING', 'CALLED', 'PICKUP'].includes(q.status))
@@ -33,8 +53,8 @@ export default function AirportDashboard() {
           <img src="/rifim-logo.svg" alt="RIFIM" className="h-10 bg-white rounded-lg px-2 py-1" />
           <div>
             <h1 className="text-xl font-bold text-white">Dashboard Bandara</h1>
-            <p className="text-sky-200 text-sm mt-0.5">{airport.id}</p>
-            <p className="text-sky-300 text-xs">{airport.fullName} &bull; {airport.city} &bull; <span className={`font-bold ${airport.tz === 'WITA' ? 'text-yellow-300' : 'text-sky-200'}`}>{airport.tz}</span></p>
+            <p className="text-sky-200 text-sm mt-0.5">{currentBranchId}</p>
+            <p className="text-sky-300 text-xs">{branchLabel}</p>
           </div>
         </div>
       </div>
@@ -58,14 +78,14 @@ export default function AirportDashboard() {
         />
         <StatsCard
           title="Staf Aktif"
-          value={airport.staffActive}
-          subtitle="Dari 5 staf terdaftar"
+          value="—"
+          subtitle="Data dari sistem absensi"
           icon={Users}
           color="blue"
         />
         <StatsCard
           title="Selesai Hari Ini"
-          value={airport.totalPickupsToday}
+          value={completedToday.length}
           subtitle="Penjemputan berhasil"
           icon={CheckCircle}
           color="purple"
@@ -80,8 +100,8 @@ export default function AirportDashboard() {
           <BarChart
             labels={REPORT_DATA.weekly.labels}
             datasets={[
-              { label: 'Penjemputan', data: REPORT_DATA.weekly.pickups.map(v => Math.round(v * (airport.totalPickupsToday / 112))), color: '#3b82f6' },
-              { label: 'Antrian', data: REPORT_DATA.weekly.queues.map(v => Math.round(v * (airport.queueCount / 28))), color: '#10b981' },
+              { label: 'Penjemputan', data: REPORT_DATA.weekly.pickups.map(v => Math.round(v * (completedToday.length / 10 || 1))), color: '#3b82f6' },
+              { label: 'Antrian', data: REPORT_DATA.weekly.queues.map(v => Math.round(v * (activeQueue.length / 5 || 1))), color: '#10b981' },
             ]}
             height={260}
           />

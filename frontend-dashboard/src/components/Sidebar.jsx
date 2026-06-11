@@ -8,7 +8,7 @@ import { ROLE_PERMISSIONS } from '../services/authService'
 
 const NAV_ITEMS = [
   { key: 'national_dashboard', to: '/national-dashboard', label: 'Dashboard Nasional', icon: Globe2, roles: ['super_admin'] },
-  { key: 'airport_dashboard', to: '/airport-dashboard', label: 'Dashboard Bandara', icon: LayoutDashboard, roles: ['coordinator', 'staff'] },
+  { key: 'airport_dashboard', to: '/airport-dashboard', label: 'Dashboard Bandara', icon: LayoutDashboard, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'drivers', to: '/drivers', label: 'Data Driver', icon: Car, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'drivers', to: '/driver-tracking', label: 'Pelacakan Driver', icon: Map, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'queue', to: '/queue', label: 'Manajemen Antrian', icon: ClipboardList, roles: ['super_admin', 'coordinator', 'staff'] },
@@ -73,7 +73,7 @@ export default function Sidebar({ collapsed, onClose }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium
                 ${isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-red-600 text-white shadow-sm'
                   : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`
               }
@@ -94,6 +94,7 @@ export default function Sidebar({ collapsed, onClose }) {
               <div className="overflow-hidden">
                 <p className="text-xs font-medium text-white truncate">{user?.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                <p className="text-[10px] text-slate-500 truncate">{user?.airportId || 'Semua Cabang'}</p>
               </div>
             </div>
           </div>

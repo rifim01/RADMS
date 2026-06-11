@@ -18,7 +18,7 @@ export default function DriversPage() {
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterAirport, setFilterAirport] = useState(user.airportId || 'all')
+  const [filterAirport, setFilterAirport] = useState(user.role === 'super_admin' ? 'all' : user.airportId)
 
   useEffect(() => {
     loadDrivers()
@@ -121,7 +121,9 @@ export default function DriversPage() {
         <div className="flex items-center gap-3">
           <img src="/rifim-logo.svg" alt="RIFIM" className="h-8" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Data Driver</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Data Driver — {user.role === 'super_admin' ? 'Semua Cabang' : user.airportId}
+            </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-gray-500 text-sm">Kelola data driver yang terdaftar</p>
               {dataSource === 'google_sheets'

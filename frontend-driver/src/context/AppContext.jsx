@@ -22,7 +22,7 @@ import {
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
-import { listenDriverTrips, ensureAuth } from '../services/firebaseService.js';
+import { listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
 
 const AppContext = createContext(null);
 
@@ -83,6 +83,9 @@ export function AppProvider({ children }) {
         setLocation(loc);
         checkAndUpdateGeofence(loc.lat, loc.lng);
       }
+
+      // GPS always-on: start tracking immediately regardless of online status
+      startTracking();
 
       // Listen to real trips from Firebase
       let unsubTrips = () => {};
@@ -184,24 +187,28 @@ export function AppProvider({ children }) {
     setIsOnline(newStatus);
     updateDriver?.({ online: newStatus });
 
+    // Update Firebase online status
+    if (driver?.id) {
+      ensureAuth().then(() => {
+        setDriverOnlineStatus(driver.id, newStatus);
+      }).catch(() => {});
+    }
+
     if (newStatus) {
-      // Mulai location tracking saat online
-      startTracking();
       addSystemNotification(
         'Status Online',
         'Anda sekarang online dan siap menerima penumpang.',
         'STATUS'
       );
     } else {
-      // Stop tracking saat offline
-      stopTracking();
+      // GPS tetap aktif saat offline — hanya update status
       addSystemNotification(
         'Status Offline',
-        'Anda sekarang offline.',
+        'Anda sekarang offline. Lokasi tetap dipantau.',
         'STATUS'
       );
     }
-  }, [isOnline, updateDriver]);
+  }, [isOnline, updateDriver, driver?.id]);
 
   const startTracking = useCallback(() => {
     if (stopTrackingRef.current) {
@@ -218,6 +225,12 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
+      // Update Firebase location regardless of online status
+      if (driver?.id) {
+        ensureAuth().then(() => {
+          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
+        }).catch(() => {});
+      }
     };
 
     const handleLocationError = (err) => {

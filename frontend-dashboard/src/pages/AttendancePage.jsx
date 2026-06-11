@@ -6,6 +6,7 @@ import {
 import { AIRPORT_BRANCHES, SHIFT_WINDOWS } from '../services/airportConfig'
 import { fetchAttendanceData, processAttendanceRecords, getLast7DaysData, determineAttendanceStatus } from '../services/attendanceService'
 import { MOCK_ATTENDANCE_DATA } from '../services/mockData'
+import { useAuth } from '../context/AuthContext'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,6 +126,7 @@ function MiniBarChart({ data, labels }) {
 // Main component
 // ---------------------------------------------------------------------------
 export default function AttendancePage() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState(0)
   const [records, setRecords]     = useState([])
   const [loading, setLoading]     = useState(false)
@@ -157,26 +159,31 @@ export default function AttendancePage() {
   // ---------------------------------------------------------------------------
   // Fetch
   // ---------------------------------------------------------------------------
+  const filterByBranch = useCallback((processed) => {
+    if (!user || user.role === 'super_admin') return processed
+    return processed.filter(r => r.idCabang === user.airportId)
+  }, [user?.role, user?.airportId])
+
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     setError(null)
     try {
       const raw = await fetchAttendanceData()
       const processed = processAttendanceRecords(raw)
-      setRecords(processed)
+      setRecords(filterByBranch(processed))
       setDemoMode(false)
       setLastUpdated(new Date())
     } catch (err) {
       console.warn('Google Sheets fetch failed, using demo data:', err.message)
       const processed = processAttendanceRecords(MOCK_ATTENDANCE_DATA)
-      setRecords(processed)
+      setRecords(filterByBranch(processed))
       setDemoMode(true)
       setLastUpdated(new Date())
       if (!silent) setError(`Tidak dapat mengakses Google Sheets (${err.message}). Menampilkan data demo.`)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [filterByBranch])
 
   useEffect(() => {
     loadData()
@@ -447,6 +454,7 @@ export default function AttendancePage() {
           {/* Controls */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-end no-print">
             {/* Branch selector */}
+            {user?.role === 'super_admin' ? (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">ID Cabang</label>
               <div className="relative">
@@ -463,6 +471,12 @@ export default function AttendancePage() {
                 <ChevronDown className="pointer-events-none absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
               </div>
             </div>
+            ) : (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cabang</label>
+              <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium min-w-[220px]">{user?.airportId}</span>
+            </div>
+            )}
 
             {/* Date from */}
             <div className="flex flex-col gap-1">
@@ -658,6 +672,7 @@ export default function AttendancePage() {
           {/* Filters */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-end no-print">
             {/* Branch */}
+            {user?.role === 'super_admin' ? (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cabang</label>
               <div className="relative">
@@ -674,6 +689,12 @@ export default function AttendancePage() {
                 <ChevronDown className="pointer-events-none absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
               </div>
             </div>
+            ) : (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cabang</label>
+              <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium min-w-[200px]">{user?.airportId}</span>
+            </div>
+            )}
 
             {/* Date range */}
             <div className="flex flex-col gap-1">

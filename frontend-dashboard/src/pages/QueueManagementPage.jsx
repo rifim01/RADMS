@@ -1,39 +1,65 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PhoneCall, CheckCircle, Trash2, RefreshCw, AlertTriangle } from 'lucide-react'
+import { ref, onValue, off, update, set, serverTimestamp } from 'firebase/database'
+import { db } from '../firebase/config'
 import StatusBadge from '../components/StatusBadge'
 import Modal from '../components/Modal'
-import { QUEUE_DATA, AIRPORTS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
+import { AIRPORT_BRANCHES } from '../services/airportConfig'
 import { useAuth } from '../context/AuthContext'
 import { formatTime } from '../utils/formatters'
 
+const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES)
+
 export default function QueueManagementPage() {
   const { user } = useAuth()
-  const [queue, setQueue] = useState(QUEUE_DATA)
-  const [filterAirport, setFilterAirport] = useState(user.airportId || 'all')
+  const [branchId, setBranchId] = useState(
+    user.role === 'super_admin' ? (BRANCH_KEYS[0] || 'all') : user.airportId
+  )
+  const [queue, setQueue] = useState([])
   const [filterStatus, setFilterStatus] = useState('all')
   const [showResetModal, setShowResetModal] = useState(false)
 
+  // Listen Firebase RTDB
+  useEffect(() => {
+    if (!branchId || branchId === 'all') {
+      setQueue([])
+      return
+    }
+    const r = ref(db, `queue/${branchId}`)
+    const unsub = onValue(r, snap => {
+      const val = snap.val() || {}
+      const entries = Object.values(val).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+      setQueue(entries)
+    })
+    return () => off(r)
+  }, [branchId])
+
   const filtered = queue.filter(q => {
-    const matchAirport = filterAirport === 'all' || q.airportId === filterAirport
-    const matchStatus  = filterStatus  === 'all' || q.status  === filterStatus
-    return matchAirport && matchStatus
+    const matchStatus = filterStatus === 'all' || q.status === filterStatus
+    return matchStatus
   })
 
-  function updateStatus(id, newStatus) {
-    setQueue(prev => prev.map(q =>
-      q.id === id
-        ? { ...q, status: newStatus, calledAt: newStatus === 'CALLED' ? new Date().toISOString() : q.calledAt }
-        : q
-    ))
+  function updateStatus(driverId, newStatus) {
+    if (!branchId || branchId === 'all') return
+    update(ref(db, `queue/${branchId}/${driverId}`), {
+      status: newStatus,
+      calledAt: newStatus === 'CALLED' ? serverTimestamp() : null,
+    })
   }
 
-  function removeFromQueue(id) {
-    setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'REMOVED' } : q))
+  function removeFromQueue(driverId) {
+    if (!branchId || branchId === 'all') return
+    set(ref(db, `queue/${branchId}/${driverId}`), null)
   }
 
   function handleReset() {
-    // Keep COMPLETED & REMOVED, reset active statuses back to WAITING
-    setQueue(QUEUE_DATA.map(q => ({ ...q, status: 'WAITING', calledAt: null })))
+    // Reset all entries in current branch back to WAITING
+    queue.forEach(q => {
+      if (q.driverId && branchId && branchId !== 'all') {
+        update(ref(db, `queue/${branchId}/${q.driverId}`), { status: 'WAITING', calledAt: null })
+      }
+    })
     setShowResetModal(false)
   }
 
@@ -113,12 +139,15 @@ export default function QueueManagementPage() {
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-center">
-        {user.role === 'super_admin' && (
-          <select value={filterAirport} onChange={e => setFilterAirport(e.target.value)}
+        {user.role === 'super_admin' ? (
+          <select value={branchId} onChange={e => setBranchId(e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">Semua Bandara</option>
-            {AIRPORTS.map(a => <option key={a.id} value={a.id}>{a.name} ({a.code})</option>)}
+            {BRANCH_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
           </select>
+        ) : (
+          <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">
+            {branchId}
+          </span>
         )}
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
           className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -147,44 +176,43 @@ export default function QueueManagementPage() {
             <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-12 text-center text-gray-400">Tidak ada data antrian</td></tr>
-              ) : filtered.map(q => {
-                const airport = AIRPORTS.find(a => a.id === q.airportId)
+              ) : filtered.map((q, idx) => {
                 return (
-                  <tr key={q.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={q.driverId || idx} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">{q.number}</div>
+                      <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">{idx + 1}</div>
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-800">{q.driverName}</p>
-                      <p className="text-xs text-gray-400">{airport?.code}</p>
+                      <p className="text-xs text-gray-400">{q.branchId}</p>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">{q.plateNumber}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{q.pickupPoint}</td>
+                    <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{q.pickupPoint || '—'}</td>
                     <td className="px-4 py-3"><StatusBadge status={q.status} /></td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{formatTime(q.joinedAt)}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{q.calledAt ? formatTime(q.calledAt) : '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         {q.status === 'WAITING' && (
-                          <button onClick={() => updateStatus(q.id, 'CALLED')} title="Panggil Driver"
+                          <button onClick={() => updateStatus(q.driverId, 'CALLED')} title="Panggil Driver"
                             className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
                             <PhoneCall className="w-3.5 h-3.5" />
                           </button>
                         )}
                         {q.status === 'CALLED' && (
-                          <button onClick={() => updateStatus(q.id, 'PICKUP')} title="Konfirmasi Penjemputan"
+                          <button onClick={() => updateStatus(q.driverId, 'PICKUP')} title="Konfirmasi Penjemputan"
                             className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition">
                             <CheckCircle className="w-3.5 h-3.5" />
                           </button>
                         )}
                         {q.status === 'PICKUP' && (
-                          <button onClick={() => updateStatus(q.id, 'COMPLETED')} title="Selesai"
+                          <button onClick={() => updateStatus(q.driverId, 'COMPLETED')} title="Selesai"
                             className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition">
                             <CheckCircle className="w-3.5 h-3.5" />
                           </button>
                         )}
                         {['WAITING', 'CALLED'].includes(q.status) && (
-                          <button onClick={() => removeFromQueue(q.id)} title="Hapus dari Antrian"
+                          <button onClick={() => removeFromQueue(q.driverId)} title="Hapus dari Antrian"
                             className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -213,7 +241,7 @@ export default function QueueManagementPage() {
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600">Total <strong>{queue.length}</strong> data antrian akan direset. Lanjutkan?</p>
+          <p className="text-sm text-gray-600">Total <strong>{filtered.length}</strong> data antrian akan direset. Lanjutkan?</p>
           <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
             <button onClick={() => setShowResetModal(false)}
               className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
