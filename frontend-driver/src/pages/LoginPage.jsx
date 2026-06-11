@@ -1,52 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react';
+import { CreditCard, User, AlertCircle, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, loading: authLoading } = useAuth();
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+  const [nik, setNik]       = useState('');
+  const [nama, setNama]     = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]   = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!phone.trim()) {
-      setError('Masukkan nomor HP Anda.');
-      return;
-    }
-    if (!password.trim()) {
-      setError('Masukkan password Anda.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password minimal 6 karakter.');
-      return;
-    }
-
     setLoading(true);
     try {
-      const result = await login(phone, password);
+      const result = await login(nik, nama);
       if (result.success) {
         navigate('/home', { replace: true });
       } else {
         setError(result.error || 'Login gagal. Coba lagi.');
       }
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan. Coba lagi.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatPhoneInput = (value) => {
-    // Bersihkan non-digit, maksimal 13 karakter
-    return value.replace(/\D/g, '').slice(0, 13);
   };
 
   return (
@@ -93,55 +73,42 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Phone input */}
+          {/* NIK input */}
           <div>
-            <label className="block text-slate-400 text-xs font-medium mb-2 ml-1">
-              Nomor HP
-            </label>
+            <label className="block text-slate-400 text-xs font-medium mb-2 ml-1">ID Driver (NIK)</label>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <Phone className="w-5 h-5 text-slate-500" />
+                <CreditCard className="w-5 h-5 text-slate-500" />
                 <div className="w-px h-5 bg-slate-600" />
               </div>
               <input
-                type="tel"
+                type="text"
                 inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-                placeholder="081234567890"
+                value={nik}
+                onChange={e => setNik(e.target.value.replace(/\D/g,'').slice(0,20))}
+                placeholder="Masukkan NIK / ID Driver"
                 className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                autoComplete="tel"
                 disabled={loading}
               />
             </div>
           </div>
 
-          {/* Password input */}
+          {/* Nama input */}
           <div>
-            <label className="block text-slate-400 text-xs font-medium mb-2 ml-1">
-              Password
-            </label>
+            <label className="block text-slate-400 text-xs font-medium mb-2 ml-1">Nama Lengkap</label>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-slate-500" />
+                <User className="w-5 h-5 text-slate-500" />
                 <div className="w-px h-5 bg-slate-600" />
               </div>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-4 pl-16 pr-12 text-base placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                autoComplete="current-password"
+                type="text"
+                value={nama}
+                onChange={e => setNama(e.target.value)}
+                placeholder="Nama sesuai data RIFIM"
+                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-4 pl-16 pr-4 text-base placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                 disabled={loading}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
             </div>
           </div>
 
@@ -165,27 +132,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo hint */}
+        {/* Info */}
         <div className="mt-8 bg-slate-800/60 border border-slate-700/50 rounded-xl p-4">
-          <p className="text-slate-400 text-xs font-medium mb-2 text-center">Akun Demo</p>
-          <div className="space-y-1.5 text-xs text-slate-500">
-            {[
-              { phone: '081234567890', name: 'Ahmad Syarifuddin' },
-              { phone: '082345678901', name: 'Budi Santoso' },
-              { phone: '083456789012', name: 'Siti Rahmawati' },
-            ].map((acc) => (
-              <button
-                key={acc.phone}
-                type="button"
-                onClick={() => { setPhone(acc.phone); setPassword('123456'); setError(''); }}
-                className="w-full flex justify-between items-center px-3 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors text-left"
-              >
-                <span className="text-slate-300">{acc.name}</span>
-                <span className="text-slate-500 font-mono">{acc.phone}</span>
-              </button>
-            ))}
-            <p className="text-center text-slate-600 mt-2">Password semua akun: <span className="font-mono text-slate-400">123456</span></p>
-          </div>
+          <p className="text-slate-400 text-xs font-medium mb-2">Cara Login:</p>
+          <ul className="text-xs text-slate-500 space-y-1">
+            <li>• <span className="text-slate-400">ID Driver</span> = NIK yang terdaftar di sistem RIFIM</li>
+            <li>• <span className="text-slate-400">Nama</span> = nama lengkap sesuai data (minimal kata pertama)</li>
+            <li>• Hubungi koordinator jika lupa NIK Anda</li>
+          </ul>
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-6">

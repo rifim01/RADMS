@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MOCK_DRIVERS } from '../services/mockData.js';
+import { findDriverByNik } from '../services/sheetsService.js';
+import { ensureAuth, setDriverOnlineStatus } from '../services/firebaseService.js';
 
 const AuthContext = createContext(null);
 
@@ -41,50 +43,76 @@ export function AuthProvider({ children }) {
    * @param {string} password
    * @returns {Promise<{success: boolean, error?: string}>}
    */
-  const login = useCallback(async (phone, password) => {
+  const login = useCallback(async (nik, nameInput) => {
     setError(null);
-
-    // Simulasi network delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    // Bersihkan nomor HP
-    const cleanPhone = phone.replace(/\D/g, '').replace(/^62/, '0');
-
-    const foundDriver = MOCK_DRIVERS.find(
-      (d) => d.phone.replace(/\D/g, '') === cleanPhone && d.password === password
-    );
-
-    if (!foundDriver) {
-      const errMsg = 'Nomor HP atau password salah. Coba lagi.';
-      setError(errMsg);
-      return { success: false, error: errMsg };
+    if (!nik.trim() || !nameInput.trim()) {
+      const msg = 'Masukkan ID Driver dan Nama Anda.';
+      setError(msg);
+      return { success: false, error: msg };
     }
+    try {
+      // Try Google Sheets first
+      let foundDriver = null;
+      try {
+        const sheetDriver = await findDriverByNik(nik.trim());
+        if (sheetDriver) {
+          const sheetName = sheetDriver.name.toLowerCase();
+          const input     = nameInput.trim().toLowerCase();
+          if (sheetName.includes(input) || input.includes(sheetName.split(' ')[0])) {
+            foundDriver = sheetDriver;
+          }
+        }
+      } catch { /* fallback below */ }
 
-    if (foundDriver.status !== 'active') {
-      const errMsg = 'Akun Anda tidak aktif. Hubungi administrator.';
-      setError(errMsg);
-      return { success: false, error: errMsg };
+      // Fallback: mock data (for demo/development)
+      if (!foundDriver) {
+        const cleanNik  = nik.replace(/\D/g, '');
+        const mockFound = MOCK_DRIVERS.find(d => (d.nik || d.id || '').replace(/\D/g,'') === cleanNik);
+        if (mockFound) {
+          foundDriver = { id: mockFound.id, nik: mockFound.nik || mockFound.id, name: mockFound.name, airportId: mockFound.airportId, vehicle: mockFound.vehicle || '', plateNumber: mockFound.plateNumber || '' };
+        }
+      }
+
+      if (!foundDriver) {
+        const msg = 'ID Driver tidak ditemukan. Pastikan NIK sesuai data RIFIM.';
+        setError(msg);
+        return { success: false, error: msg };
+      }
+
+      await ensureAuth();
+
+      const driverData = {
+        id: foundDriver.id || foundDriver.nik,
+        nik: foundDriver.nik,
+        name: foundDriver.name,
+        airportId: foundDriver.airportId,
+        vehicle: foundDriver.vehicle || '',
+        plateNumber: foundDriver.plateNumber || '',
+        online: false,
+      };
+      const session = { loginAt: Date.now(), driverId: driverData.id };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(DRIVER_KEY, JSON.stringify(driverData));
+      setDriver(driverData);
+      return { success: true };
+    } catch {
+      const msg = 'Terjadi kesalahan. Coba lagi.';
+      setError(msg);
+      return { success: false, error: msg };
     }
-
-    // Simpan session
-    const session = { loginAt: Date.now(), driverId: foundDriver.id };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    localStorage.setItem(DRIVER_KEY, JSON.stringify(foundDriver));
-
-    setDriver(foundDriver);
-    return { success: true };
   }, []);
 
   /**
    * Logout driver
    */
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (driver) setDriverOnlineStatus(driver.id, false).catch(() => {});
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(DRIVER_KEY);
     sessionStorage.clear();
     setDriver(null);
     setError(null);
-  }, []);
+  }, [driver]);
 
   /**
    * Update data driver (simulasi)
