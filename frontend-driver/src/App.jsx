@@ -11,7 +11,7 @@ import NotificationsPage from './pages/NotificationsPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import PanicButton from './components/PanicButton.jsx'
-import BottomNav from './components/BottomNav.jsx'
+import AppShell from './components/AppShell.jsx'
 import Header from './components/Header.jsx'
 
 // Protected route wrapper
@@ -21,7 +21,7 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -40,7 +40,7 @@ function PublicRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -52,24 +52,15 @@ function PublicRoute({ children }) {
   return children
 }
 
-// Layout wrapper with bottom nav
-function AppLayout({ children, title, showBack = false }) {
-  return (
-    <div className="min-h-screen bg-slate-950">
-      {children}
-      <BottomNav />
-    </div>
-  )
-}
-
 // Panic page wrapper (special layout)
 function PanicPage() {
   return (
-    <div className="min-h-screen bg-slate-950 pb-20">
-      <Header title="Tombol Darurat" showBack={true} />
-      <PanicButton />
-      <BottomNav />
-    </div>
+    <AppShell>
+      <div className="min-h-screen bg-slate-950 pb-20">
+        <Header title="Tombol Darurat" showBack={true} />
+        <PanicButton />
+      </div>
+    </AppShell>
   )
 }
 
@@ -94,9 +85,9 @@ function AppRoutes() {
         path="/home"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <HomePage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -104,9 +95,9 @@ function AppRoutes() {
         path="/queue"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <QueuePage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -114,9 +105,9 @@ function AppRoutes() {
         path="/map"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <MapPage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -124,9 +115,9 @@ function AppRoutes() {
         path="/notifications"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <NotificationsPage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -134,9 +125,9 @@ function AppRoutes() {
         path="/history"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <HistoryPage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -144,9 +135,9 @@ function AppRoutes() {
         path="/profile"
         element={
           <ProtectedRoute>
-            <AppLayout>
+            <AppShell>
               <ProfilePage />
-            </AppLayout>
+            </AppShell>
           </ProtectedRoute>
         }
       />

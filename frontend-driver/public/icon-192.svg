@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" rx="32" fill="#0f172a"/>
-  <circle cx="96" cy="96" r="60" fill="none" stroke="#3b82f6" stroke-width="4"/>
-  <!-- Airplane icon -->
-  <g transform="translate(96,96) rotate(-45)">
-    <path d="M0,-40 L12,-10 L40,-10 L30,0 L40,10 L12,10 L0,40 L-12,10 L-40,10 L-30,0 L-40,-10 L-12,-10 Z" fill="#3b82f6" opacity="0.9"/>
-  </g>
-  <text x="96" y="170" text-anchor="middle" font-family="Inter,sans-serif" font-size="18" font-weight="700" fill="#3b82f6">RADMS</text>
+  <rect width="192" height="192" rx="28" fill="#CC1B1B"/>
+  <!-- RI inside red box (white square) -->
+  <rect x="16" y="16" width="96" height="96" rx="10" fill="#CC1B1B" stroke="white" stroke-width="4"/>
+  <text x="64" y="82" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="white">RI</text>
+  <!-- FIM outside the box -->
+  <text x="120" y="90" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="62" fill="white">FIM</text>
+  <!-- Company name below -->
+  <text x="96" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="rgba(255,255,255,0.8)" letter-spacing="0.5">PT. RIFIM INTERNATIONAL</text>
+  <text x="96" y="172" text-anchor="middle" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="rgba(255,255,255,0.8)" letter-spacing="0.5">GEMILANG</text>
 </svg>

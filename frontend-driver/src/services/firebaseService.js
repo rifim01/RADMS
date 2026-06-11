@@ -96,3 +96,34 @@ export function sendPanic(driverId, driverName, branchId, lat, lng) {
     handled: false,
   })
 }
+
+// ─── Trips / Riwayat ─────────────────────────────────────────────────────────
+export function listenDriverTrips(driverId, callback) {
+  const r = ref(db, `trips/${driverId}`)
+  onValue(r, snap => {
+    const val = snap.val() || {}
+    const list = Object.entries(val).map(([id, t]) => ({ id, ...t }))
+      .sort((a, b) => (b.startTime || 0) - (a.startTime || 0))
+    callback(list)
+  })
+  return () => off(r)
+}
+
+export function recordTrip(driverId, tripData) {
+  return push(ref(db, `trips/${driverId}`), {
+    ...tripData,
+    createdAt: serverTimestamp(),
+  })
+}
+
+// ─── Staff Validation ─────────────────────────────────────────────────────────
+export function recordValidation(driverId, driverName, branchId, staffId, staffName) {
+  return push(ref(db, `validations/${branchId}`), {
+    driverId,
+    driverName,
+    branchId,
+    staffId,
+    staffName,
+    validatedAt: serverTimestamp(),
+  })
+}

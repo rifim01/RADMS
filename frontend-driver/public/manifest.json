@@ -4,8 +4,9 @@
   "description": "RIFIM Airport Driver Management System - Aplikasi untuk pengemudi bandara",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "background_color": "#CC1B1B",
+  "theme_color": "#CC1B1B",
   "orientation": "portrait",
   "icons": [
     {

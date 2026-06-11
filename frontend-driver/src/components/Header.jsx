@@ -2,6 +2,7 @@ import React from 'react';
 import { Bell, Wifi, WifiOff, Signal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import RifimLogo from './RifimLogo.jsx';
 
 export default function Header({ title, showBack = false, rightAction = null }) {
   const navigate = useNavigate();
@@ -23,9 +24,7 @@ export default function Header({ title, showBack = false, rightAction = null }) 
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">R</span>
-              </div>
+              <RifimLogo className="h-6 w-auto" textColor="white" subtitleColor="rgba(255,255,255,0.6)" />
             </div>
           )}
           <h1 className="text-white font-semibold text-base truncate">{title}</h1>

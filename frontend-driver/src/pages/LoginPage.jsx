@@ -2,21 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, User, AlertCircle, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-
-function RifimLogo({ className = '' }) {
-  return (
-    <svg viewBox="0 0 220 64" xmlns="http://www.w3.org/2000/svg" className={className}>
-      {/* Red square badge */}
-      <rect x="2" y="2" width="60" height="60" rx="6" fill="#CC1B1B"/>
-      <text x="31" y="28" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontWeight="900" fontSize="18" fill="white">RI</text>
-      <text x="31" y="52" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontWeight="900" fontSize="20" fill="white">FIM</text>
-      {/* Company name */}
-      <text x="74" y="26" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="15" fill="white">PT. RIFIM</text>
-      <text x="74" y="44" fontFamily="Arial,sans-serif" fontWeight="400" fontSize="11" fill="rgba(255,255,255,0.85)">INTERNATIONAL</text>
-      <text x="74" y="58" fontFamily="Arial,sans-serif" fontWeight="400" fontSize="11" fill="rgba(255,255,255,0.85)">GEMILANG</text>
-    </svg>
-  );
-}
+import RifimLogo from '../components/RifimLogo.jsx';
 
 export default function LoginPage() {
   const navigate = useNavigate();
