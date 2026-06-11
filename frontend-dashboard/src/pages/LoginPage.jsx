@@ -46,7 +46,7 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-col justify-between flex-1 p-12 text-white">
         <div className="flex items-center gap-3">
-          <img src="/rifim-logo.svg" alt="RIFIM" className="h-12 brightness-0 invert" />
+          <img src="/rifim-logo.svg" alt="RIFIM" className="h-12" />
         </div>
 
         <div>
