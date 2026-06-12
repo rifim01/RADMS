@@ -53,6 +53,7 @@ export function AuthProvider({ children }) {
     try {
       // Try Google Sheets first
       let foundDriver = null;
+      let nikFoundButNameWrong = false;
       try {
         const sheetDriver = await findDriverByNik(nik.trim());
         if (sheetDriver) {
@@ -70,12 +71,14 @@ export function AuthProvider({ children }) {
             (inputFirst.length >= 3 && sheetNameRaw.includes(inputFirst));
           if (nameMatch) {
             foundDriver = sheetDriver;
+          } else {
+            nikFoundButNameWrong = true;
           }
         }
       } catch { /* fallback below */ }
 
       // Fallback: mock data (for demo/development)
-      if (!foundDriver) {
+      if (!foundDriver && !nikFoundButNameWrong) {
         const cleanNik  = nik.replace(/\D/g, '');
         const mockFound = MOCK_DRIVERS.find(d => (d.nik || d.id || '').replace(/\D/g,'') === cleanNik);
         if (mockFound) {
@@ -84,7 +87,9 @@ export function AuthProvider({ children }) {
       }
 
       if (!foundDriver) {
-        const msg = 'ID Driver tidak ditemukan. Pastikan NIK sesuai data RIFIM.';
+        const msg = nikFoundButNameWrong
+          ? 'Nama tidak sesuai data RIFIM. Ketik nama persis seperti tercatat (contoh: nama lengkap tanpa singkatan).'
+          : 'ID Driver (NIK) tidak ditemukan. Pastikan NIK sesuai data RIFIM.';
         setError(msg);
         return { success: false, error: msg };
       }

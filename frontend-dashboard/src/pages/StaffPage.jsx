@@ -163,7 +163,10 @@ export default function StaffPage() {
           <select value={filterAirport} onChange={e => setFilterAirport(e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="all">Semua Cabang</option>
-            {branchList.map(b => <option key={b} value={b}>{b}</option>)}
+            {branchList.map(b => {
+              const a = AIRPORTS.find(ap => ap.id === b)
+              return <option key={b} value={b}>{a ? `${a.code} — ${a.city}` : b}</option>
+            })}
           </select>
         ) : (
           <span className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">

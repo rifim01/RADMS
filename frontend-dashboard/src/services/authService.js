@@ -1,6 +1,6 @@
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { fetchUsers } from './sheetsService'
+import { fetchUsers, fetchStaff } from './sheetsService'
 
 // Static role mapping for known admin accounts
 const STATIC_ROLES = {
@@ -22,7 +22,7 @@ async function getRoleData(email) {
   const lower = email.toLowerCase()
   if (STATIC_ROLES[lower]) return STATIC_ROLES[lower]
 
-  // Try to fetch role from USERS sheet
+  // Try to fetch role from USERS sheet (ABSENSI)
   try {
     const users = await fetchUsers()
     const found = users.find(u => u.email === lower)
@@ -33,6 +33,20 @@ async function getRoleData(email) {
         airportId: found.cabang || null,
         jabatan:   found.jabatan,
         avatar:    (found.nama || email).slice(0, 2).toUpperCase(),
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Try MASTER DATA STAFF sheet by email
+  try {
+    const staff = await fetchStaff()
+    const found = staff.find(s => s.email && s.email.toLowerCase() === lower)
+    if (found) {
+      return {
+        role:      jabatanToRole(found.role),
+        name:      found.name || email,
+        airportId: found.airportId || null,
+        avatar:    (found.name || email).slice(0, 2).toUpperCase(),
       }
     }
   } catch { /* ignore */ }
