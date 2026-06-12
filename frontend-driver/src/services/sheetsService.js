@@ -4,7 +4,7 @@ const SHEET_IDS = {
   DRIVER_EXTERNAL: '1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc',
 }
 
-const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru']
+const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru','ID Rifim Airport Makassar']
 const EXTERNAL_SHEETS = ['ID Rifim Batam','ID Rifim Jambi Luar']
 
 async function fetchGviz(sheetId, sheetName) {

@@ -95,7 +95,7 @@ export default function LoginPage() {
             <p className="text-slate-400 text-sm mt-1">Manajemen driver & operasional bandara</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
+          <form onSubmit={handleLogin} className="space-y-4" autoComplete="new-password">
             {error && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"/>
@@ -107,7 +107,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}
-                  autoComplete="email" placeholder="admin@rifim.com"
+                  autoComplete="new-password" placeholder="admin@rifim.com"
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"/>
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
                 <input type={showPass ? 'text' : 'password'} value={password}
                   onChange={e => setPassword(e.target.value)} required disabled={loading}
-                  placeholder="••••••••"
+                  autoComplete="new-password" placeholder="••••••••"
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 pl-10 pr-12 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"/>
                 <button type="button" onClick={() => setShowPass(s => !s)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">

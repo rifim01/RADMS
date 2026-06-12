@@ -59,6 +59,17 @@ export const AIRPORTS = {
     geofenceRadius: 2000,
     zones: [{ id: 'Z1', name: 'Zona Kedatangan', lat: 0.4608, lng: 101.4449 }],
   },
+  'ID Rifim Airport Makassar': {
+    id: 'ID Rifim Airport Makassar',
+    name: 'Bandara Sultan Hasanuddin',
+    city: 'Makassar',
+    province: 'Sulawesi Selatan',
+    iata: 'UPG',
+    lat: -5.0614,
+    lng: 119.5542,
+    geofenceRadius: 2000,
+    zones: [{ id: 'Z1', name: 'Zona Kedatangan', lat: -5.0614, lng: 119.5542 }],
+  },
   'ID Rifim Airport Palembang': {
     id: 'ID Rifim Airport Palembang',
     name: 'Bandara Sultan Mahmud Badaruddin II',

@@ -21,6 +21,7 @@ export const SHEET_NAMES = {
   AIRPORT_BALIKPAPAN: 'ID Rifim Airport Balikpapan',
   AIRPORT_MANADO:     'ID Rifim Airport Manado',
   AIRPORT_PEKANBARU:  'ID Rifim Airport Pekanbaru',
+  AIRPORT_MAKASSAR:   'ID Rifim Airport Makassar',
   EXTERNAL_BATAM:     'ID Rifim Batam',
   EXTERNAL_JAMBI:     'ID Rifim Jambi Luar',
 }
@@ -47,6 +48,7 @@ const AIRPORT_SHEETS = [
   SHEET_NAMES.AIRPORT_BALIKPAPAN,
   SHEET_NAMES.AIRPORT_MANADO,
   SHEET_NAMES.AIRPORT_PEKANBARU,
+  SHEET_NAMES.AIRPORT_MAKASSAR,
 ]
 
 async function fetchAirportSheet(sheetName) {

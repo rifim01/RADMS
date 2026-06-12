@@ -4,6 +4,7 @@ export const AIRPORT_BRANCHES = {
   "ID Rifim Airport Balikpapan": { lat: -1.267625979363085,  lng: 116.89423472491762, r: 500,    admin: false, tz: "WITA", deductionExempt: false },
   "ID Rifim Airport Manado":     { lat: 1.550165772441465,   lng: 124.9254933960822,  r: 500,    admin: false, tz: "WITA", deductionExempt: true  },
   "ID Rifim Airport Pekanbaru":  { lat: 0.46454514194723073, lng: 101.44817503840943, r: 500,    admin: false, tz: "WIB",  deductionExempt: false },
+  "ID Rifim Airport Makassar":  { lat: -5.0614,             lng: 119.5542,           r: 500,    admin: false, tz: "WITA", deductionExempt: false },
   "ID Rifim Batam":              { lat: 1.1211,              lng: 104.0402,           r: 2000,   admin: false, tz: "WIB",  deductionExempt: false },
   "ID Rifim Jambi Luar":         { lat: -1.6500,             lng: 103.6300,           r: 2000,   admin: false, tz: "WIB",  deductionExempt: true  },
   "Admin":                       { lat: 0,                   lng: 0,                  r: 999999, admin: true,  tz: "WIB",  deductionExempt: true  },
