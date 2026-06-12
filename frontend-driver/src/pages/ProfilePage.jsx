@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-  User, Car, Phone, Star, Award, Calendar, Shield, LogOut,
-  Edit3, MapPin, ChevronRight, Settings, HelpCircle, FileText
+  User, Star, Award, Shield, LogOut,
+  Edit3, MapPin, ChevronRight, Settings, HelpCircle, FileText, CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header.jsx';
@@ -70,12 +70,12 @@ export default function ProfilePage() {
             <div className="flex-1 min-w-0">
               <h2 className="text-white font-bold text-lg leading-tight">{driver?.name}</h2>
               <div className="flex items-center gap-1.5 mt-1">
-                <Phone className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-slate-400 text-sm">{formatPhone(driver?.phone || '')}</span>
+                <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-slate-400 text-sm font-mono">{driver?.nik || driver?.id || '-'}</span>
               </div>
               <div className="flex items-center gap-1.5 mt-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-slate-400 text-sm truncate">{airport?.name}</span>
+                <span className="text-slate-400 text-sm truncate">{driver?.airportId || airport?.name || '-'}</span>
               </div>
             </div>
           </div>
@@ -102,46 +102,24 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Vehicle info */}
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Car className="w-5 h-5 text-blue-400" />
-            <p className="text-white font-semibold">Informasi Kendaraan</p>
-          </div>
-          <div className="space-y-2.5">
-            {[
-              { label: 'Jenis', value: driver?.vehicleType },
-              { label: 'Plat Nomor', value: driver?.vehiclePlate },
-              { label: 'Model', value: driver?.vehicleModel },
-              { label: 'No. SIM', value: driver?.licenseNumber },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between items-center">
-                <span className="text-slate-500 text-sm">{label}</span>
-                <span className="text-slate-200 text-sm font-medium">{value || '-'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Account info */}
+        {/* Driver ID card */}
         <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <Award className="w-5 h-5 text-yellow-400" />
-            <p className="text-white font-semibold">Informasi Akun</p>
+            <p className="text-white font-semibold">Informasi Driver</p>
           </div>
           <div className="space-y-2.5">
             {[
-              { label: 'Bergabung', value: driver?.joinDate ? formatDate(driver.joinDate) : '-' },
-              { label: 'Status Akun', value: driver?.status === 'active' ? 'Aktif' : 'Tidak Aktif' },
-              { label: 'Verifikasi', value: driver?.verified ? 'Terverifikasi' : 'Belum Terverifikasi' },
-            ].map(({ label, value }) => (
+              { label: 'ID Driver (NIK)', value: driver?.nik || driver?.id },
+              { label: 'Nama', value: driver?.name },
+              { label: 'Cabang', value: driver?.airportId || airport?.name },
+              { label: 'Status Akun', value: 'Aktif', green: true },
+            ].map(({ label, value, green }) => (
               <div key={label} className="flex justify-between items-center">
                 <span className="text-slate-500 text-sm">{label}</span>
-                <span className={`text-sm font-medium ${
-                  label === 'Status Akun' && value === 'Aktif' ? 'text-green-400' :
-                  label === 'Verifikasi' && value === 'Terverifikasi' ? 'text-blue-400' :
-                  'text-slate-200'
-                }`}>{value}</span>
+                <span className={`text-sm font-medium ${green ? 'text-green-400' : 'text-slate-200'}`}>
+                  {value || '-'}
+                </span>
               </div>
             ))}
           </div>

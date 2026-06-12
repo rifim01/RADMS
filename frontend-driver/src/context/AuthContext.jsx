@@ -56,9 +56,19 @@ export function AuthProvider({ children }) {
       try {
         const sheetDriver = await findDriverByNik(nik.trim());
         if (sheetDriver) {
-          const sheetName = sheetDriver.name.toLowerCase();
-          const input     = nameInput.trim().toLowerCase();
-          if (sheetName.includes(input) || input.includes(sheetName.split(' ')[0])) {
+          const sheetNameRaw  = sheetDriver.name.toLowerCase();
+          const sheetNameNorm = sheetNameRaw.replace(/\s+/g, '');
+          const inputRaw      = nameInput.trim().toLowerCase();
+          const inputNorm     = inputRaw.replace(/\s+/g, '');
+          const inputFirst    = inputRaw.split(/\s+/)[0];
+          const nameMatch =
+            sheetNameNorm.includes(inputNorm) ||
+            inputNorm.includes(sheetNameNorm) ||
+            sheetNameNorm.startsWith(inputNorm) ||
+            inputNorm.startsWith(sheetNameNorm) ||
+            (inputFirst.length >= 3 && sheetNameNorm.startsWith(inputFirst)) ||
+            (inputFirst.length >= 3 && sheetNameRaw.includes(inputFirst));
+          if (nameMatch) {
             foundDriver = sheetDriver;
           }
         }
