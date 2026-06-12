@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, ClipboardList, UserCheck,
-  BarChart2, FileText, Building2, Settings, Car, Globe2, X
+  BarChart2, FileText, Building2, Settings, Car, Globe2, X, History
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLE_PERMISSIONS } from '../services/authService'
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { key: 'drivers', to: '/drivers', label: 'Data Driver', icon: Car, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'drivers', to: '/driver-tracking', label: 'Pelacakan Driver', icon: Map, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'queue', to: '/queue', label: 'Manajemen Antrian', icon: ClipboardList, roles: ['super_admin', 'coordinator', 'staff'] },
+  { key: 'trips_history', to: '/trips-history', label: 'Riwayat Pengantaran', icon: History, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'attendance', to: '/attendance', label: 'Kehadiran Staf', icon: UserCheck, roles: ['super_admin', 'coordinator', 'staff'] },
   { key: 'kpi', to: '/kpi', label: 'Analitik KPI', icon: BarChart2, roles: ['super_admin', 'coordinator'] },
   { key: 'reporting', to: '/reporting', label: 'Laporan', icon: FileText, roles: ['super_admin', 'coordinator'] },

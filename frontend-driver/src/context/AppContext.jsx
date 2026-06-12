@@ -16,13 +16,12 @@ import {
 import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
   generateNotifications,
-  generateHistory,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
 import {
   listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus,
-  joinQueue, leaveQueue, listenQueue,
+  joinQueue, leaveQueue, listenQueue, markQueuePickup, completeQueueEntry, recordTripCompletion,
 } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
@@ -51,7 +50,10 @@ export function AppProvider({ children }) {
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
 
-  const airport = AIRPORTS[DEFAULT_AIRPORT_ID];
+  // Use driver's real airport, fallback to mock
+  const airport = driver?.airportId
+    ? (AIRPORTS[driver.airportId] || AIRPORTS[DEFAULT_AIRPORT_ID])
+    : AIRPORTS[DEFAULT_AIRPORT_ID];
 
   // Init data
   useEffect(() => {
@@ -60,12 +62,13 @@ export function AppProvider({ children }) {
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
 
-      const hist = generateHistory(driver.id);
-      setHistory(hist);
+      // History starts empty; Firebase fills it
+      setHistory([]);
 
-      // Init geofence monitor
+      // Init geofence monitor using driver's real airport
+      const airportId = driver.airportId || DEFAULT_AIRPORT_ID;
       geofenceMonitorRef.current = new GeofenceMonitor(
-        DEFAULT_AIRPORT_ID,
+        airportId,
         handleGeofenceEnter,
         handleGeofenceExit
       );
@@ -87,9 +90,9 @@ export function AppProvider({ children }) {
       let unsubQueue = () => {};
 
       ensureAuth().then(() => {
-        // Listen to real trips
+        // Listen to real trips — always update (even if empty)
         unsubTrips = listenDriverTrips(driver.id, (trips) => {
-          if (trips.length > 0) setHistory(trips);
+          setHistory(trips);
         });
 
         // Listen to real RTDB queue for driver's branch
@@ -124,10 +127,15 @@ export function AppProvider({ children }) {
 
   const checkAndUpdateGeofence = useCallback((lat, lng) => {
     if (!geofenceMonitorRef.current) return;
+    // Rebuild monitor if airportId changed
+    const airportId = driver?.airportId || DEFAULT_AIRPORT_ID;
+    if (geofenceMonitorRef.current.airportId !== airportId) {
+      geofenceMonitorRef.current = new GeofenceMonitor(airportId, handleGeofenceEnter, handleGeofenceExit);
+    }
     const result = geofenceMonitorRef.current.update(lat, lng);
     setInGeofence(result.inside);
     setGeofenceDistance(result.distance);
-  }, []);
+  }, [driver?.airportId]);
 
   const handleGeofenceEnter = useCallback((result) => {
     setInGeofence(true);
@@ -310,6 +318,15 @@ export function AppProvider({ children }) {
 
   const enterQueue = useCallback(async () => {
     if (!driver?.id || !driver?.airportId) return;
+    // Block if >2000m from airport
+    if (geofenceDistance != null && geofenceDistance > 2000) {
+      addSystemNotification(
+        'Di Luar Area Bandara',
+        `Anda ${Math.round(geofenceDistance)}m dari bandara. Harus dalam radius 2 km untuk masuk antrian.`,
+        'GEOFENCE'
+      );
+      return;
+    }
     setQueueLoading(true);
     try {
       await ensureAuth();
@@ -319,7 +336,7 @@ export function AppProvider({ children }) {
     } finally {
       setQueueLoading(false);
     }
-  }, [driver?.id, driver?.name, driver?.plateNumber, driver?.airportId]);
+  }, [driver?.id, driver?.name, driver?.plateNumber, driver?.airportId, geofenceDistance]);
 
   const exitQueue = useCallback(async () => {
     if (!driver?.id || !driver?.airportId) return;
@@ -333,6 +350,31 @@ export function AppProvider({ children }) {
       setQueueLoading(false);
     }
   }, [driver?.id, driver?.airportId]);
+
+  // Confirm pickup by staff — sets status PICKUP
+  const pickupQueue = useCallback(async () => {
+    if (!driver?.id || !driver?.airportId) return;
+    try {
+      await ensureAuth();
+      await markQueuePickup(driver.id, driver.airportId);
+    } catch {}
+  }, [driver?.id, driver?.airportId]);
+
+  // Driver completes the trip — removes from queue, records trip
+  const completeTrip = useCallback(async () => {
+    if (!driver?.id || !driver?.airportId) return;
+    setQueueLoading(true);
+    try {
+      await ensureAuth();
+      await completeQueueEntry(driver.id, driver.airportId);
+      await recordTripCompletion(driver.id, driver.name, driver.airportId, driver.plateNumber || '');
+      addSystemNotification('Perjalanan Selesai', 'Perjalanan berhasil diselesaikan. Anda dapat masuk antrian kembali.', 'COMPLETED');
+    } catch {
+      addSystemNotification('Error', 'Gagal menyelesaikan perjalanan. Coba lagi.', 'SYSTEM');
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [driver?.id, driver?.name, driver?.airportId, driver?.plateNumber]);
 
   /**
    * Update posisi manual (untuk testing)
@@ -371,6 +413,8 @@ export function AppProvider({ children }) {
     queueLoading,
     enterQueue,
     exitQueue,
+    pickupQueue,
+    completeTrip,
 
     // Notifications
     notifications,

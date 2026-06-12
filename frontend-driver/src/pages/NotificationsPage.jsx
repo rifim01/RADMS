@@ -52,8 +52,8 @@ export default function NotificationsPage() {
         onClick={() => handleNotifClick(notif)}
         className={`w-full flex items-start gap-3 p-4 rounded-xl border transition-all text-left ${
           !notif.read
-            ? `${typeConfig.bg} ${typeConfig.border} shadow-sm`
-            : 'bg-slate-800/30 border-slate-700/30 opacity-70'
+            ? 'bg-white border-gray-200 shadow-sm'
+            : 'bg-gray-50 border-gray-100 opacity-70'
         }`}
       >
         {/* Icon */}
@@ -64,7 +64,7 @@ export default function NotificationsPage() {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className={`font-semibold text-sm leading-snug ${!notif.read ? 'text-white' : 'text-slate-300'}`}>
+            <p className={`font-semibold text-sm leading-snug ${!notif.read ? 'text-gray-900' : 'text-gray-500'}`}>
               {notif.title}
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -73,22 +73,22 @@ export default function NotificationsPage() {
               )}
             </div>
           </div>
-          <p className="text-slate-400 text-xs mt-1 leading-relaxed">{notif.message}</p>
-          <p className="text-slate-600 text-xs mt-2">{formatRelativeTime(notif.createdAt)}</p>
+          <p className="text-gray-500 text-xs mt-1 leading-relaxed">{notif.message}</p>
+          <p className="text-gray-400 text-xs mt-2">{formatRelativeTime(notif.createdAt)}</p>
         </div>
       </button>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <Header
         title="Notifikasi"
         rightAction={
           unreadCount > 0 ? (
             <button
               onClick={markAllNotificationsRead}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700/60 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors"
             >
               <CheckCheck className="w-4 h-4" />
               Baca Semua
@@ -102,7 +102,7 @@ export default function NotificationsPage() {
         {unread.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+              <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">
                 Belum Dibaca
               </p>
               <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
         {/* Read section */}
         {read.length > 0 && (
           <div>
-            <p className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-3">
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-3">
               Sudah Dibaca
             </p>
             <div className="space-y-2">
@@ -134,11 +134,11 @@ export default function NotificationsPage() {
         {/* Empty state */}
         {notifications.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
-              <Bell className="w-8 h-8 text-slate-600" />
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <Bell className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="text-slate-400 font-medium">Tidak ada notifikasi</p>
-            <p className="text-slate-600 text-sm mt-1">Notifikasi baru akan muncul di sini</p>
+            <p className="text-gray-500 font-medium">Tidak ada notifikasi</p>
+            <p className="text-gray-400 text-sm mt-1">Notifikasi baru akan muncul di sini</p>
           </div>
         )}
       </div>

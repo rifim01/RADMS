@@ -114,7 +114,7 @@ export const ROLE_LABELS = {
 }
 
 export const ROLE_PERMISSIONS = {
-  super_admin:  ['national_dashboard', 'airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'staff', 'airports', 'settings'],
-  coordinator:  ['airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'settings'],
-  staff:        ['queue', 'drivers', 'attendance', 'settings'],
+  super_admin:  ['national_dashboard', 'airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'staff', 'airports', 'settings', 'trips_history'],
+  coordinator:  ['airport_dashboard', 'drivers', 'queue', 'attendance', 'kpi', 'reporting', 'settings', 'trips_history'],
+  staff:        ['queue', 'drivers', 'attendance', 'settings', 'trips_history'],
 }

@@ -1,42 +1,118 @@
-import { useState } from 'react'
-import { Search, Filter } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, RefreshCw } from 'lucide-react'
+import { ref, onValue, off } from 'firebase/database'
+import { db } from '../firebase/config'
 import DriverMap from '../maps/DriverMap'
 import StatusBadge from '../components/StatusBadge'
-import { DRIVERS, AIRPORTS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import { useAuth } from '../context/AuthContext'
 import { formatRelativeTime } from '../utils/formatters'
+import { fetchAllDrivers } from '../services/sheetsService'
 
 export default function DriverTrackingPage() {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [filterAirport, setFilterAirport] = useState(user.airportId || 'all')
-  const [selectedDriver, setSelectedDriver] = useState(null)
+  const [rtdbDrivers, setRtdbDrivers] = useState({})
+  const [sheetDrivers, setSheetDrivers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = DRIVERS.filter(d => {
-    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.plateNumber.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = filterStatus === 'all' || d.status === filterStatus
-    const matchAirport = filterAirport === 'all' || d.airportId === filterAirport
-    return matchSearch && matchStatus && matchAirport
+  // Listen to Firebase RTDB for real-time driver locations + online status
+  useEffect(() => {
+    const driversRef = ref(db, 'drivers')
+    const unsub = onValue(driversRef, snap => {
+      setRtdbDrivers(snap.val() || {})
+    })
+    return () => off(driversRef)
+  }, [])
+
+  // Load driver list from sheet once
+  useEffect(() => {
+    fetchAllDrivers([]).then(result => {
+      setSheetDrivers(result?.data || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  // Merge sheet data with RTDB real-time data
+  const mergedDrivers = sheetDrivers.map(d => {
+    const nik = d.nik || d.id || ''
+    const rtdb = rtdbDrivers[nik] || {}
+    const loc = rtdb.location || {}
+    return {
+      ...d,
+      isOnline: rtdb.isOnline === true,
+      lastLat: loc.lat || null,
+      lastLng: loc.lng || null,
+      speed: loc.speed || 0,
+      lastSeen: rtdb.lastSeen || null,
+    }
   })
 
-  const mapDrivers = filtered.filter(d => d.lastLat && d.lastLng)
+  // Also show RTDB-only drivers (those not yet in sheet list)
+  const rtdbOnlyNiks = Object.keys(rtdbDrivers).filter(
+    nik => !sheetDrivers.find(d => (d.nik || d.id) === nik)
+  )
+  const rtdbOnlyDrivers = rtdbOnlyNiks.map(nik => {
+    const rtdb = rtdbDrivers[nik]
+    const loc = rtdb.location || {}
+    return {
+      id: nik,
+      nik,
+      name: rtdb.name || nik,
+      airportId: loc.branchId || rtdb.branchId || '',
+      isOnline: rtdb.isOnline === true,
+      lastLat: loc.lat || null,
+      lastLng: loc.lng || null,
+      speed: loc.speed || 0,
+      lastSeen: rtdb.lastSeen || null,
+      vehicle: '',
+      plateNumber: '',
+      rating: null,
+    }
+  })
 
-  const mapCenter = filterAirport !== 'all'
-    ? AIRPORTS.find(a => a.id === filterAirport)
-    : null
+  const allDrivers = [...mergedDrivers, ...rtdbOnlyDrivers]
+
+  // Filter by branch for non-super_admin
+  const branchFiltered = user.role === 'super_admin'
+    ? allDrivers
+    : allDrivers.filter(d => d.airportId === user.airportId)
+
+  const filtered = branchFiltered.filter(d => {
+    const matchSearch = !search ||
+      (d.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (d.plateNumber || '').toLowerCase().includes(search.toLowerCase())
+    const matchStatus = filterStatus === 'all' ||
+      (filterStatus === 'online' && d.isOnline) ||
+      (filterStatus === 'offline' && !d.isOnline)
+    return matchSearch && matchStatus
+  })
+
+  // Map drivers: only those with GPS location
+  const mapDrivers = filtered
+    .filter(d => d.lastLat && d.lastLng)
+    .map(d => ({
+      ...d,
+      status: d.isOnline ? 'online' : 'offline',
+    }))
+
+  // Center map on user's airport
+  const userAirport = user.airportId ? AIRPORTS.find(a => a.id === user.airportId) : null
+
+  const onlineCount = filtered.filter(d => d.isOnline).length
+  const offlineCount = filtered.filter(d => !d.isOnline).length
 
   return (
     <div className="space-y-6 fade-in">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Pelacakan Driver</h1>
-        <p className="text-gray-500 text-sm mt-1">Pantau posisi dan status driver secara real-time</p>
+        <p className="text-gray-500 text-sm mt-1">Pantau posisi dan status driver secara real-time dari Firebase</p>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -56,23 +132,15 @@ export default function DriverTrackingPage() {
             <option value="online">Online</option>
             <option value="offline">Offline</option>
           </select>
-          {user.role === 'super_admin' && (
-            <select
-              value={filterAirport}
-              onChange={e => setFilterAirport(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Semua Bandara</option>
-              {AIRPORTS.map(a => (
-                <option key={a.id} value={a.id}>{a.name} ({a.code})</option>
-              ))}
-            </select>
-          )}
-          <div className="flex items-center gap-2 text-sm text-gray-500 ml-auto">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-            Online: {filtered.filter(d => d.status === 'online').length}
-            <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block ml-2"></span>
-            Offline: {filtered.filter(d => d.status === 'offline').length}
+          <div className="flex items-center gap-3 text-sm text-gray-500 ml-auto">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+              Online: <strong className="text-gray-700">{onlineCount}</strong>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span>
+              Offline: <strong className="text-gray-700">{offlineCount}</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -81,32 +149,44 @@ export default function DriverTrackingPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <div className="mb-4">
           <h3 className="font-semibold text-gray-800">Peta Posisi Driver</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Klik marker untuk detail driver</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {mapDrivers.length} driver dengan lokasi aktif · Klik marker untuk detail
+          </p>
         </div>
         {mapDrivers.length > 0 ? (
           <DriverMap
             drivers={mapDrivers}
-            center={mapCenter ? [mapCenter.lat, mapCenter.lng] : undefined}
-            zoom={mapCenter ? 13 : 5}
+            center={userAirport ? [userAirport.lat, userAirport.lng] : undefined}
+            zoom={userAirport ? 13 : 5}
             height={450}
           />
         ) : (
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            Tidak ada driver yang sesuai filter
+          <div className="h-64 flex flex-col items-center justify-center text-gray-400 gap-2">
+            <RefreshCw className="w-8 h-8 text-gray-200" />
+            <p className="text-sm">Menunggu data GPS driver...</p>
+            <p className="text-xs text-gray-300">Driver harus aktif di aplikasi untuk muncul di peta</p>
           </div>
         )}
       </div>
 
-      {/* Driver Table */}
+      {/* Driver Table — all drivers online + offline */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">
-          Daftar Driver ({filtered.length})
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">
+            Semua Driver ({filtered.length})
+          </h3>
+          {loading && (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+              Memuat data...
+            </div>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm divide-y divide-gray-100">
             <thead className="bg-gray-50">
               <tr>
-                {['No', 'Nama Driver', 'Kendaraan', 'Plat', 'Bandara', 'Status', 'Kecepatan', 'Koordinat', 'Terakhir Aktif', 'Rating'].map(h => (
+                {['No', 'Nama Driver', 'Plat / Kendaraan', 'Bandara', 'Status', 'Kecepatan', 'Koordinat GPS', 'Terakhir Aktif', 'Rating'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -114,37 +194,49 @@ export default function DriverTrackingPage() {
             <tbody className="divide-y divide-gray-50">
               {filtered.map((d, i) => {
                 const airport = AIRPORTS.find(a => a.id === d.airportId)
+                const hasGps = d.lastLat && d.lastLng
                 return (
-                  <tr
-                    key={d.id}
-                    className={`hover:bg-blue-50/50 transition-colors cursor-pointer ${selectedDriver?.id === d.id ? 'bg-blue-50' : ''}`}
-                    onClick={() => setSelectedDriver(d)}
-                  >
+                  <tr key={d.nik || d.id || i} className="hover:bg-blue-50/50 transition-colors">
                     <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                     <td className="px-4 py-3 font-medium text-gray-800">{d.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{d.vehicle}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{d.plateNumber}</td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{airport?.code} — {airport?.city}</td>
-                    <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
                     <td className="px-4 py-3 text-gray-600">
-                      {d.status === 'online' ? (
-                        <span className={d.speed > 0 ? 'text-blue-600 font-medium' : 'text-gray-400'}>
-                          {d.speed} km/j
-                        </span>
+                      <span className="font-mono text-xs">{d.plateNumber || '-'}</span>
+                      {d.vehicle && <span className="text-gray-400 text-xs ml-1">· {d.vehicle}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
+                      {airport ? `${airport.code} — ${airport.city}` : (d.airportId || '-')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={d.isOnline ? 'online' : 'offline'} />
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {d.isOnline && d.speed > 0 ? (
+                        <span className="text-blue-600 font-medium">{Math.round(d.speed)} km/j</span>
                       ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-gray-400">
-                      {d.lastLat.toFixed(4)}, {d.lastLng.toFixed(4)}
+                      {hasGps ? `${d.lastLat.toFixed(4)}, ${d.lastLng.toFixed(4)}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatRelativeTime(d.lastSeen)}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                      {d.lastSeen ? formatRelativeTime(d.lastSeen) : '-'}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className="flex items-center gap-1 text-yellow-500 font-medium">
-                        ★ {d.rating}
-                      </span>
+                      {d.rating ? (
+                        <span className="flex items-center gap-1 text-yellow-500 font-medium">
+                          ★ {d.rating}
+                        </span>
+                      ) : '-'}
                     </td>
                   </tr>
                 )
               })}
+              {filtered.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
+                    Tidak ada driver yang sesuai filter
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

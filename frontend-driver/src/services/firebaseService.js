@@ -47,6 +47,30 @@ export function leaveQueue(driverId, branchId) {
   return set(ref(db, `queue/${branchId}/${driverId}`), null)
 }
 
+export function markQueuePickup(driverId, branchId) {
+  return update(ref(db, `queue/${branchId}/${driverId}`), {
+    status: 'PICKUP',
+    pickedUpAt: serverTimestamp(),
+  })
+}
+
+export function completeQueueEntry(driverId, branchId) {
+  return set(ref(db, `queue/${branchId}/${driverId}`), null)
+}
+
+export function recordTripCompletion(driverId, driverName, branchId, plateNumber) {
+  return push(ref(db, `trips/${driverId}`), {
+    driverId,
+    driverName,
+    branchId,
+    plateNumber: plateNumber || '',
+    status: 'COMPLETED',
+    startTime: serverTimestamp(),
+    endTime: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  })
+}
+
 export function listenQueue(branchId, callback) {
   const r = ref(db, `queue/${branchId}`)
   onValue(r, snap => {

@@ -22,6 +22,7 @@ import DriversPage from './pages/DriversPage'
 import StaffPage from './pages/StaffPage'
 import AirportsPage from './pages/AirportsPage'
 import SettingsPage from './pages/SettingsPage'
+import TripsHistoryPage from './pages/TripsHistoryPage'
 
 function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -35,7 +36,7 @@ function DashboardLayout() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-gray-50 flex" style={{ backgroundImage: 'url(/hero-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <Sidebar
         collapsed={sidebarCollapsed}
         onClose={() => setSidebarCollapsed(true)}
@@ -44,7 +45,7 @@ function DashboardLayout() {
       {/* Main Content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <Header onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        <main className="flex-1 p-4 lg:p-6 overflow-auto bg-white/85 backdrop-blur-sm">
           <Routes>
             {/* Default redirect based on role */}
             <Route path="/" element={<Navigate to={ROLE_REDIRECTS[user?.role] || '/login'} replace />} />
@@ -102,6 +103,11 @@ function DashboardLayout() {
             <Route path="/settings" element={
               <ProtectedRoute permission="settings">
                 <SettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/trips-history" element={
+              <ProtectedRoute permission="trips_history">
+                <TripsHistoryPage />
               </ProtectedRoute>
             } />
 
