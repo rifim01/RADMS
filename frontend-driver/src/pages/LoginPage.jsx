@@ -97,14 +97,20 @@ export default function LoginPage() {
           <rect x="315" y="56"  width="5"   height="9"  rx="1" fill="#93c5fd" opacity="0.8"/>
           <circle cx="314" cy="52" r="2.5" fill="#CC0000"/>
           <circle cx="314" cy="52" r="5"   fill="#CC0000" opacity="0.15"/>
-          <g transform="translate(200,125) rotate(-8)">
-            <ellipse cx="0" cy="0" rx="50" ry="8" fill="#eef2f7"/>
-            <rect x="-50" y="-1.5" width="100" height="3" rx="1.5" fill="#CC0000" opacity="0.8"/>
-            <polygon points="-5,-8 -5,8 -45,22 -45,-22" fill="#e4eaf2"/>
-            <polygon points="35,-8 45,-8 45,-28 30,-10" fill="#e4eaf2"/>
-            <polygon points="35,-8 45,-8 45,-28 30,-10" fill="#CC0000" opacity="0.2"/>
-            <ellipse cx="48" cy="0" rx="6" ry="5" fill="#d8e3ee"/>
-            <ellipse cx="-20" cy="12" rx="8" ry="4" fill="#cdd5de"/>
+          <g transform="translate(180,130) rotate(-6)">
+            {/* Fuselage */}
+            <ellipse cx="0" cy="0" rx="52" ry="8" fill="#f1f5f9"/>
+            {/* Red stripe */}
+            <rect x="-52" y="-2" width="104" height="4" rx="2" fill="#CC0000" opacity="0.8"/>
+            {/* Main wing - stays below fuselage */}
+            <polygon points="-8,-7 -8,7 -46,20 -46,-20" fill="#e2e8f0" opacity="0.9"/>
+            {/* Tail fin - short, stays within body */}
+            <polygon points="40,-7 50,-7 44,-18 36,-9" fill="#e2e8f0"/>
+            {/* Nose */}
+            <ellipse cx="52" cy="0" rx="6" ry="5" fill="#dde4ec"/>
+            {/* Engine pods */}
+            <ellipse cx="-22" cy="14" rx="9" ry="4" fill="#cbd5e1"/>
+            <ellipse cx="-22" cy="-14" rx="9" ry="4" fill="#cbd5e1"/>
           </g>
           <circle cx="365" cy="175" r="22" fill="none" stroke="#CC0000" strokeWidth="1.5" opacity="0.15"/>
           <circle cx="365" cy="175" r="15" fill="none" stroke="#CC0000" strokeWidth="1" opacity="0.1"/>
