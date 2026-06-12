@@ -37,7 +37,8 @@ export default function DriversPage() {
   const [editId, setEditId] = useState(null)
 
   // Build unique branch list from loaded data (not from mock AIRPORTS)
-  const branchList = [...new Set(drivers.map(d => d.airportId).filter(Boolean))].sort()
+  const branchFromData = [...new Set(drivers.map(d => d.airportId).filter(Boolean))].sort()
+  const branchList = branchFromData.length > 0 ? branchFromData : AIRPORTS.map(a => a.id)
 
   const filtered = drivers.filter(d => {
     const matchSearch = !search ||

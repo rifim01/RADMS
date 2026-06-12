@@ -37,7 +37,8 @@ export default function StaffPage() {
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState(null)
 
-  const branchList = [...new Set(staff.map(s => s.airportId).filter(Boolean))].sort()
+  const branchFromData = [...new Set(staff.map(s => s.airportId).filter(Boolean))].sort()
+  const branchList = branchFromData.length > 0 ? branchFromData : AIRPORTS.map(a => a.id)
 
   const filtered = staff.filter(s => {
     const matchSearch = !search ||

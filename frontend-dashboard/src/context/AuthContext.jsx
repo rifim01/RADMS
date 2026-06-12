@@ -16,9 +16,22 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (email, password) => {
-    const u = await authService.login(email, password)
-    setUser(u)
-    return u
+    try {
+      const u = await authService.login(email, password)
+      setUser(u)
+      return { success: true, user: u }
+    } catch (err) {
+      let error = 'Terjadi kesalahan. Coba lagi.'
+      const code = err?.code || ''
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') {
+        error = 'Email atau password salah.'
+      } else if (code === 'auth/user-not-found') {
+        error = 'Email tidak terdaftar di sistem.'
+      } else if (code === 'auth/network-request-failed') {
+        error = 'Gagal terhubung ke server. Periksa koneksi internet.'
+      }
+      return { success: false, error }
+    }
   }, [])
 
   const logout = useCallback(async () => {
