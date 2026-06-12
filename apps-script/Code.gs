@@ -45,6 +45,12 @@ function doPost(e) {
       })));
     }
 
+    // logJadwalKerja tidak memerlukan token — hanya pencatatan aktivitas staff
+    if (action === 'logJadwalKerja') {
+      var jk = logJadwalKerja(params.nama, params.cabang, params.jabatan, params.shift, params.tanggal);
+      return setCorsHeaders(output.setContent(JSON.stringify(jk)));
+    }
+
     var result = routePostAction(action, params);
     return setCorsHeaders(output.setContent(JSON.stringify(result)));
 

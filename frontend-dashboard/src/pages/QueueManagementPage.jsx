@@ -9,6 +9,7 @@ import { AIRPORT_BRANCHES } from '../services/airportConfig'
 import { useAuth } from '../context/AuthContext'
 import { formatTime } from '../utils/formatters'
 import { playCalled, playNotification, unlockAudio } from '../services/soundService'
+import { logJadwalKerja } from '../services/jadwalKerjaService'
 
 const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES)
 
@@ -52,7 +53,10 @@ export default function QueueManagementPage() {
 
   function updateStatus(driverId, newStatus) {
     if (!branchId || branchId === 'all') return
-    if (newStatus === 'CALLED') playCalled()
+    if (newStatus === 'CALLED') {
+      playCalled()
+      logJadwalKerja(user)  // catat ke JADWAL KERJA saat staff panggil driver
+    }
     update(ref(db, `queue/${branchId}/${driverId}`), {
       status: newStatus,
       calledAt: newStatus === 'CALLED' ? serverTimestamp() : null,
@@ -61,6 +65,7 @@ export default function QueueManagementPage() {
 
   function removeFromQueue(driverId) {
     if (!branchId || branchId === 'all') return
+    logJadwalKerja(user)  // catat ke JADWAL KERJA saat staff selesaikan antrian
     set(ref(db, `queue/${branchId}/${driverId}`), null)
   }
 
