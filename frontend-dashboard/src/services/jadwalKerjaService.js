@@ -4,7 +4,10 @@
  * Satu baris per (Nama, Cabang, Shift, Tanggal) — deduplikasi di server.
  */
 
-const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL
+// Apps Script URL — public endpoint, tidak perlu disembunyikan
+const APPS_SCRIPT_URL =
+  import.meta.env.VITE_APPS_SCRIPT_URL ||
+  'https://script.google.com/macros/s/AKfycbxIzRRCti8rNHZiBEuOCzMhTKSiIAAMkRU7kVNCkdKOQoT4zcY5Gsn4sYFy-O2Ngj3g8A/exec'
 
 function getShift() {
   const h = new Date().getHours()
