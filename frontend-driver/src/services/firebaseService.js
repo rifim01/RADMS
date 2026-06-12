@@ -1,6 +1,37 @@
-import { ref, set, onValue, off, push, serverTimestamp, update } from 'firebase/database'
+import { ref, set, onValue, off, push, serverTimestamp, update, onDisconnect } from 'firebase/database'
 import { signInAnonymously } from 'firebase/auth'
 import { db, auth } from '../firebase/config'
+
+// ─── Device Session (single-device enforcement) ───────────────────────────────
+const DEVICE_KEY = 'radms_device_id'
+
+export function getOrCreateDeviceId() {
+  let id = localStorage.getItem(DEVICE_KEY)
+  if (!id) {
+    id = Date.now().toString(36) + Math.random().toString(36).substring(2)
+    localStorage.setItem(DEVICE_KEY, id)
+  }
+  return id
+}
+
+// Write deviceId to Firebase — satu akun hanya satu device aktif
+export async function registerDeviceSession(driverId) {
+  const deviceId = getOrCreateDeviceId()
+  await update(ref(db, `drivers/${driverId}`), { activeDeviceId: deviceId })
+  // Saat koneksi putus (app ditutup), hapus activeDeviceId agar device lain bisa masuk
+  onDisconnect(ref(db, `drivers/${driverId}/activeDeviceId`)).remove()
+  return deviceId
+}
+
+// Dengarkan perubahan activeDeviceId — jika berubah ke device lain → panggil onKicked
+export function listenDeviceSession(driverId, deviceId, onKicked) {
+  const r = ref(db, `drivers/${driverId}/activeDeviceId`)
+  onValue(r, snap => {
+    const val = snap.val()
+    if (val && val !== deviceId) onKicked()
+  })
+  return () => off(r)
+}
 
 // Ensure anonymous Firebase auth so RTDB rules work
 export async function ensureAuth() {
@@ -25,6 +56,14 @@ export function updateDriverLocation(driverId, branchId, lat, lng, isOnline) {
 export function setDriverOnlineStatus(driverId, isOnline) {
   return update(ref(db, `drivers/${driverId}`), {
     isOnline,
+    lastSeen: serverTimestamp(),
+  })
+}
+
+// Saat app ditutup/koneksi putus → Firebase otomatis set isOnline=false + simpan lastSeen
+export function setOnDisconnectOffline(driverId) {
+  onDisconnect(ref(db, `drivers/${driverId}`)).update({
+    isOnline: false,
     lastSeen: serverTimestamp(),
   })
 }

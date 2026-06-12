@@ -12,6 +12,11 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+  const [kicked,   setKicked]   = useState(() => {
+    const v = sessionStorage.getItem('radms_staff_kicked')
+    if (v) sessionStorage.removeItem('radms_staff_kicked')
+    return !!v
+  })
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -96,6 +101,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4" autoComplete="new-password">
+            {kicked && (
+              <div className="flex items-start gap-3 bg-orange-50 border border-orange-300 rounded-xl p-3">
+                <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5"/>
+                <p className="text-orange-700 text-sm">Akun ini masuk dari perangkat lain. Anda telah dikeluarkan secara otomatis.</p>
+              </div>
+            )}
             {error && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"/>

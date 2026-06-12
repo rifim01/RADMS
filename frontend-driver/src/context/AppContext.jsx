@@ -23,13 +23,14 @@ import {
   listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus,
   writeDriverInfo, joinQueue, leaveQueue, listenQueue, markQueuePickup,
   completeQueueEntry, recordTripCompletion,
+  getOrCreateDeviceId, listenDeviceSession, setOnDisconnectOffline,
 } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const { driver, updateDriver } = useAuth();
+  const { driver, updateDriver, logout } = useAuth();
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
@@ -91,8 +92,19 @@ export function AppProvider({ children }) {
 
       let unsubTrips = () => {};
       let unsubQueue = () => {};
+      let unsubDevice = () => {};
 
       ensureAuth().then(() => {
+        // Register onDisconnect: Firebase auto-sets isOnline=false saat app ditutup
+        setOnDisconnectOffline(driver.id);
+
+        // Single-device enforcement: logout jika device lain login dengan akun ini
+        const myDeviceId = getOrCreateDeviceId();
+        unsubDevice = listenDeviceSession(driver.id, myDeviceId, () => {
+          sessionStorage.setItem('radms_kicked', '1');
+          logout();
+        });
+
         // Listen to real trips — always update (even if empty)
         unsubTrips = listenDriverTrips(driver.id, (trips) => {
           setHistory(trips);
@@ -112,6 +124,7 @@ export function AppProvider({ children }) {
       return () => {
         unsubTrips();
         unsubQueue();
+        unsubDevice();
       };
     }
   }, [driver?.id]);

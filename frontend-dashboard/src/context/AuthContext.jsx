@@ -1,24 +1,81 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { ref, update, onValue, off, onDisconnect } from 'firebase/database'
+import { db } from '../firebase/config'
 import { authService } from '../services/authService'
 
 const AuthContext = createContext(null)
 
+const STAFF_DEVICE_KEY = 'radms_staff_device_id'
+
+function getOrCreateStaffDeviceId() {
+  let id = localStorage.getItem(STAFF_DEVICE_KEY)
+  if (!id) {
+    id = Date.now().toString(36) + Math.random().toString(36).substring(2)
+    localStorage.setItem(STAFF_DEVICE_KEY, id)
+  }
+  return id
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => authService.getCurrentUser())
   const [authReady, setAuthReady] = useState(false)
+  const unsubDeviceRef = useRef(null)
+
+  // Clean up device listener
+  const stopDeviceListener = useCallback(() => {
+    if (unsubDeviceRef.current) {
+      unsubDeviceRef.current()
+      unsubDeviceRef.current = null
+    }
+  }, [])
+
+  const logout = useCallback(async () => {
+    stopDeviceListener()
+    await authService.logout()
+    setUser(null)
+  }, [stopDeviceListener])
+
+  // Start single-device enforcement for a logged-in user
+  const startDeviceSession = useCallback((uid) => {
+    stopDeviceListener()
+    const deviceId = getOrCreateStaffDeviceId()
+    const r = ref(db, `staff_sessions/${uid}/activeDeviceId`)
+    // Write this device as the active one
+    update(ref(db, `staff_sessions/${uid}`), { activeDeviceId: deviceId }).catch(() => {})
+    // Remove on disconnect
+    onDisconnect(r).remove()
+    // Listen for device takeover
+    onValue(r, (snap) => {
+      const val = snap.val()
+      if (val && val !== deviceId) {
+        sessionStorage.setItem('radms_staff_kicked', '1')
+        logout()
+      }
+    })
+    unsubDeviceRef.current = () => off(r)
+  }, [stopDeviceListener, logout])
 
   useEffect(() => {
     const unsub = authService.onAuthChange((u) => {
       setUser(u)
       setAuthReady(true)
+      if (u?.id) {
+        startDeviceSession(u.id)
+      } else {
+        stopDeviceListener()
+      }
     })
-    return unsub
-  }, [])
+    return () => {
+      unsub()
+      stopDeviceListener()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = useCallback(async (email, password) => {
     try {
       const u = await authService.login(email, password)
       setUser(u)
+      startDeviceSession(u.id)
       return { success: true, user: u }
     } catch (err) {
       let error = 'Terjadi kesalahan. Coba lagi.'
@@ -32,12 +89,7 @@ export function AuthProvider({ children }) {
       }
       return { success: false, error }
     }
-  }, [])
-
-  const logout = useCallback(async () => {
-    await authService.logout()
-    setUser(null)
-  }, [])
+  }, [startDeviceSession])
 
   if (!authReady) {
     return (

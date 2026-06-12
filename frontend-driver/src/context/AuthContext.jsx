@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MOCK_DRIVERS } from '../services/mockData.js';
 import { findDriverByNik } from '../services/sheetsService.js';
-import { ensureAuth, setDriverOnlineStatus } from '../services/firebaseService.js';
+import { ensureAuth, setDriverOnlineStatus, registerDeviceSession } from '../services/firebaseService.js';
 
 const AuthContext = createContext(null);
 
@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
         return { success: false, error: msg };
       }
 
-      try { await ensureAuth() } catch { /* Anonymous auth optional; RTDB will work if enabled */ }
+      try { await ensureAuth() } catch { /* Anonymous auth optional */ }
 
       const driverData = {
         id: foundDriver.id || foundDriver.nik,
@@ -105,6 +105,10 @@ export function AuthProvider({ children }) {
         plateNumber: foundDriver.plateNumber || '',
         online: false,
       };
+
+      // Daftarkan device ini sebagai satu-satunya device aktif untuk akun ini
+      try { await registerDeviceSession(driverData.id) } catch { /* non-critical */ }
+
       const session = { loginAt: Date.now(), driverId: driverData.id };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       localStorage.setItem(DRIVER_KEY, JSON.stringify(driverData));

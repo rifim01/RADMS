@@ -10,6 +10,11 @@ export default function LoginPage() {
   const [nama, setNama]       = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [kicked, setKicked]   = useState(() => {
+    const v = sessionStorage.getItem('radms_kicked');
+    if (v) sessionStorage.removeItem('radms_kicked');
+    return !!v;
+  });
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -79,6 +84,12 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
+          {kicked && (
+            <div className="flex items-start gap-3 bg-orange-50 border border-orange-300 rounded-2xl p-3.5">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-orange-500"/>
+              <p className="text-sm text-orange-700">Akun ini masuk dari perangkat lain. Anda telah dikeluarkan secara otomatis.</p>
+            </div>
+          )}
           {error && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-3.5">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#CC0000' }}/>
