@@ -6,12 +6,22 @@ import { AIRPORT_BRANCHES, SHIFT_WINDOWS, SHEET_IDS } from './airportConfig'
 // E=Koordinat GPS  F=Status Jarak  G=Bukti Foto
 // ---------------------------------------------------------------------------
 
-export async function fetchAttendanceData() {
+let _attendanceCache = null
+let _attendanceCacheTime = 0
+const CACHE_TTL = 5 * 60 * 1000
+
+export async function fetchAttendanceData(forceRefresh = false) {
+  if (!forceRefresh && _attendanceCache && Date.now() - _attendanceCacheTime < CACHE_TTL) {
+    return _attendanceCache
+  }
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.ABSENSI}/gviz/tq?tqx=out:json&sheet=ABSENSI`
   const response = await fetch(url)
   if (!response.ok) throw new Error(`HTTP error ${response.status}`)
   const rawText = await response.text()
-  return parseGvizResponse(rawText)
+  const result = parseGvizResponse(rawText)
+  _attendanceCache = result
+  _attendanceCacheTime = Date.now()
+  return result
 }
 
 export function parseGvizResponse(rawText) {
@@ -200,7 +210,7 @@ export function processAttendanceRecords(rawData) {
       statusInfo.status = 'Di Luar Radius'
     }
 
-    return { ...entry, ...statusInfo }
+    return { ...entry, ...statusInfo, idCabang: entry.bandara }
   })
 }
 
@@ -218,4 +228,45 @@ export function getLast7DaysData(records, branchId) {
     const matchDate   = r.date >= cutoffStr
     return matchBranch && matchDate
   })
+}
+
+// ---------------------------------------------------------------------------
+// Jadwal Kerja sheet
+// ---------------------------------------------------------------------------
+let _jadwalCache = null
+let _jadwalCacheTime = 0
+
+export async function fetchJadwalKerja(forceRefresh = false) {
+  if (!forceRefresh && _jadwalCache && Date.now() - _jadwalCacheTime < CACHE_TTL) {
+    return _jadwalCache
+  }
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.ABSENSI}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('JADWAL KERJA')}`
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP error ${response.status}`)
+  const rawText = await response.text()
+
+  const jsonStart = rawText.indexOf('{')
+  const jsonEnd   = rawText.lastIndexOf('}')
+  if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid GVIZ response')
+  const data = JSON.parse(rawText.substring(jsonStart, jsonEnd + 1))
+
+  // Extract column headers from first row that looks like strings
+  const cols = (data?.table?.cols || []).map(c => (c.label || '').trim())
+  const rows = data?.table?.rows || []
+
+  const result = rows
+    .map(row => {
+      const c = row.c || []
+      const obj = {}
+      cols.forEach((col, i) => {
+        const val = c[i]?.v
+        obj[col || `col${i}`] = val !== null && val !== undefined ? String(val) : ''
+      })
+      return obj
+    })
+    .filter(r => Object.values(r).some(v => v !== ''))
+
+  _jadwalCache = { cols: cols.filter(Boolean), rows: result }
+  _jadwalCacheTime = Date.now()
+  return _jadwalCache
 }

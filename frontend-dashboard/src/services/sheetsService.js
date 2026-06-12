@@ -161,7 +161,14 @@ export async function fetchUsers() {
     return []
   }
 }
-export async function fetchAllDrivers(mockDrivers) {
+const CACHE_TTL = 5 * 60 * 1000
+let _driverCache = null; let _driverCacheTime = 0
+let _staffCache = null;  let _staffCacheTime = 0
+
+export async function fetchAllDrivers(mockDrivers, forceRefresh = false) {
+  if (!forceRefresh && _driverCache && Date.now() - _driverCacheTime < CACHE_TTL) {
+    return _driverCache
+  }
   try {
     const [airport, external] = await Promise.all([
       fetchDriverAirport().catch(() => []),
@@ -169,18 +176,25 @@ export async function fetchAllDrivers(mockDrivers) {
     ])
     const combined = [...airport, ...external]
     if (combined.length === 0) throw new Error('Empty result')
-    return { data: combined, source: 'google_sheets' }
+    const result = { data: combined, source: 'google_sheets' }
+    _driverCache = result; _driverCacheTime = Date.now()
+    return result
   } catch (err) {
     console.warn('Sheets driver fetch failed, using mock:', err.message)
     return { data: mockDrivers, source: 'mock' }
   }
 }
 
-export async function fetchAllStaff(mockStaff) {
+export async function fetchAllStaff(mockStaff, forceRefresh = false) {
+  if (!forceRefresh && _staffCache && Date.now() - _staffCacheTime < CACHE_TTL) {
+    return _staffCache
+  }
   try {
     const staff = await fetchStaff()
     if (staff.length === 0) throw new Error('Empty result')
-    return { data: staff, source: 'google_sheets' }
+    const result = { data: staff, source: 'google_sheets' }
+    _staffCache = result; _staffCacheTime = Date.now()
+    return result
   } catch (err) {
     console.warn('Sheets staff fetch failed, using mock:', err.message)
     return { data: mockStaff, source: 'mock' }

@@ -4,7 +4,7 @@ import {
   Printer, Calendar, ChevronDown, AlertCircle, RotateCcw, Save, BarChart2,
 } from 'lucide-react'
 import { AIRPORT_BRANCHES, SHIFT_WINDOWS } from '../services/airportConfig'
-import { fetchAttendanceData, processAttendanceRecords, getLast7DaysData, determineAttendanceStatus } from '../services/attendanceService'
+import { fetchAttendanceData, processAttendanceRecords, getLast7DaysData, determineAttendanceStatus, fetchJadwalKerja } from '../services/attendanceService'
 import { MOCK_ATTENDANCE_DATA } from '../services/mockData'
 import { useAuth } from '../context/AuthContext'
 
@@ -139,6 +139,12 @@ export default function AttendancePage() {
   const [startDate7, setStartDate7] = useState(getNDaysAgo(6))
   const [autoRefresh, setAutoRefresh] = useState(false)
 
+  // Tab-5 Jadwal state
+  const [jadwal, setJadwal]             = useState({ cols: [], rows: [] })
+  const [jadwalLoading, setJadwalLoading] = useState(false)
+  const [jadwalError, setJadwalError]   = useState(null)
+  const [jadwalBranch, setJadwalBranch] = useState('')
+
   // Tab-4 state
   const [filterBranchRekap, setFilterBranchRekap] = useState('')
   const [filterDateFrom, setFilterDateFrom]       = useState(getNDaysAgo(29))
@@ -165,11 +171,11 @@ export default function AttendancePage() {
     return processed.filter(r => r.idCabang === user.airportId)
   }, [user?.role, user?.airportId])
 
-  const loadData = useCallback(async (silent = false) => {
+  const loadData = useCallback(async (silent = false, forceRefresh = false) => {
     if (!silent) setLoading(true)
     setError(null)
     try {
-      const raw = await fetchAttendanceData()
+      const raw = await fetchAttendanceData(forceRefresh)
       const processed = processAttendanceRecords(raw)
       setRecords(filterByBranch(processed))
       setDemoMode(false)
@@ -210,6 +216,17 @@ export default function AttendancePage() {
     }
     return () => clearInterval(autoRefreshRef.current)
   }, [autoRefresh, loadData])
+
+  // Tab-5 Jadwal Kerja — fetch when tab first opened
+  useEffect(() => {
+    if (activeTab !== 4) return
+    if (jadwal.rows.length > 0) return  // already loaded
+    setJadwalLoading(true)
+    setJadwalError(null)
+    fetchJadwalKerja()
+      .then(data => { setJadwal(data); setJadwalLoading(false) })
+      .catch(err => { setJadwalError(err.message); setJadwalLoading(false) })
+  }, [activeTab])
 
   // ---------------------------------------------------------------------------
   // Derived data
@@ -309,7 +326,7 @@ export default function AttendancePage() {
   // ---------------------------------------------------------------------------
   // Tabs config
   // ---------------------------------------------------------------------------
-  const tabs = ['Hari Ini', '7 Hari', 'Mingguan', 'Rekap']
+  const tabs = ['Hari Ini', '7 Hari', 'Mingguan', 'Rekap', 'Jadwal Kerja']
 
   // ---------------------------------------------------------------------------
   // Render
@@ -347,7 +364,7 @@ export default function AttendancePage() {
             </p>
           </div>
           <button
-            onClick={() => loadData()}
+            onClick={() => loadData(false, true)}
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60 no-print"
           >
@@ -661,6 +678,100 @@ export default function AttendancePage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* TAB 5 — Jadwal Kerja                                            */}
+      {/* ================================================================ */}
+      {activeTab === 4 && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-gray-500">Jadwal kerja staf dari sheet JADWAL KERJA</p>
+            <div className="flex items-center gap-2">
+              {user?.role === 'super_admin' && (
+                <select
+                  value={jadwalBranch}
+                  onChange={e => setJadwalBranch(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
+                >
+                  <option value="">Semua Cabang</option>
+                  {Object.keys(AIRPORT_BRANCHES).map(k => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+                </select>
+              )}
+              <button
+                onClick={() => {
+                  setJadwalLoading(true)
+                  setJadwalError(null)
+                  fetchJadwalKerja(true)
+                    .then(data => { setJadwal(data); setJadwalLoading(false) })
+                    .catch(err => { setJadwalError(err.message); setJadwalLoading(false) })
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium"
+              >
+                <RefreshCw className={`w-4 h-4 ${jadwalLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {jadwalError && (
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 flex items-start gap-2 text-sm text-yellow-800">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Tidak dapat membaca sheet "JADWAL KERJA": {jadwalError}.
+                Pastikan nama tab sheet di Google Sheets adalah <b>JADWAL KERJA</b> (huruf kapital) dan sheet bersifat publik.
+              </span>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">Jadwal Kerja Staf</h3>
+            </div>
+            {jadwalLoading ? (
+              <div className="py-16 text-center text-gray-400 animate-pulse">Memuat jadwal...</div>
+            ) : jadwal.rows.length === 0 && !jadwalError ? (
+              <div className="py-16 text-center">
+                <Calendar className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-gray-400 font-medium">Belum ada data jadwal</p>
+                <p className="text-gray-300 text-sm mt-1">
+                  Pastikan sheet "JADWAL KERJA" di spreadsheet ABSENSI sudah berisi data
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-sky-50 text-sky-700 text-xs font-semibold uppercase tracking-wide">
+                    <tr>
+                      <th className="px-4 py-3 text-left whitespace-nowrap">No</th>
+                      {jadwal.cols.map(col => (
+                        <th key={col} className="px-4 py-3 text-left whitespace-nowrap">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {jadwal.rows
+                      .filter(r => {
+                        if (!jadwalBranch) return true
+                        return Object.values(r).some(v => String(v).includes(jadwalBranch))
+                      })
+                      .map((row, i) => (
+                        <tr key={i} className="hover:bg-sky-50/40 transition-colors">
+                          <td className="px-4 py-3 text-gray-400 text-xs">{i + 1}</td>
+                          {jadwal.cols.map(col => (
+                            <td key={col} className="px-4 py-3 text-gray-700">{row[col] || '-'}</td>
+                          ))}
+                        </tr>
+                      ))
+                    }
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
