@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, ListOrdered, Clock, Users, Info, CheckCircle, X } from 'lucide-react';
+import { RefreshCw, ListOrdered, Clock, Users, Info, CheckCircle, X, LogIn, LogOut } from 'lucide-react';
 import { findStaffById } from '../services/sheetsService.js';
 import { recordValidation } from '../services/firebaseService.js';
 import Header from '../components/Header.jsx';
@@ -12,7 +12,7 @@ import { estimateWaitTime } from '../services/geofence.js';
 
 export default function QueuePage() {
   const { driver } = useAuth();
-  const { queueData, myQueueEntry, airport, isOnline, inGeofence } = useApp();
+  const { queueData, myQueueEntry, airport, isOnline, inGeofence, enterQueue, exitQueue, queueLoading } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [showValidasi, setShowValidasi] = useState(false);
   const [staffId, setStaffId] = useState('');
@@ -142,24 +142,44 @@ export default function QueuePage() {
               </div>
             )}
 
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              <Clock className="w-3 h-3" />
-              <span>Bergabung: {formatTime(myQueueEntry.joinedAt)}</span>
-              <span>·</span>
-              <span>{myQueueEntry.zone}</span>
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Clock className="w-3 h-3" />
+                <span>Bergabung: {formatTime(myQueueEntry.joinedAt)}</span>
+              </div>
+              {myQueueEntry.status === 'WAITING' && (
+                <button
+                  onClick={exitQueue}
+                  disabled={queueLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Keluar Antrian
+                </button>
+              )}
             </div>
           </div>
         ) : (
           <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 text-center">
             <ListOrdered className="w-10 h-10 text-slate-600 mx-auto mb-3" />
             <p className="text-slate-400 font-medium">Belum Dalam Antrian</p>
-            <p className="text-slate-500 text-sm mt-1">
-              {!isOnline
-                ? 'Aktifkan status online di Beranda'
-                : !inGeofence
-                  ? 'Masuki area bandara untuk bergabung antrian'
-                  : 'Mendaftarkan ke antrian...'}
-            </p>
+            {!isOnline ? (
+              <p className="text-slate-500 text-sm mt-1">Aktifkan status online di Beranda terlebih dahulu</p>
+            ) : (
+              <>
+                <p className="text-slate-500 text-sm mt-1 mb-4">Tekan tombol di bawah untuk masuk antrian</p>
+                <button
+                  onClick={enterQueue}
+                  disabled={queueLoading}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+                >
+                  {queueLoading
+                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Mendaftar...</>
+                    : <><LogIn className="w-4 h-4" /> Masuk Antrian</>
+                  }
+                </button>
+              </>
+            )}
           </div>
         )}
 

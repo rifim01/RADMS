@@ -15,14 +15,15 @@ import {
 } from '../services/geolocation.js';
 import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
-  generateQueueData,
   generateNotifications,
   generateHistory,
-  generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
-import { listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
+import {
+  listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus,
+  joinQueue, leaveQueue, listenQueue,
+} from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
@@ -36,6 +37,7 @@ export function AppProvider({ children }) {
   const [geofenceDistance, setGeofenceDistance] = useState(null);
   const [queueData, setQueueData] = useState([]);
   const [myQueueEntry, setMyQueueEntry] = useState(null);
+  const [queueLoading, setQueueLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [history, setHistory] = useState([]);
@@ -54,19 +56,12 @@ export function AppProvider({ children }) {
   // Init data
   useEffect(() => {
     if (driver) {
-      const queue = generateQueueData(DEFAULT_AIRPORT_ID, driver.id);
-      setQueueData(queue);
-      const myEntry = queue.find((q) => q.driverId === driver.id);
-      setMyQueueEntry(myEntry || null);
-
       const notifs = generateNotifications();
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
 
       const hist = generateHistory(driver.id);
       setHistory(hist);
-
-      setOnlineDrivers(generateOnlineDrivers());
 
       // Init geofence monitor
       geofenceMonitorRef.current = new GeofenceMonitor(
@@ -85,47 +80,35 @@ export function AppProvider({ children }) {
         checkAndUpdateGeofence(loc.lat, loc.lng);
       }
 
-      // GPS always-on: start tracking immediately regardless of online status
+      // GPS always-on: start tracking immediately
       startTracking();
 
-      // Listen to real trips from Firebase
       let unsubTrips = () => {};
+      let unsubQueue = () => {};
+
       ensureAuth().then(() => {
+        // Listen to real trips
         unsubTrips = listenDriverTrips(driver.id, (trips) => {
-          if (trips.length > 0) {
-            setHistory(trips);
-          }
-          // If no Firebase trips yet, keep mock data as fallback
+          if (trips.length > 0) setHistory(trips);
         });
-      }).catch(() => {
-        // If auth fails, keep mock data
-      });
+
+        // Listen to real RTDB queue for driver's branch
+        const branchId = driver.airportId;
+        if (branchId) {
+          unsubQueue = listenQueue(branchId, (entries) => {
+            setQueueData(entries);
+            const myEntry = entries.find(e => e.driverId === driver.id || e.driverId === driver.nik);
+            setMyQueueEntry(myEntry || null);
+          });
+        }
+      }).catch(() => {});
 
       return () => {
         unsubTrips();
+        unsubQueue();
       };
     }
   }, [driver?.id]);
-
-  // Refresh queue simulasi setiap 30 detik
-  useEffect(() => {
-    if (!driver || !isOnline) return;
-
-    queueRefreshRef.current = setInterval(() => {
-      // Simulasi pergerakan antrian
-      setQueueData((prev) => {
-        const updated = prev.map((entry) => {
-          if (entry.driverId === driver.id) return entry;
-          return entry;
-        });
-        return updated;
-      });
-    }, 30000);
-
-    return () => {
-      if (queueRefreshRef.current) clearInterval(queueRefreshRef.current);
-    };
-  }, [driver?.id, isOnline]);
 
   // Network status
   useEffect(() => {
@@ -325,6 +308,32 @@ export function AppProvider({ children }) {
     }, 60000);
   }, [panicCooldown, location, addSystemNotification]);
 
+  const enterQueue = useCallback(async () => {
+    if (!driver?.id || !driver?.airportId) return;
+    setQueueLoading(true);
+    try {
+      await ensureAuth();
+      await joinQueue(driver.id, driver.name, driver.plateNumber || '', driver.airportId);
+    } catch {
+      addSystemNotification('Antrian', 'Gagal masuk antrian. Coba lagi.', 'SYSTEM');
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [driver?.id, driver?.name, driver?.plateNumber, driver?.airportId]);
+
+  const exitQueue = useCallback(async () => {
+    if (!driver?.id || !driver?.airportId) return;
+    setQueueLoading(true);
+    try {
+      await ensureAuth();
+      await leaveQueue(driver.id, driver.airportId);
+    } catch {
+      addSystemNotification('Antrian', 'Gagal keluar antrian. Coba lagi.', 'SYSTEM');
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [driver?.id, driver?.airportId]);
+
   /**
    * Update posisi manual (untuk testing)
    */
@@ -359,6 +368,9 @@ export function AppProvider({ children }) {
     // Queue
     queueData,
     myQueueEntry,
+    queueLoading,
+    enterQueue,
+    exitQueue,
 
     // Notifications
     notifications,
