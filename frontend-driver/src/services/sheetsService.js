@@ -23,13 +23,16 @@ function cellVal(cell) {
 
 async function fetchSheet(sheetId, sheetName) {
   const data = await fetchGviz(sheetId, sheetName)
-  const rows = (data.table?.rows || []).slice(1)
+  // Do NOT slice(1) — GVIZ may exclude header for sheets with few rows.
+  // Guard against header row instead.
+  const rows = data.table?.rows || []
   return rows.map(row => {
     const c = row.c || []
     const driverId = cellVal(c[1])
     const name     = cellVal(c[2])
     const branch   = cellVal(c[3]) || sheetName
-    if (!name) return null
+    // Skip header row if GVIZ includes it
+    if (!name || name === 'Nama Driver' || name === 'Nama' || driverId === 'ID Driver') return null
     return { id: driverId, nik: driverId, name, airportId: branch }
   }).filter(Boolean)
 }

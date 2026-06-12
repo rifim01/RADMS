@@ -53,13 +53,14 @@ const AIRPORT_SHEETS = [
 
 async function fetchAirportSheet(sheetName) {
   const data = await fetchGviz(SHEET_IDS.DRIVER_AIRPORT, sheetName)
-  const rows = (data.table?.rows || []).slice(1)
+  // Do NOT slice(1) — guard against header row instead (handles sheets with few rows)
+  const rows = data.table?.rows || []
   return rows.map(row => {
     const c = row.c || []
     const driverId = cellVal(c[1])
     const name     = cellVal(c[2])
     const branch   = cellVal(c[3]) || sheetName
-    if (!name) return null
+    if (!name || name === 'Nama Driver' || name === 'Nama' || driverId === 'ID Driver') return null
     return {
       id:          driverId || `${sheetName}-${name}`,
       nik:         driverId,
@@ -90,13 +91,14 @@ const EXTERNAL_SHEETS = [
 
 async function fetchExternalSheet(sheetName) {
   const data = await fetchGviz(SHEET_IDS.DRIVER_EXTERNAL, sheetName)
-  const rows = (data.table?.rows || []).slice(1)
+  // Do NOT slice(1) — guard against header row instead
+  const rows = data.table?.rows || []
   return rows.map(row => {
     const c = row.c || []
     const driverId = cellVal(c[1])
     const name     = cellVal(c[2])
     const branch   = cellVal(c[3]) || sheetName
-    if (!name) return null
+    if (!name || name === 'Nama' || name === 'Nama Driver' || driverId === 'ID Driver') return null
     return {
       id:          driverId || `${sheetName}-${name}`,
       nik:         driverId,
