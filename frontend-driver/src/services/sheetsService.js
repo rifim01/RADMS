@@ -66,13 +66,17 @@ export async function findStaffById(staffId) {
     const res = await fetch(url)
     const text = await res.text()
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
-    const rows = (json.table?.rows || []).slice(1)
+    // Do NOT slice(1) — GVIZ may already exclude the header row from rows[]
+    // Add a guard to skip any row that looks like a header
+    const rows = json.table?.rows || []
     for (const row of rows) {
       const c = row.c || []
-      const id = c[4]?.v ? String(c[4].v).trim() : ''  // kolom E = ID Staff
+      const id   = c[4]?.v ? String(c[4].v).trim() : ''  // kolom E = ID Staff
       const nama = c[1]?.v ? String(c[1].v).trim() : ''  // kolom B = Nama
       const cabang = c[3]?.v ? String(c[3].v).trim() : ''  // kolom D = ID CABANG
-      if (id && id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
+      // Skip header rows (e.g. "ID Staff", "Nama", etc.)
+      if (!id || id.toUpperCase() === 'ID STAFF' || id.toUpperCase() === 'ID') continue
+      if (id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
         return { id, nama, cabang }
       }
     }

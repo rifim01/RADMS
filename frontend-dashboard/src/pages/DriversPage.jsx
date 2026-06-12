@@ -113,7 +113,7 @@ export default function DriversPage() {
     { header: 'Status', key: 'status', render: (v, row) => {
       const nik = row.nik || row.id
       const rtdbData = onlineNiks[nik]
-      const isOnline = rtdbData?.isOnline === true
+      const isOnline = rtdbData?.isOnline === true || rtdbData?.location?.isOnline === true
       return <StatusBadge status={isOnline ? 'online' : 'offline'} />
     }},
     { header: 'Rating', key: 'rating', render: v => <span className="text-yellow-500 font-medium">★ {v}</span> },

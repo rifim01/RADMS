@@ -18,7 +18,7 @@ export default function HistoryPage() {
   const filtered = filter === 'all' ? history : history.filter((h) => h.status === filter);
 
   const totalCompleted = history.filter((h) => h.status === 'COMPLETED');
-  const totalEarnings = totalCompleted.reduce((sum, t) => sum + t.fare, 0);
+  const totalEarnings = totalCompleted.reduce((sum, t) => sum + (t.fare || 0), 0);
   const avgRating = totalCompleted.filter((t) => t.rating)
     .reduce((sum, t, _, arr) => sum + t.rating / arr.length, 0);
 

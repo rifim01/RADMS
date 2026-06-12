@@ -29,6 +29,11 @@ export function setDriverOnlineStatus(driverId, isOnline) {
   })
 }
 
+// Write driver display info so dashboard can show name even for RTDB-only entries
+export function writeDriverInfo(driverId, name, branchId) {
+  return update(ref(db, `drivers/${driverId}`), { name, branchId })
+}
+
 // ─── Queue ───────────────────────────────────────────────────────────────────
 export function joinQueue(driverId, driverName, plateNumber, branchId) {
   const r = ref(db, `queue/${branchId}/${driverId}`)

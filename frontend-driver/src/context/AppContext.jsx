@@ -21,7 +21,8 @@ import {
 } from '../services/mockData.js';
 import {
   listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus,
-  joinQueue, leaveQueue, listenQueue, markQueuePickup, completeQueueEntry, recordTripCompletion,
+  writeDriverInfo, joinQueue, leaveQueue, listenQueue, markQueuePickup,
+  completeQueueEntry, recordTripCompletion,
 } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
@@ -49,6 +50,8 @@ export function AppProvider({ children }) {
   const stopTrackingRef = useRef(null);
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
+  const isOnlineRef = useRef(false);          // always-current isOnline for async callbacks
+  const prevQueueStatusRef = useRef(null);    // track myQueueEntry.status transitions
 
   // Use driver's real airport, fallback to mock
   const airport = driver?.airportId
@@ -124,6 +127,21 @@ export function AppProvider({ children }) {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Keep isOnlineRef current so async GPS callbacks always use latest value
+  useEffect(() => { isOnlineRef.current = isOnline; }, [isOnline]);
+
+  // Sync online status to Firebase whenever it changes (also handles session restore)
+  useEffect(() => {
+    if (!driver?.id) return;
+    ensureAuth().then(() => {
+      setDriverOnlineStatus(driver.id, isOnline);
+      // Write name + branchId so dashboard can display driver info
+      if (driver.name && driver.airportId) {
+        writeDriverInfo(driver.id, driver.name, driver.airportId);
+      }
+    }).catch(() => {});
+  }, [isOnline, driver?.id]);
 
   const checkAndUpdateGeofence = useCallback((lat, lng) => {
     if (!geofenceMonitorRef.current) return;
@@ -228,10 +246,10 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Update Firebase location regardless of online status
+      // Update Firebase location regardless of online status (use ref to avoid stale closure)
       if (driver?.id) {
         ensureAuth().then(() => {
-          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
+          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnlineRef.current);
         }).catch(() => {});
       }
     };
@@ -285,6 +303,16 @@ export function AppProvider({ children }) {
     setUnreadCount(0);
   }, []);
 
+  // Detect CALLED status change → play sound + show notification
+  useEffect(() => {
+    const prev = prevQueueStatusRef.current;
+    const curr = myQueueEntry?.status ?? null;
+    if (prev !== 'CALLED' && curr === 'CALLED') {
+      addSystemNotification('Anda Dipanggil!', 'Segera menuju zona penjemputan.', 'CALLED');
+    }
+    prevQueueStatusRef.current = curr;
+  }, [myQueueEntry?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /**
    * Kirim Panic Button alert
    */
@@ -331,6 +359,7 @@ export function AppProvider({ children }) {
     try {
       await ensureAuth();
       await joinQueue(driver.id, driver.name, driver.plateNumber || '', driver.airportId);
+      addSystemNotification('Masuk Antrian', 'Anda berhasil masuk antrian. Tunggu giliran Anda.', 'GEOFENCE');
     } catch {
       addSystemNotification('Antrian', 'Gagal masuk antrian. Coba lagi.', 'SYSTEM');
     } finally {

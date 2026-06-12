@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import { ref, onValue, off } from 'firebase/database'
 import { db } from '../firebase/config'
@@ -9,27 +9,34 @@ import { useAuth } from '../context/AuthContext'
 import { formatRelativeTime } from '../utils/formatters'
 import { fetchAllDrivers } from '../services/sheetsService'
 
+// Module-level caches — survive tab navigation without re-fetching
+let _rtdbCache = {}
+let _sheetCache = []
+
 export default function DriverTrackingPage() {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [rtdbDrivers, setRtdbDrivers] = useState({})
-  const [sheetDrivers, setSheetDrivers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [rtdbDrivers, setRtdbDrivers] = useState(_rtdbCache)   // init from cache
+  const [sheetDrivers, setSheetDrivers] = useState(_sheetCache)
+  const [loading, setLoading] = useState(_sheetCache.length === 0)
 
   // Listen to Firebase RTDB for real-time driver locations + online status
   useEffect(() => {
     const driversRef = ref(db, 'drivers')
     const unsub = onValue(driversRef, snap => {
-      setRtdbDrivers(snap.val() || {})
+      _rtdbCache = snap.val() || {}
+      setRtdbDrivers(_rtdbCache)
     })
     return () => off(driversRef)
   }, [])
 
-  // Load driver list from sheet once
+  // Load driver list from sheet (cache in module var — re-uses 5-min cache from sheetsService)
   useEffect(() => {
+    if (_sheetCache.length > 0) return  // already loaded this session
     fetchAllDrivers([]).then(result => {
-      setSheetDrivers(result?.data || [])
+      _sheetCache = result?.data || []
+      setSheetDrivers(_sheetCache)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -39,9 +46,11 @@ export default function DriverTrackingPage() {
     const nik = d.nik || d.id || ''
     const rtdb = rtdbDrivers[nik] || {}
     const loc = rtdb.location || {}
+    // Check both root-level isOnline and location-embedded isOnline
+    const isOnline = rtdb.isOnline === true || loc.isOnline === true
     return {
       ...d,
-      isOnline: rtdb.isOnline === true,
+      isOnline,
       lastLat: loc.lat || null,
       lastLng: loc.lng || null,
       speed: loc.speed || 0,
@@ -61,7 +70,7 @@ export default function DriverTrackingPage() {
       nik,
       name: rtdb.name || nik,
       airportId: loc.branchId || rtdb.branchId || '',
-      isOnline: rtdb.isOnline === true,
+      isOnline: rtdb.isOnline === true || loc.isOnline === true,
       lastLat: loc.lat || null,
       lastLng: loc.lng || null,
       speed: loc.speed || 0,

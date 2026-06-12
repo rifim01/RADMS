@@ -120,20 +120,21 @@ export async function fetchDriverExternal() {
 // Columns: A=Email  B=Nama  C=Gaji Staff  D=ID CABANG  E=ID Staff  F=Jabatan  G=Deposit
 export async function fetchStaff() {
   const data = await fetchGviz(SHEET_IDS.DATABASE_STAFF, SHEET_NAMES.STAFF)
-  const rows = (data.table?.rows || []).slice(1)
+  // Do NOT slice(1) — GVIZ may already exclude the header; guard against header row instead
+  const rows = data.table?.rows || []
   return rows.map((row, i) => {
     const c = row.c || []
     const name = cellVal(c[1])
-    if (!name) return null
+    if (!name || name.toLowerCase() === 'nama') return null  // skip header if included
     return {
-      id:        cellVal(c[4]) || `stf-${i}`,   // E: ID Staff (RIF0125, etc.)
-      name,                                       // B: Nama
-      email:     cellVal(c[0]) || '',             // A: Email
-      gaji:      cellVal(c[2]) || '',             // C: Gaji Staff
-      airportId: cellVal(c[3]) || '',             // D: ID CABANG
-      staffId:   cellVal(c[4]) || '',             // E: ID Staff
-      role:      cellVal(c[5]) || 'Staff',        // F: Jabatan
-      deposit:   cellVal(c[6]) || '',             // G: Deposit
+      id:        cellVal(c[4]) || `stf-${i}`,
+      name,
+      email:     cellVal(c[0]) || '',
+      gaji:      cellVal(c[2]) || '',
+      airportId: cellVal(c[3]) || '',
+      staffId:   cellVal(c[4]) || '',
+      role:      cellVal(c[5]) || 'Staff',
+      deposit:   cellVal(c[6]) || '',
       status:    'active',
     }
   }).filter(Boolean)
@@ -144,11 +145,12 @@ export async function fetchStaff() {
 export async function fetchUsers() {
   try {
     const data = await fetchGviz(SHEET_IDS.ABSENSI, 'USERS')
-    const rows = (data.table?.rows || []).slice(1)
+    // Do NOT slice(1) — guard against header row presence
+    const rows = data.table?.rows || []
     return rows.map(row => {
       const c = row.c || []
       const email = cellVal(c[0]).toLowerCase()
-      if (!email) return null
+      if (!email || email === 'email') return null  // skip header if included
       return {
         email,
         nama:    cellVal(c[2]),
@@ -163,7 +165,7 @@ export async function fetchUsers() {
 }
 const CACHE_TTL = 5 * 60 * 1000
 let _driverCache = null; let _driverCacheTime = 0
-let _staffCache = null;  let _staffCacheTime = 0
+let _staffCache  = null; let _staffCacheTime  = 0
 
 export async function fetchAllDrivers(mockDrivers, forceRefresh = false) {
   if (!forceRefresh && _driverCache && Date.now() - _driverCacheTime < CACHE_TTL) {
