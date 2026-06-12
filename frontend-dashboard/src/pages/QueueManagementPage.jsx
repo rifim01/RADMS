@@ -11,7 +11,8 @@ import { formatTime } from '../utils/formatters'
 import { playCalled, playNotification, unlockAudio } from '../services/soundService'
 import { logJadwalKerja } from '../services/jadwalKerjaService'
 
-const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES)
+// Exclude internal/admin-only entries from queue branch selector
+const BRANCH_KEYS = Object.keys(AIRPORT_BRANCHES).filter(k => !AIRPORT_BRANCHES[k].admin)
 
 export default function QueueManagementPage() {
   const { user } = useAuth()
@@ -55,7 +56,7 @@ export default function QueueManagementPage() {
     if (!branchId || branchId === 'all') return
     if (newStatus === 'CALLED') {
       playCalled()
-      logJadwalKerja(user)  // catat ke JADWAL KERJA saat staff panggil driver
+      logJadwalKerja({ ...user, airportId: user.airportId || branchId })
     }
     update(ref(db, `queue/${branchId}/${driverId}`), {
       status: newStatus,
@@ -65,7 +66,7 @@ export default function QueueManagementPage() {
 
   function removeFromQueue(driverId) {
     if (!branchId || branchId === 'all') return
-    logJadwalKerja(user)  // catat ke JADWAL KERJA saat staff selesaikan antrian
+    logJadwalKerja({ ...user, airportId: user.airportId || branchId })
     set(ref(db, `queue/${branchId}/${driverId}`), null)
   }
 
