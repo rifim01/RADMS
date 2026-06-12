@@ -30,100 +30,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f8f9fa' }}>
+    <div className="min-h-screen flex flex-col bg-gray-900">
 
-      {/* Top Header Bar */}
-      <div className="bg-white border-b border-gray-100 px-5 py-3 flex items-center gap-3 shadow-sm">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ background: '#CC0000' }}>
-          <span className="text-white font-black text-lg leading-none tracking-tight">RI</span>
-        </div>
-        <div>
-          <div className="font-black text-lg leading-none" style={{ color: '#CC0000' }}>FIM</div>
-          <div className="text-[9px] text-gray-400 tracking-wider font-medium leading-none mt-0.5">DRIVER APP</div>
-        </div>
-        <div className="ml-auto text-right">
-          <div className="text-[10px] text-gray-400 font-medium">PT. RIFIM INTERNATIONAL GEMILANG</div>
-        </div>
-      </div>
+      {/* Hero Banner */}
+      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: 260 }}>
+        <img
+          src="/hero-bg.png"
+          alt="RIFIM Airport"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60"/>
 
-      {/* Illustration Banner */}
-      <div className="relative overflow-hidden" style={{ height: 200, background: 'linear-gradient(160deg, #fff 0%, #fff5f5 60%, #ffeaea 100%)' }}>
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 390 200" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fff"/>
-              <stop offset="100%" stopColor="#fdecea"/>
-            </linearGradient>
-            <linearGradient id="termG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f4f7fb"/>
-              <stop offset="100%" stopColor="#e1e8f0"/>
-            </linearGradient>
-          </defs>
-          <rect width="390" height="200" fill="url(#skyG)"/>
-          <rect x="0"   y="120" width="25"  height="80" fill="#e8edf2" opacity="0.5"/>
-          <rect x="20"  y="100" width="20"  height="100" fill="#dde4ec" opacity="0.5"/>
-          <rect x="35"  y="110" width="30"  height="90" fill="#e4eaf2" opacity="0.5"/>
-          <rect x="310" y="105" width="30"  height="95" fill="#e4eaf2" opacity="0.5"/>
-          <rect x="335" y="90"  width="22"  height="110" fill="#dde4ec" opacity="0.5"/>
-          <rect x="352" y="115" width="38"  height="85" fill="#e8edf2" opacity="0.5"/>
-          <path d="M-10,180 Q100,155 200,165 Q300,175 410,150" fill="none" stroke="#CC0000" strokeWidth="2" opacity="0.12"/>
-          <path d="M-10,190 Q120,168 220,175 Q320,182 410,162" fill="none" stroke="#CC0000" strokeWidth="1.5" opacity="0.08"/>
-          <rect x="0" y="160" width="390" height="40" fill="#edf0f4"/>
-          <rect x="100" y="158" width="190" height="42" fill="#d1d9e2" opacity="0.6"/>
-          {[0,1,2,3,4,5].map(i => (
-            <rect key={i} x="192" y={162+i*6} width="5" height="4" rx="1" fill="white" opacity="0.9"/>
-          ))}
-          {[0,1,2,3,4].map(i => (
-            <circle key={`l${i}`} cx={107} cy={163+i*8} r="2" fill="#CC0000" opacity="0.8"/>
-          ))}
-          {[0,1,2,3,4].map(i => (
-            <circle key={`r${i}`} cx={283} cy={163+i*8} r="2" fill="#CC0000" opacity="0.8"/>
-          ))}
-          <rect x="60"  y="90"  width="220" height="75" rx="4" fill="url(#termG)"/>
-          <rect x="60"  y="90"  width="220" height="6"  rx="4" fill="#CC0000" opacity="0.85"/>
-          {[75,97,119,141,163,185,207,229,251].map((x,i) => (
-            <rect key={i} x={x} y={105} width={14} height={18} rx="2" fill="#c7e0f4" opacity="0.85"/>
-          ))}
-          {[75,97,119,141,163,185,207,229,251].map((x,i) => (
-            <rect key={i} x={x} y={130} width={14} height={14} rx="2" fill="#c7e0f4" opacity="0.45"/>
-          ))}
-          <rect x="60"  y="155" width="40"  height="10" rx="2" fill="#cdd5de"/>
-          <rect x="242" y="155" width="38"  height="10" rx="2" fill="#cdd5de"/>
-          <rect x="150" y="148" width="40"  height="18" rx="2" fill="#e8f4fd" stroke="#c7d8e8" strokeWidth="0.5"/>
-          <rect x="310" y="68"  width="9"   height="95" rx="2" fill="#d5dce6"/>
-          <rect x="305" y="65"  width="19"  height="10" rx="2" fill="#c8d2de"/>
-          <rect x="307" y="54"  width="15"  height="13" rx="2" fill="#dce4ee"/>
-          <rect x="308" y="56"  width="5"   height="9"  rx="1" fill="#93c5fd" opacity="0.8"/>
-          <rect x="315" y="56"  width="5"   height="9"  rx="1" fill="#93c5fd" opacity="0.8"/>
-          <circle cx="314" cy="52" r="2.5" fill="#CC0000"/>
-          <circle cx="314" cy="52" r="5"   fill="#CC0000" opacity="0.15"/>
-          <g transform="translate(180,130) rotate(-6)">
-            {/* Fuselage */}
-            <ellipse cx="0" cy="0" rx="52" ry="8" fill="#f1f5f9"/>
-            {/* Red stripe */}
-            <rect x="-52" y="-2" width="104" height="4" rx="2" fill="#CC0000" opacity="0.8"/>
-            {/* Main wing - stays below fuselage */}
-            <polygon points="-8,-7 -8,7 -46,20 -46,-20" fill="#e2e8f0" opacity="0.9"/>
-            {/* Tail fin - short, stays within body */}
-            <polygon points="40,-7 50,-7 44,-18 36,-9" fill="#e2e8f0"/>
-            {/* Nose */}
-            <ellipse cx="52" cy="0" rx="6" ry="5" fill="#dde4ec"/>
-            {/* Engine pods */}
-            <ellipse cx="-22" cy="14" rx="9" ry="4" fill="#cbd5e1"/>
-            <ellipse cx="-22" cy="-14" rx="9" ry="4" fill="#cbd5e1"/>
-          </g>
-          <circle cx="365" cy="175" r="22" fill="none" stroke="#CC0000" strokeWidth="1.5" opacity="0.15"/>
-          <circle cx="365" cy="175" r="15" fill="none" stroke="#CC0000" strokeWidth="1" opacity="0.1"/>
-          <path d="M30,58 L30,42 M25,47 L30,42 L35,47" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.3"/>
-        </svg>
-        <div className="absolute bottom-5 left-5">
-          <div className="text-xs font-semibold text-gray-500 tracking-wider uppercase">Selamat Datang</div>
-          <div className="text-lg font-black text-gray-800 leading-tight">RIFIM Driver Portal</div>
+        {/* Top bar */}
+        <div className="relative z-10 flex items-center justify-between px-5 pt-4">
+          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-xl px-3 py-1.5">
+            <span className="text-white/60 text-[9px] tracking-widest font-bold uppercase">FIM</span>
+            <div className="w-px h-3 bg-white/30"/>
+            <span className="text-white/60 text-[9px] tracking-widest font-bold uppercase">DRIVER APP</span>
+          </div>
+          <span className="text-white/40 text-[9px] font-medium">PT. RIFIM INTERNATIONAL GEMILANG</span>
         </div>
-        <div className="absolute top-4 right-5 flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#CC0000', opacity: 0.7 }}/>
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#CC0000', opacity: 0.4 }}/>
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#CC0000', opacity: 0.2 }}/>
+
+        {/* Logo + Title centered */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full -mt-6">
+          <img
+            src="/rifim-logo.png"
+            alt="RIFIM Logo"
+            className="h-20 w-auto object-contain drop-shadow-2xl"
+          />
+        </div>
+
+        {/* Bottom text */}
+        <div className="absolute bottom-4 left-0 right-0 z-10 text-center">
+          <div className="flex items-center justify-center gap-3">
+            {['INTEGRITAS','INOVASI','KUALITAS'].map(v => (
+              <span key={v} className="text-white/50 text-[8px] tracking-widest font-bold uppercase">{v}</span>
+            ))}
+          </div>
         </div>
       </div>
 
