@@ -1,19 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ChevronRight } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLE_REDIRECTS } from '../services/authService'
-
-const DEMO_ACCOUNTS = [
-  { label: 'Super Admin', email: 'rifim01@adminrifim.org', password: 'Admin@Rifim2025', role: 'Super Admin' },
-  { label: 'Pipin Admin',  email: 'pipin@adminrifim.org',  password: 'Admin@Rifim2025', role: 'Super Admin' },
-]
 
 export default function LoginPage() {
   const navigate   = useNavigate()
   const { login }  = useAuth()
-  const [email,    setEmail]    = useState('rifim01@adminrifim.org')
-  const [password, setPassword] = useState('Admin@Rifim2025')
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -36,11 +31,6 @@ export default function LoginPage() {
     }
   }
 
-  function fillDemo(acc) {
-    setEmail(acc.email)
-    setPassword(acc.password)
-    setError('')
-  }
 
   return (
     <div className="min-h-screen flex bg-slate-900">
@@ -105,27 +95,7 @@ export default function LoginPage() {
             <p className="text-slate-400 text-sm mt-1">Manajemen driver & operasional bandara</p>
           </div>
 
-          {/* Quick accounts */}
-          <div className="mb-5 bg-red-50 border border-red-100 rounded-xl p-3">
-            <p className="text-red-700 text-xs font-bold mb-2 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"/>
-              Akun Tersedia
-            </p>
-            <div className="space-y-1">
-              {DEMO_ACCOUNTS.map(acc => (
-                <button key={acc.email} type="button" onClick={() => fillDemo(acc)}
-                  className="w-full flex items-center justify-between bg-white hover:bg-red-50 border border-red-100 hover:border-red-300 rounded-lg px-3 py-2 transition group">
-                  <div className="text-left">
-                    <p className="text-slate-700 text-xs font-semibold">{acc.label}</p>
-                    <p className="text-slate-400 text-[10px]">{acc.email}</p>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-red-400 group-hover:text-red-600 transition"/>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
             {error && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"/>
@@ -137,7 +107,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}
-                  placeholder="admin@rifim.com"
+                  autoComplete="email" placeholder="admin@rifim.com"
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"/>
               </div>
             </div>

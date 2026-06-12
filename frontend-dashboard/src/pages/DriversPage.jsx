@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, RefreshCw, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, RefreshCw, ExternalLink, PhoneCall, CheckCircle } from 'lucide-react'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
 import { DRIVERS as INITIAL_DRIVERS, AIRPORTS } from '../services/mockData'
 import { fetchAllDrivers } from '../services/sheetsService'
 import { useAuth } from '../context/AuthContext'
+import { ref, update, set, onValue, off, serverTimestamp } from 'firebase/database'
+import { db } from '../firebase/config'
 
 const emptyForm = {
   name: '', nik: '', phone: '', vehicle: '', plateNumber: '',
@@ -15,6 +17,7 @@ const emptyForm = {
 export default function DriversPage() {
   const { user } = useAuth()
   const [drivers, setDrivers] = useState(INITIAL_DRIVERS)
+  const [onlineNiks, setOnlineNiks] = useState({})
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -22,6 +25,12 @@ export default function DriversPage() {
 
   useEffect(() => {
     loadDrivers()
+    // Listen to RTDB drivers node for real-time online status
+    const driversRef = ref(db, 'drivers')
+    const unsub = onValue(driversRef, snap => {
+      setOnlineNiks(snap.val() || {})
+    })
+    return () => off(driversRef)
   }, [])
 
   async function loadDrivers() {
@@ -101,24 +110,60 @@ export default function DriversPage() {
       const label = a ? `${a.code} — ${a.city}` : (v || '-')
       return <span className="text-gray-600 text-xs">{label}</span>
     }},
-    { header: 'Status', key: 'status', render: v => <StatusBadge status={v} /> },
+    { header: 'Status', key: 'status', render: (v, row) => {
+      const nik = row.nik || row.id
+      const rtdbData = onlineNiks[nik]
+      const isOnline = rtdbData?.isOnline === true
+      return <StatusBadge status={isOnline ? 'online' : 'offline'} />
+    }},
     { header: 'Rating', key: 'rating', render: v => <span className="text-yellow-500 font-medium">★ {v}</span> },
-    { header: 'Aksi', key: 'id', render: (_, row) => (
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => openEdit(row)}
-          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => setDeleteModal(row)}
-          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    )},
+    { header: 'Aksi', key: 'id', render: (_, row) => {
+      if (user.role === 'super_admin') {
+        return (
+          <div className="flex items-center gap-1">
+            <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setDeleteModal(row)} className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )
+      }
+      // Staff / Coordinator: Panggil Driver & Selesai Order via RTDB queue
+      const branchId = row.airportId
+      const driverId = row.nik || row.id
+      return (
+        <div className="flex items-center gap-1">
+          <button
+            title="Panggil Driver"
+            onClick={() => {
+              if (!branchId || !driverId) return
+              update(ref(db, `queue/${branchId}/${driverId}`), {
+                driverId, driverName: row.name, plateNumber: row.plateNumber || '', branchId,
+                status: 'CALLED', calledAt: serverTimestamp(),
+              }).catch(() => set(ref(db, `queue/${branchId}/${driverId}`), {
+                driverId, driverName: row.name, plateNumber: row.plateNumber || '', branchId,
+                status: 'CALLED', joinedAt: serverTimestamp(), calledAt: serverTimestamp(),
+              }))
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-xs font-medium"
+          >
+            <PhoneCall className="w-3.5 h-3.5" /> Panggil
+          </button>
+          <button
+            title="Selesai Order"
+            onClick={() => {
+              if (!branchId || !driverId) return
+              update(ref(db, `queue/${branchId}/${driverId}`), { status: 'COMPLETED' })
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition text-xs font-medium"
+          >
+            <CheckCircle className="w-3.5 h-3.5" /> Selesai
+          </button>
+        </div>
+      )
+    }},
   ]
 
   return (

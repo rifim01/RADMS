@@ -63,8 +63,16 @@ export default function QueuePage() {
   const activeQueue = queueData.filter((q) => q.status !== 'COMPLETED');
   const waitingCount = queueData.filter((q) => q.status === 'WAITING').length;
   const calledCount = queueData.filter((q) => q.status === 'CALLED').length;
-  const waitingAhead = myQueueEntry ? myQueueEntry.queueNumber - 1 : 0;
-  const estWait = myQueueEntry ? estimateWaitTime(myQueueEntry.queueNumber) : null;
+  // Compute queue position from index in sorted array
+  const myQueueIndex = myQueueEntry
+    ? activeQueue.findIndex(e => e.driverId === (driver?.id || driver?.nik))
+    : -1;
+  const myQueueNumber = myQueueIndex !== -1 ? myQueueIndex + 1 : 1;
+  const waitingAhead = Math.max(0, myQueueNumber - 1);
+  const estWait = myQueueEntry ? estimateWaitTime(myQueueNumber) : null;
+  // Firebase serverTimestamp is a number (ms) when read back
+  const joinedAtMs = myQueueEntry?.joinedAt;
+  const joinedTimeStr = joinedAtMs ? formatTime(new Date(joinedAtMs)) : '--:--';
 
   const statusColors = {
     WAITING: 'text-yellow-400',
@@ -101,7 +109,7 @@ export default function QueuePage() {
               <div className="relative">
                 <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center">
                   <span className="text-white text-3xl font-black">
-                    {formatQueueNumber(myQueueEntry.queueNumber)}
+                    {formatQueueNumber(myQueueNumber)}
                   </span>
                 </div>
                 {myQueueEntry.status === 'CALLED' && (
@@ -145,7 +153,7 @@ export default function QueuePage() {
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Clock className="w-3 h-3" />
-                <span>Bergabung: {formatTime(myQueueEntry.joinedAt)}</span>
+                <span>Bergabung: {joinedTimeStr}</span>
               </div>
               {myQueueEntry.status === 'WAITING' && (
                 <button
