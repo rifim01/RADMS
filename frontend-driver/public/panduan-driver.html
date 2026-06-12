@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="theme-color" content="#CC1B1B"/>
+<meta property="og:title" content="Panduan Driver RIFIM Airport"/>
+<meta property="og:description" content="Panduan lengkap penggunaan aplikasi RADMS Driver — dari login hingga selesai perjalanan"/>
+<meta property="og:image" content="/rifim-logo.png"/>
+<title>Panduan Driver — RIFIM Airport</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+
+/* ─── Print ──────────────────────────────────────────── */
+@media print{
+  .no-print{display:none!important}
+  body{background:#fff}
+  .card{break-inside:avoid;box-shadow:none!important;border:1px solid #eee}
+  .hero{background:#CC1B1B!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .step-anim-wrap{display:none}
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+.hero{background:#CC1B1B;color:#fff;padding:28px 20px 36px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.06);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;background:rgba(255,255,255,0.05);border-radius:50%}
+.hero-logo{width:64px;height:64px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))}
+.hero h1{font-size:20px;font-weight:700;margin-bottom:4px;position:relative}
+.hero p{font-size:13px;opacity:0.8;position:relative}
+.hero-badge{display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:0.06em;margin-bottom:14px;position:relative}
+
+/* ─── Share Bar ──────────────────────────────────────── */
+.share-bar{background:#fff;padding:14px 20px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #eee;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.share-bar span{font-size:12px;color:#666;flex:1}
+.btn-wa{background:#25D366;color:#fff;border:none;border-radius:24px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none}
+.btn-pdf{background:#fff;color:#CC1B1B;border:1.5px solid #CC1B1B;border-radius:24px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-wa svg,.btn-pdf svg{width:16px;height:16px;flex-shrink:0}
+
+/* ─── Container ─────────────────────────────────────── */
+.container{max-width:600px;margin:0 auto;padding:20px 16px 40px}
+
+/* ─── Section label ─────────────────────────────────── */
+.section-label{font-size:10px;font-weight:700;letter-spacing:0.1em;color:#999;text-transform:uppercase;margin:24px 0 12px;padding-left:2px}
+
+/* ─── Step cards ─────────────────────────────────────── */
+.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:0.5px solid rgba(0,0,0,0.06);animation:fadeUp 0.5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.card-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
+.step-badge{width:28px;height:28px;border-radius:50%;background:#FCEBEB;color:#CC1B1B;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.card-title{flex:1}
+.card-title h3{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.card-title p{font-size:12px;color:#888}
+
+/* ─── Animated illustration ─────────────────────────── */
+.step-anim-wrap{background:#f8f8f8;border-radius:12px;overflow:hidden;margin-bottom:14px;position:relative}
+.anim-scene{width:100%;height:160px;position:relative;display:flex;align-items:center;justify-content:center}
+
+/* ─── Steps list ─────────────────────────────────────── */
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.steps-list li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#333;line-height:1.55}
+.steps-list li .dot{width:6px;height:6px;border-radius:50%;background:#CC1B1B;flex-shrink:0;margin-top:7px}
+
+/* ─── Tips ───────────────────────────────────────────── */
+.tip{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:10px;margin-top:12px;font-size:12.5px;line-height:1.55}
+.tip-green{background:#EAF3DE;color:#2d6a11}
+.tip-amber{background:#FFF8E6;color:#7a4f0a;border-left:3px solid #EF9F27}
+.tip-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* ─── Status pills ───────────────────────────────────── */
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.pill-blue{background:#E6F1FB;color:#185FA5}
+.pill-amber{background:#FAEEDA;color:#854F0B}
+.pill-green{background:#EAF3DE;color:#27500A}
+.pill-red{background:#FCEBEB;color:#A32D2D}
+
+/* ─── FAQ ────────────────────────────────────────────── */
+.faq-item{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:3px solid #CC1B1B;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.faq-item .q{font-size:13.5px;font-weight:700;color:#1a1a1a;margin-bottom:5px}
+.faq-item .a{font-size:13px;color:#555;line-height:1.6}
+
+/* ─── Footer ─────────────────────────────────────────── */
+.footer{text-align:center;padding:24px 16px;color:#aaa;font-size:12px}
+.footer strong{color:#CC1B1B}
+
+/* ─── ANIMATIONS ─────────────────────────────────────── */
+
+/* Anim 1: Install — phone + download arrow */
+@keyframes phone-appear{0%{opacity:0;transform:translateY(20px)}30%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(0)}}
+@keyframes arrow-drop{0%,30%{opacity:0;transform:translateY(-10px)}60%{opacity:1;transform:translateY(0)}80%{opacity:1;transform:translateY(0)}95%{opacity:0;transform:translateY(10px)}100%{opacity:0;transform:translateY(-10px)}}
+@keyframes check-pop{0%,60%{opacity:0;transform:scale(0)}75%{opacity:1;transform:scale(1.2)}85%{transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}
+@keyframes icon-land{0%,80%{opacity:0;transform:scale(0) translateY(-20px)}90%{opacity:1;transform:scale(1.1) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0)}}
+
+/* Anim 2: Login — form fill effect */
+@keyframes field-fill{0%{width:0}60%{width:80%}100%{width:80%}}
+@keyframes btn-pulse{0%,60%{transform:scale(1);opacity:0.7}70%{transform:scale(1.05);opacity:1}80%{transform:scale(0.97)}90%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
+
+/* Anim 3: Online toggle */
+@keyframes toggle-on{0%,20%{transform:translateX(0)}60%{transform:translateX(24px)}100%{transform:translateX(24px)}}
+@keyframes track-on{0%,20%{background:#ddd}60%{background:#25D366}100%{background:#25D366}}
+@keyframes signal-ring{0%{transform:scale(0.5);opacity:0}40%{opacity:0}60%{transform:scale(1);opacity:0.5}100%{transform:scale(1.8);opacity:0}}
+
+/* Anim 4: Geofence */
+@keyframes ring-pulse{0%{transform:scale(0.8);opacity:0}40%{opacity:0.6}100%{transform:scale(1.5);opacity:0}}
+@keyframes car-enter{0%{transform:translateX(-60px);opacity:0}60%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:1}}
+@keyframes queue-appear{0%,50%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
+
+/* Anim 5: Called notification */
+@keyframes bell-ring{0%,30%{transform:rotate(0)}35%{transform:rotate(-20deg)}40%{transform:rotate(20deg)}45%{transform:rotate(-15deg)}50%{transform:rotate(15deg)}55%{transform:rotate(0)}100%{transform:rotate(0)}}
+@keyframes notif-slide{0%,25%{transform:translateY(-40px);opacity:0}40%{transform:translateY(4px);opacity:1}50%{transform:translateY(0);opacity:1}85%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+@keyframes wave-out{0%{transform:scale(1);opacity:0.8}100%{transform:scale(2);opacity:0}}
+
+/* Anim 6: Complete trip */
+@keyframes car-drive{0%{transform:translateX(-50px)}60%{transform:translateX(10px)}100%{transform:translateX(10px)}}
+@keyframes check-bounce{0%,50%{transform:scale(0);opacity:0}65%{transform:scale(1.3);opacity:1}75%{transform:scale(0.9)}85%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes stars-pop{0%,55%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
+
+/* Anim 7: Panic */
+@keyframes panic-flash{0%,40%{background:#FCEBEB}50%{background:#F09595}60%{background:#FCEBEB}70%{background:#F09595}80%{background:#FCEBEB}100%{background:#FCEBEB}}
+@keyframes pulse-ring-danger{0%{transform:scale(0.8);opacity:0.8}100%{transform:scale(2);opacity:0}}
+@keyframes exclaim{0%{transform:scale(1)}10%{transform:scale(0.9)}20%{transform:scale(1.15)}30%{transform:scale(0.95)}40%{transform:scale(1)}100%{transform:scale(1)}}
+
+.anim1,.anim2,.anim3,.anim4,.anim5,.anim6,.anim7{animation-iteration-count:infinite;animation-duration:3s}
+</style>
+</head>
+<body>
+
+<!-- ─── HERO ─────────────────────────────────────────── -->
+<div class="hero">
+  <img src="/rifim-logo.png" class="hero-logo" alt="RIFIM Logo" onerror="this.style.display='none'"/>
+  <div class="hero-badge">RADMS DRIVER APP</div>
+  <h1>Panduan Driver RIFIM Airport</h1>
+  <p>Langkah lengkap dari install hingga selesai perjalanan</p>
+</div>
+
+<!-- ─── SHARE BAR ─────────────────────────────────────── -->
+<div class="share-bar no-print">
+  <span>Bagikan panduan ini:</span>
+  <a id="btn-wa" class="btn-wa" href="#" onclick="shareWA(event)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    WhatsApp
+  </a>
+  <button class="btn-pdf no-print" onclick="window.print()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    PDF
+  </button>
+</div>
+
+<div class="container">
+
+<div class="section-label">Alur penggunaan — 7 langkah</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 1 — Install -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0s">
+  <div class="card-header">
+    <div class="step-badge">1</div>
+    <div class="card-title">
+      <h3>Install aplikasi di HP</h3>
+      <p>PWA — tidak perlu Play Store / App Store</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#f0f4ff 0%,#e8eeff 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Phone body -->
+        <rect x="110" y="15" width="80" height="130" rx="12" fill="#fff" stroke="#ddd" stroke-width="2" style="animation:phone-appear 3s ease infinite"/>
+        <rect x="115" y="25" width="70" height="100" rx="6" fill="#f5f5f5"/>
+        <!-- Screen content - address bar -->
+        <rect x="118" y="28" width="64" height="12" rx="3" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+        <rect x="120" y="31" width="40" height="6" rx="2" fill="#CC1B1B" style="animation:field-fill 3s ease infinite"/>
+        <!-- Install prompt on screen -->
+        <rect x="118" y="45" width="64" height="50" rx="4" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+        <rect x="126" y="52" width="24" height="24" rx="12" fill="#FCEBEB" style="animation:phone-appear 3s ease infinite"/>
+        <!-- RIFIM logo placeholder -->
+        <text x="138" y="68" text-anchor="middle" font-size="12" fill="#CC1B1B" font-weight="700">R</text>
+        <rect x="122" y="80" width="44" height="6" rx="3" fill="#f0f0f0"/>
+        <rect x="126" y="89" width="36" height="8" rx="4" fill="#CC1B1B" style="animation:btn-pulse 3s ease infinite"/>
+        <text x="144" y="97" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Tambah ke Layar</text>
+        <!-- Download arrow animated -->
+        <g style="animation:arrow-drop 3s ease infinite">
+          <path d="M150 20 L150 35" stroke="#CC1B1B" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M144 30 L150 37 L156 30" stroke="#CC1B1B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- Home screen icon appearing -->
+        <g style="animation:icon-land 3s ease infinite">
+          <rect x="55" y="60" width="44" height="44" rx="10" fill="#CC1B1B"/>
+          <text x="77" y="89" text-anchor="middle" font-size="22" fill="#fff" font-weight="900">R</text>
+        </g>
+        <text x="77" y="116" text-anchor="middle" font-size="9" fill="#555">RIFIM Driver</text>
+        <!-- Check mark -->
+        <circle cx="82" cy="62" r="10" fill="#25D366" style="animation:check-pop 3s ease infinite"/>
+        <path d="M76 62 L80 66 L88 58" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:check-pop 3s ease infinite"/>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Buka Chrome di Android → kunjungi link aplikasi dari koordinator</li>
+    <li><span class="dot"></span>Ketuk menu ⋮ pojok kanan atas → pilih <strong>"Tambahkan ke Layar Utama"</strong></li>
+    <li><span class="dot"></span>Ketuk <strong>Tambah</strong> — ikon RIFIM muncul di homescreen HP</li>
+    <li><span class="dot"></span>iPhone/Safari: ketuk Share → <strong>"Add to Home Screen"</strong></li>
+    <li><span class="dot"></span>Izinkan notifikasi saat browser meminta</li>
+  </ul>
+  <div class="tip tip-green">
+    <span class="tip-icon">ℹ️</span>
+    <span><strong>Info:</strong> Aplikasi bisa digunakan tanpa koneksi internet setelah pertama kali dibuka (mode offline terbatas).</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 2 — Login -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.05s">
+  <div class="card-header">
+    <div class="step-badge">2</div>
+    <div class="card-title">
+      <h3>Login dengan NIK & Nama</h3>
+      <p>Gunakan data terdaftar di sistem RIFIM</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#fff5f5 0%,#fff0f0 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Phone -->
+        <rect x="100" y="10" width="100" height="130" rx="14" fill="#1a1a1a"/>
+        <rect x="104" y="14" width="92" height="122" rx="10" fill="#fff"/>
+        <!-- Login form on screen -->
+        <rect x="108" y="18" width="84" height="14" rx="0" fill="#CC1B1B"/>
+        <text x="150" y="29" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">MASUK DRIVER</text>
+        <!-- NIK field -->
+        <text x="112" y="45" font-size="7" fill="#888">ID Driver (NIK)</text>
+        <rect x="112" y="48" width="72" height="14" rx="4" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+        <rect x="115" y="52" width="0" height="6" rx="2" fill="#CC1B1B" style="animation:field-fill 3s linear infinite"/>
+        <text x="115" y="59" font-size="6" fill="#CC1B1B" style="animation:phone-appear 3s ease infinite">158756364</text>
+        <!-- Name field -->
+        <text x="112" y="72" font-size="7" fill="#888">Nama Lengkap</text>
+        <rect x="112" y="75" width="72" height="14" rx="4" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+        <rect x="115" y="79" width="0" height="6" rx="2" fill="#CC1B1B">
+          <animate attributeName="width" values="0;50;50;0" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+        </rect>
+        <text x="115" y="86" font-size="6" fill="#CC1B1B">
+          <animate attributeName="opacity" values="0;0;1;1;0" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+          Bobby Rahman
+        </text>
+        <!-- Login button -->
+        <rect x="112" y="96" width="72" height="18" rx="8" fill="#CC1B1B" style="animation:btn-pulse 3s ease infinite;animation-delay:0.8s"/>
+        <text x="148" y="109" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Masuk</text>
+        <!-- Success state -->
+        <g>
+          <circle cx="186" cy="36" r="12" fill="#EAF3DE" stroke="#639922" stroke-width="1.5" style="animation:check-pop 3s ease infinite;animation-delay:1.5s"/>
+          <path d="M180 36 L184 40 L192 31" stroke="#639922" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:check-pop 3s ease infinite;animation-delay:1.5s"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span><strong>ID Driver</strong> = NIK Anda (angka saja, contoh: 158756364)</li>
+    <li><span class="dot"></span><strong>Nama Lengkap</strong> = nama persis sesuai data RIFIM (minimal kata pertama)</li>
+    <li><span class="dot"></span>Ketuk tombol merah <strong>Masuk</strong></li>
+    <li><span class="dot"></span>Berhasil → masuk ke halaman utama aplikasi</li>
+  </ul>
+  <div class="tip tip-amber">
+    <span class="tip-icon">⚠️</span>
+    <span><strong>Penting:</strong> 1 akun hanya bisa aktif di 1 HP. Login di HP lain otomatis mengakhiri sesi HP pertama.</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 3 — Online Status -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.1s">
+  <div class="card-header">
+    <div class="step-badge">3</div>
+    <div class="card-title">
+      <h3>Aktifkan status Online</h3>
+      <p>GPS aktif — posisi terpantau koordinator</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#f0fff4 0%,#e8ffe8 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Map background -->
+        <rect x="50" y="20" width="200" height="110" rx="12" fill="#e8f5e9"/>
+        <!-- Map roads -->
+        <path d="M50 75 L250 75" stroke="#fff" stroke-width="3"/>
+        <path d="M150 20 L150 130" stroke="#fff" stroke-width="3"/>
+        <path d="M70 40 L200 110" stroke="#fff" stroke-width="2" opacity="0.5"/>
+        <!-- Signal rings around location -->
+        <circle cx="150" cy="75" r="20" fill="none" stroke="#25D366" stroke-width="1.5" style="animation:signal-ring 3s ease-out infinite"/>
+        <circle cx="150" cy="75" r="30" fill="none" stroke="#25D366" stroke-width="1" opacity="0.6" style="animation:signal-ring 3s ease-out infinite;animation-delay:0.5s"/>
+        <circle cx="150" cy="75" r="40" fill="none" stroke="#25D366" stroke-width="0.5" opacity="0.3" style="animation:signal-ring 3s ease-out infinite;animation-delay:1s"/>
+        <!-- Location marker -->
+        <circle cx="150" cy="75" r="12" fill="#25D366" stroke="#fff" stroke-width="2.5"/>
+        <text x="150" y="80" text-anchor="middle" font-size="11" fill="#fff">📍</text>
+        <!-- Toggle switch UI overlay -->
+        <rect x="170" y="18" width="76" height="32" rx="8" fill="rgba(255,255,255,0.92)" stroke="#ddd" stroke-width="0.5"/>
+        <text x="178" y="31" font-size="8" fill="#333" font-weight="600">Status</text>
+        <!-- Track -->
+        <rect x="178" y="35" width="30" height="10" rx="5" fill="#ddd" style="animation:track-on 3s ease infinite;animation-delay:0.5s"/>
+        <!-- Thumb -->
+        <circle cx="183" cy="40" r="6" fill="#fff" stroke="#ccc" stroke-width="1" style="animation:toggle-on 3s ease infinite;animation-delay:0.5s"/>
+        <text x="212" y="43" font-size="8" fill="#25D366" font-weight="700">ONLINE</text>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Di halaman Home, ketuk toggle <strong>Online/Offline</strong> atau tombol <strong>Mulai Bertugas</strong></li>
+    <li><span class="dot"></span>Status berubah menjadi <span style="color:#25D366;font-weight:700">● ONLINE</span> — GPS Anda aktif</li>
+    <li><span class="dot"></span>Izinkan akses lokasi jika browser meminta permission</li>
+    <li><span class="dot"></span>Posisi terakhir Anda tetap tersimpan meski aplikasi ditutup</li>
+  </ul>
+  <div class="tip tip-green">
+    <span class="tip-icon">📡</span>
+    <span><strong>GPS otomatis:</strong> Tracking berjalan di background — tidak perlu buka aplikasi terus menerus.</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 4 — Geofence & Antrian -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.15s">
+  <div class="card-header">
+    <div class="step-badge">4</div>
+    <div class="card-title">
+      <h3>Masuk area bandara & antrian</h3>
+      <p>Sistem otomatis mendeteksi kedatangan Anda</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#f0f4ff 0%,#e8f0ff 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Airport building -->
+        <rect x="130" y="40" width="80" height="60" rx="4" fill="#e0e8ff" stroke="#5b7dd4" stroke-width="1.5"/>
+        <rect x="150" y="40" width="40" height="15" rx="2" fill="#5b7dd4" opacity="0.4"/>
+        <text x="170" y="72" text-anchor="middle" font-size="9" fill="#3a5cc7" font-weight="700">BANDARA</text>
+        <rect x="155" y="78" width="8" height="22" rx="1" fill="#b3c6ff"/>
+        <rect x="167" y="78" width="8" height="22" rx="1" fill="#b3c6ff"/>
+        <rect x="179" y="78" width="8" height="22" rx="1" fill="#b3c6ff"/>
+        <!-- Geofence rings -->
+        <circle cx="170" cy="75" r="50" fill="none" stroke="#5b7dd4" stroke-width="1.5" stroke-dasharray="4 3" style="animation:ring-pulse 3s ease-out infinite"/>
+        <circle cx="170" cy="75" r="70" fill="none" stroke="#5b7dd4" stroke-width="1" stroke-dasharray="3 4" opacity="0.4" style="animation:ring-pulse 3s ease-out infinite;animation-delay:0.6s"/>
+        <!-- Radius label -->
+        <text x="130" y="73" font-size="7" fill="#5b7dd4" opacity="0.8">2 km</text>
+        <!-- Car approaching -->
+        <g style="animation:car-enter 3s ease-out infinite">
+          <rect x="30" y="68" width="42" height="20" rx="4" fill="#CC1B1B"/>
+          <rect x="36" y="64" width="28" height="12" rx="3" fill="#CC1B1B" opacity="0.7"/>
+          <rect x="38" y="65" width="24" height="10" rx="2" fill="#99c6ff" opacity="0.6"/>
+          <circle cx="40" cy="90" r="5" fill="#333"/>
+          <circle cx="64" cy="90" r="5" fill="#333"/>
+          <circle cx="40" cy="90" r="2.5" fill="#888"/>
+          <circle cx="64" cy="90" r="2.5" fill="#888"/>
+        </g>
+        <!-- Queue number badge -->
+        <g style="animation:queue-appear 3s ease-out infinite;animation-delay:1.2s">
+          <rect x="190" y="28" width="52" height="32" rx="8" fill="#CC1B1B"/>
+          <text x="216" y="41" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.7)">ANTRIAN</text>
+          <text x="216" y="55" text-anchor="middle" font-size="18" fill="#fff" font-weight="900">#7</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Saat memasuki radius <strong>2 km dari bandara</strong> — notifikasi <em>Geofence Aktif</em> muncul</li>
+    <li><span class="dot"></span>Ketuk tombol <strong>Masuk Antrian</strong> di halaman Home atau menu Antrian</li>
+    <li><span class="dot"></span>Nomor antrian Anda ditampilkan — tunggu giliran dipanggil</li>
+    <li><span class="dot"></span>Harus berada dalam radius bandara agar tombol antrian aktif</li>
+  </ul>
+  <div class="pills">
+    <span class="pill pill-blue">● Menunggu</span>
+    <span class="pill pill-amber">● Dipanggil</span>
+    <span class="pill pill-green">● Selesai</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 5 — Panggilan -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="step-badge">5</div>
+    <div class="card-title">
+      <h3>Terima panggilan dari staff</h3>
+      <p>Notifikasi suara dan layar saat giliran tiba</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#fffbf0 0%,#fff8e6 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Phone -->
+        <rect x="105" y="15" width="90" height="125" rx="12" fill="#1a1a1a"/>
+        <rect x="109" y="19" width="82" height="117" rx="9" fill="#fff"/>
+        <!-- Notification slide down -->
+        <g style="animation:notif-slide 3s ease-in-out infinite">
+          <rect x="112" y="22" width="76" height="46" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="1.5"/>
+          <text x="150" y="37" text-anchor="middle" font-size="8" fill="#854F0B" font-weight="700">🔔 ANDA DIPANGGIL!</text>
+          <text x="150" y="49" text-anchor="middle" font-size="7" fill="#7a5e30">Segera menuju zona jemput</text>
+          <rect x="127" y="55" width="46" height="9" rx="4" fill="#EF9F27"/>
+          <text x="150" y="63" text-anchor="middle" font-size="6.5" fill="#fff" font-weight="700">Konfirmasi Hadir</text>
+        </g>
+        <!-- App screen below -->
+        <rect x="112" y="72" width="76" height="60" rx="4" fill="#f9f9f9"/>
+        <text x="150" y="90" text-anchor="middle" font-size="7" fill="#888">Status Antrian</text>
+        <rect x="120" y="94" width="60" height="16" rx="8" fill="#FAEEDA" stroke="#EF9F27" stroke-width="1"/>
+        <text x="150" y="106" text-anchor="middle" font-size="8" fill="#854F0B" font-weight="700">● DIPANGGIL</text>
+        <!-- Bell icon animated -->
+        <g transform="translate(220, 60)">
+          <circle cx="0" cy="0" r="26" fill="#FAEEDA" opacity="0.5" style="animation:wave-out 3s ease-out infinite"/>
+          <circle cx="0" cy="0" r="20" fill="#FAEEDA"/>
+          <g style="animation:bell-ring 3s ease infinite;transform-origin:0 -8px">
+            <path d="M0 -15 C-8 -15 -12 -8 -12 0 L-12 5 L12 5 L12 0 C12 -8 8 -15 0 -15Z" fill="#EF9F27"/>
+            <rect x="-6" y="5" width="12" height="4" rx="0" fill="#EF9F27"/>
+            <circle cx="0" cy="10" r="3.5" fill="#CC7A00"/>
+            <rect x="-2" y="-16" width="4" height="4" rx="2" fill="#EF9F27"/>
+          </g>
+        </g>
+        <!-- Sound waves -->
+        <path d="M246 55 Q255 60 246 65" stroke="#EF9F27" stroke-width="2" stroke-linecap="round" fill="none" style="animation:wave-out 3s ease-out infinite;animation-delay:0.2s"/>
+        <path d="M252 50 Q265 60 252 70" stroke="#EF9F27" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6" style="animation:wave-out 3s ease-out infinite;animation-delay:0.4s"/>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Aplikasi berbunyi notifikasi dan menampilkan <strong>"Anda Dipanggil!"</strong></li>
+    <li><span class="dot"></span>Status antrian berubah menjadi <span class="pill pill-amber" style="display:inline;font-size:11px">● Dipanggil</span></li>
+    <li><span class="dot"></span>Segera menuju <strong>zona penjemputan</strong> yang ditentukan koordinator</li>
+    <li><span class="dot"></span>Staff akan konfirmasi kehadiran Anda di titik jemput</li>
+  </ul>
+  <div class="tip tip-green">
+    <span class="tip-icon">🔔</span>
+    <span><strong>Suara aktif:</strong> Pastikan volume HP tidak silent. Izin notifikasi browser harus diberikan saat pertama install.</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 6 — Selesaikan -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.25s">
+  <div class="card-header">
+    <div class="step-badge">6</div>
+    <div class="card-title">
+      <h3>Selesaikan perjalanan</h3>
+      <p>Rekam trip setelah mengantar penumpang</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="background:linear-gradient(135deg,#f0fff4 0%,#e8fff0 100%)">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Road -->
+        <rect x="40" y="80" width="220" height="30" rx="4" fill="#e0e0e0"/>
+        <path d="M40 95 L260 95" stroke="#fff" stroke-width="3" stroke-dasharray="15 10"/>
+        <!-- Car animated driving -->
+        <g style="animation:car-drive 3s ease-in-out infinite">
+          <rect x="50" y="60" width="55" height="28" rx="6" fill="#CC1B1B"/>
+          <rect x="58" y="53" width="36" height="16" rx="4" fill="#CC1B1B" opacity="0.8"/>
+          <rect x="60" y="55" width="32" height="13" rx="2" fill="#99c6ff" opacity="0.7"/>
+          <circle cx="63" cy="90" r="7" fill="#333"/>
+          <circle cx="92" cy="90" r="7" fill="#333"/>
+          <circle cx="63" cy="90" r="3.5" fill="#888"/>
+          <circle cx="92" cy="90" r="3.5" fill="#888"/>
+          <!-- Passenger -->
+          <circle cx="82" cy="58" r="4" fill="#FFB347"/>
+        </g>
+        <!-- Destination marker -->
+        <g>
+          <rect x="210" y="42" width="3" height="40" fill="#639922"/>
+          <polygon points="213,42 213,60 228,51" fill="#639922"/>
+          <text x="218" y="55" font-size="7" fill="#fff" font-weight="600">TUJUAN</text>
+        </g>
+        <!-- Complete button -->
+        <g style="animation:check-bounce 3s ease infinite;animation-delay:1.5s">
+          <rect x="168" y="50" width="80" height="32" rx="10" fill="#25D366"/>
+          <text x="208" y="64" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">✓ Selesai</text>
+          <text x="208" y="76" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.8)">Complete Trip</text>
+        </g>
+        <!-- Stars -->
+        <g style="animation:stars-pop 3s ease infinite;animation-delay:2s">
+          <text x="155" y="32" font-size="14">⭐</text>
+          <text x="175" y="25" font-size="18">⭐</text>
+          <text x="198" y="30" font-size="14">⭐</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Setelah mengantar penumpang, kembali ke aplikasi</li>
+    <li><span class="dot"></span>Ketuk tombol <strong>Selesai / Complete Trip</strong></li>
+    <li><span class="dot"></span>Riwayat perjalanan otomatis tersimpan di menu <strong>Riwayat</strong></li>
+    <li><span class="dot"></span>Anda bisa langsung masuk antrian lagi untuk penjemputan berikutnya</li>
+  </ul>
+  <div class="tip tip-green">
+    <span class="tip-icon">📋</span>
+    <span><strong>Riwayat tercatat:</strong> Koordinator dapat memverifikasi semua perjalanan dari dashboard staff.</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- STEP 7 — Panic -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="card" style="animation-delay:0.3s">
+  <div class="card-header">
+    <div class="step-badge">7</div>
+    <div class="card-title">
+      <h3>Tombol darurat (Panic Button)</h3>
+      <p>Hanya gunakan dalam kondisi darurat nyata</p>
+    </div>
+  </div>
+
+  <div class="step-anim-wrap">
+    <div class="anim-scene" style="animation:panic-flash 3s ease-in-out infinite">
+      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background pulse rings -->
+        <circle cx="150" cy="75" r="35" fill="none" stroke="#E24B4A" stroke-width="2" style="animation:pulse-ring-danger 3s ease-out infinite"/>
+        <circle cx="150" cy="75" r="55" fill="none" stroke="#E24B4A" stroke-width="1" opacity="0.5" style="animation:pulse-ring-danger 3s ease-out infinite;animation-delay:0.5s"/>
+        <!-- Panic button -->
+        <circle cx="150" cy="75" r="42" fill="#CC1B1B" stroke="#fff" stroke-width="3"/>
+        <circle cx="150" cy="75" r="36" fill="#E24B4A"/>
+        <!-- Exclamation mark -->
+        <g style="animation:exclaim 3s ease infinite">
+          <rect x="145" y="54" width="10" height="26" rx="5" fill="#fff"/>
+          <circle cx="150" cy="89" r="5.5" fill="#fff"/>
+        </g>
+        <text x="150" y="120" text-anchor="middle" font-size="9" fill="#A32D2D" font-weight="700">DARURAT — Tekan &amp; Tahan</text>
+        <!-- Phone notification to coordinator -->
+        <g transform="translate(220,30)" style="animation:notif-slide 3s ease-in-out infinite;animation-delay:1s">
+          <rect x="-30" y="0" width="60" height="36" rx="8" fill="#1a1a1a"/>
+          <text x="0" y="14" text-anchor="middle" font-size="6.5" fill="#FF6B6B" font-weight="700">🚨 SINYAL DARURAT</text>
+          <text x="0" y="24" text-anchor="middle" font-size="6" fill="#ccc">Bobby — Makassar</text>
+          <text x="0" y="33" text-anchor="middle" font-size="6" fill="#ccc">Lokasi dikirim ✓</text>
+        </g>
+        <!-- Coordinator -->
+        <g transform="translate(58,50)">
+          <circle cx="0" cy="0" r="18" fill="#E6F1FB"/>
+          <text x="0" y="5" text-anchor="middle" font-size="16">👮</text>
+          <text x="0" y="26" text-anchor="middle" font-size="7" fill="#185FA5">Koordinator</text>
+        </g>
+        <path d="M82 68 L108 72" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+  </div>
+
+  <ul class="steps-list">
+    <li><span class="dot"></span>Tekan dan tahan tombol <span class="pill pill-red" style="display:inline;font-size:11px">● DARURAT</span> di halaman utama</li>
+    <li><span class="dot"></span>Sistem mengirim sinyal darurat + lokasi GPS ke koordinator secara instan</li>
+    <li><span class="dot"></span>Bantuan akan segera dikirimkan ke lokasi Anda</li>
+    <li><span class="dot"></span>Tombol cooldown 60 detik untuk mencegah pengiriman berulang</li>
+  </ul>
+  <div class="tip tip-amber">
+    <span class="tip-icon">⚠️</span>
+    <span><strong>Hanya untuk darurat nyata.</strong> Penyalahgunaan tombol ini akan tercatat dan dilaporkan ke manajemen.</span>
+  </div>
+</div>
+
+<!-- ─── FAQ ─────────────────────────────────────────── -->
+<div class="section-label" style="margin-top:28px">Masalah umum & solusi</div>
+
+<div class="faq-item">
+  <div class="q">❌ Tidak bisa login — NIK tidak ditemukan</div>
+  <div class="a">Pastikan NIK yang dimasukkan hanya angka dan sesuai data RIFIM. Hubungi koordinator untuk verifikasi NIK Anda di sistem.</div>
+</div>
+<div class="faq-item">
+  <div class="q">🔄 Tiba-tiba keluar dari aplikasi sendiri</div>
+  <div class="a">Akun digunakan di HP lain. Login ulang — sesi HP lain otomatis berakhir. Jangan bagikan akun ke driver lain.</div>
+</div>
+<div class="faq-item">
+  <div class="q">📍 Tombol "Masuk Antrian" tidak aktif / abu-abu</div>
+  <div class="a">Pastikan GPS HP aktif (mode Akurasi Tinggi) dan status Anda sudah Online. Anda harus berada dalam radius 2 km dari bandara.</div>
+</div>
+<div class="faq-item">
+  <div class="q">🔕 Tidak menerima notifikasi suara panggilan</div>
+  <div class="a">Pastikan volume HP tidak silent. Aktifkan izin notifikasi: Pengaturan → Aplikasi → Chrome → Notifikasi → Aktifkan.</div>
+</div>
+<div class="faq-item">
+  <div class="q">🌐 GPS tidak akurat atau tidak terdeteksi</div>
+  <div class="a">Aktifkan mode Akurasi Tinggi di pengaturan lokasi HP. Keluar dari dalam gedung jika sinyal lemah. Izinkan akses lokasi saat browser meminta.</div>
+</div>
+<div class="faq-item">
+  <div class="q">📶 Aplikasi error saat tidak ada internet</div>
+  <div class="a">Aplikasi dapat digunakan dalam mode terbatas tanpa internet. Koneksi diperlukan untuk masuk antrian dan update lokasi real-time.</div>
+</div>
+
+<!-- ─── Footer ─────────────────────────────────────── -->
+<div class="footer">
+  <img src="/rifim-logo.png" style="height:36px;object-fit:contain;margin-bottom:8px;opacity:0.7" alt="RIFIM" onerror="this.style.display='none'"/><br/>
+  <strong>PT. RIFIM INTERNATIONAL GEMILANG</strong><br/>
+  <span style="font-size:11px;color:#bbb">Panduan RADMS Driver App · Hubungi koordinator bandara Anda untuk bantuan</span>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function shareWA(e){
+  e.preventDefault();
+  var url = window.location.href;
+  var text = encodeURIComponent('Panduan lengkap penggunaan aplikasi RADMS Driver RIFIM Airport:\n\n' + url + '\n\nBuka di Chrome untuk install ke homescreen HP kamu.');
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+</script>
+</body>
+</html>
