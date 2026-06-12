@@ -10,10 +10,10 @@ export const AIRPORTS = {
     city: 'Jambi',
     province: 'Jambi',
     iata: 'DJB',
-    lat: -1.6381,
-    lng: 103.6442,
+    lat: -1.6318367703997263,
+    lng: 103.64383210805866,
     geofenceRadius: 2000,
-    zones: [{ id: 'Z1', name: 'Zona Kedatangan', lat: -1.6381, lng: 103.6442 }],
+    zones: [{ id: 'Z1', name: 'Zona Kedatangan', lat: -1.6318367703997263, lng: 103.64383210805866 }],
   },
   'ID Rifim Airport Batam': {
     id: 'ID Rifim Airport Batam',

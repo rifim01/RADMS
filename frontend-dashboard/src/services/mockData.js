@@ -125,8 +125,8 @@ export const AIRPORTS = [
     city: 'Jambi',
     province: 'Jambi',
     fullName: 'Bandara Sultan Thaha Syaifuddin Jambi',
-    lat: -1.636867558115533,
-    lng: 103.6442494672467,
+    lat: -1.6318367703997263,
+    lng: 103.64383210805866,
     radius: 500,
     tz: 'WIB',
     driversOnline: 8,
@@ -252,8 +252,8 @@ export const DRIVERS = [
   { id: 'drv-02', name: 'Budi Santoso', nik: '2171021234560002', phone: '081234567891', vehicle: 'Suzuki Ertiga', plateNumber: 'BP 5678 CD', airportId: 'ID Rifim Airport Batam', status: 'online', lastLat: 1.1230, lastLng: 104.1190, speed: 15, lastSeen: '2026-06-10T08:31:00', totalPickups: 245, rating: 4.6, joinDate: '2022-05-15' },
   { id: 'drv-03', name: 'Chandra Wijaya', nik: '2171031234560003', phone: '081234567892', vehicle: 'Daihatsu Xenia', plateNumber: 'BP 9012 EF', airportId: 'ID Rifim Airport Batam', status: 'offline', lastLat: 1.1215, lastLng: 104.1175, speed: 0, lastSeen: '2026-06-10T06:15:00', totalPickups: 178, rating: 4.5, joinDate: '2022-07-20' },
   // Jambi Airport
-  { id: 'drv-04', name: 'Deni Prasetyo', nik: '1571041234560004', phone: '081234567893', vehicle: 'Toyota Avanza', plateNumber: 'BH 1234 AB', airportId: 'ID Rifim Airport Jambi', status: 'online', lastLat: -1.6369, lastLng: 103.6442, speed: 0, lastSeen: '2026-06-10T08:32:00', totalPickups: 420, rating: 4.9, joinDate: '2021-11-05' },
-  { id: 'drv-05', name: 'Eko Wahyudi', nik: '1571051234560005', phone: '081234567894', vehicle: 'Honda Mobilio', plateNumber: 'BH 5678 CD', airportId: 'ID Rifim Airport Jambi', status: 'offline', lastLat: -1.6380, lastLng: 103.6455, speed: 0, lastSeen: '2026-06-10T07:00:00', totalPickups: 156, rating: 4.3, joinDate: '2023-01-18' },
+  { id: 'drv-04', name: 'Deni Prasetyo', nik: '1571041234560004', phone: '081234567893', vehicle: 'Toyota Avanza', plateNumber: 'BH 1234 AB', airportId: 'ID Rifim Airport Jambi', status: 'online', lastLat: -1.6318, lastLng: 103.6438, speed: 0, lastSeen: '2026-06-10T08:32:00', totalPickups: 420, rating: 4.9, joinDate: '2021-11-05' },
+  { id: 'drv-05', name: 'Eko Wahyudi', nik: '1571051234560005', phone: '081234567894', vehicle: 'Honda Mobilio', plateNumber: 'BH 5678 CD', airportId: 'ID Rifim Airport Jambi', status: 'offline', lastLat: -1.6325, lastLng: 103.6445, speed: 0, lastSeen: '2026-06-10T07:00:00', totalPickups: 156, rating: 4.3, joinDate: '2023-01-18' },
   // Balikpapan Airport
   { id: 'drv-06', name: 'Fajar Nugroho', nik: '6471061234560006', phone: '081234567895', vehicle: 'Toyota Calya', plateNumber: 'KT 1234 AB', airportId: 'ID Rifim Airport Balikpapan', status: 'online', lastLat: -1.2676, lastLng: 116.8942, speed: 20, lastSeen: '2026-06-10T08:33:00', totalPickups: 534, rating: 4.7, joinDate: '2021-06-12' },
   { id: 'drv-07', name: 'Gunawan Setiawan', nik: '6471071234560007', phone: '081234567896', vehicle: 'Suzuki APV', plateNumber: 'KT 5678 CD', airportId: 'ID Rifim Airport Balikpapan', status: 'online', lastLat: -1.2685, lastLng: 116.8952, speed: 0, lastSeen: '2026-06-10T08:34:00', totalPickups: 389, rating: 4.5, joinDate: '2021-09-20' },
