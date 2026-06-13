@@ -9,14 +9,14 @@ window.APP_CONFIG = {
   VERSION: '1.0.0',
 
   CABANG: [
-    { id: 'BTM-APT', nama: 'ID Rifim Airport Batam',        kota: 'BATAM',       bandara: 'HANG NADIM INTERNATIONAL AIRPORT' },
-    { id: 'JMB-APT', nama: 'ID Rifim Airport Jambi',        kota: 'JAMBI',       bandara: 'SULTAN THAHA SAIFUDDIN AIRPORT' },
-    { id: 'BPN-APT', nama: 'ID Rifim Airport Balikpapan',   kota: 'BALIKPAPAN',  bandara: 'SULTAN AJI MUHAMMAD SULAIMAN AIRPORT' },
-    { id: 'MDO-APT', nama: 'ID Rifim Airport Manado',       kota: 'MANADO',      bandara: 'SAM RATULANGI INTERNATIONAL AIRPORT' },
-    { id: 'PKU-APT', nama: 'ID Rifim Airport Pekanbaru',    kota: 'PEKANBARU',   bandara: 'SULTAN SYARIF KASIM II AIRPORT' },
-    { id: 'MKS-APT', nama: 'ID Rifim Airport Makassar',     kota: 'MAKASSAR',    bandara: 'SULTAN HASANUDDIN INTERNATIONAL AIRPORT' },
-    { id: 'BTM-OFF', nama: 'ID Rifim Batam',                kota: 'BATAM',       bandara: 'KANTOR' },
-    { id: 'JMB-OFF', nama: 'ID Rifim Jambi Luar',           kota: 'JAMBI',       bandara: 'KANTOR' }
+    { id: 'BTM-APT', nama: 'ID Rifim Airport Batam',        kota: 'BATAM',       bandara: 'HANG NADIM INTERNATIONAL AIRPORT',          lat:  1.1213, lng: 104.1186, radiusM: 1000 },
+    { id: 'JMB-APT', nama: 'ID Rifim Airport Jambi',        kota: 'JAMBI',       bandara: 'SULTAN THAHA SAIFUDDIN AIRPORT',            lat: -1.6382, lng: 103.6441, radiusM: 1000 },
+    { id: 'BPN-APT', nama: 'ID Rifim Airport Balikpapan',   kota: 'BALIKPAPAN',  bandara: 'SULTAN AJI MUHAMMAD SULAIMAN AIRPORT',      lat: -1.2683, lng: 116.8942, radiusM: 1000 },
+    { id: 'MDO-APT', nama: 'ID Rifim Airport Manado',       kota: 'MANADO',      bandara: 'SAM RATULANGI INTERNATIONAL AIRPORT',       lat:  1.5492, lng: 124.9260, radiusM: 1000 },
+    { id: 'PKU-APT', nama: 'ID Rifim Airport Pekanbaru',    kota: 'PEKANBARU',   bandara: 'SULTAN SYARIF KASIM II AIRPORT',            lat:  0.4608, lng: 101.4449, radiusM: 1000 },
+    { id: 'MKS-APT', nama: 'ID Rifim Airport Makassar',     kota: 'MAKASSAR',    bandara: 'SULTAN HASANUDDIN INTERNATIONAL AIRPORT',   lat: -5.0612, lng: 119.5546, radiusM: 1000 },
+    { id: 'BTM-OFF', nama: 'ID Rifim Batam',                kota: 'BATAM',       bandara: 'KANTOR',                                    lat:  1.1421, lng: 104.0195, radiusM: 500  },
+    { id: 'JMB-OFF', nama: 'ID Rifim Jambi Luar',           kota: 'JAMBI',       bandara: 'KANTOR',                                    lat: -1.6100, lng: 103.6100, radiusM: 500  }
   ],
 
   ROLES: {

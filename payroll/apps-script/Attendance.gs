@@ -8,7 +8,30 @@
  * method: manual | qr | gps
  */
 
-var ABSENSI_HEADERS = ['id','timestamp','tanggal','id_staff','nama','id_cabang','status','lat','lng','method'];
+var ABSENSI_HEADERS = ['id','timestamp','tanggal','id_staff','nama','id_cabang','status','lat','lng','method','jarak_meter'];
+
+// Koordinat pusat setiap cabang (sinkron dengan config.js)
+var CABANG_KOORDINAT = {
+  'BTM-APT': { lat:  1.1213, lng: 104.1186, radiusM: 1000 },
+  'JMB-APT': { lat: -1.6382, lng: 103.6441, radiusM: 1000 },
+  'BPN-APT': { lat: -1.2683, lng: 116.8942, radiusM: 1000 },
+  'MDO-APT': { lat:  1.5492, lng: 124.9260, radiusM: 1000 },
+  'PKU-APT': { lat:  0.4608, lng: 101.4449, radiusM: 1000 },
+  'MKS-APT': { lat: -5.0612, lng: 119.5546, radiusM: 1000 },
+  'BTM-OFF': { lat:  1.1421, lng: 104.0195, radiusM:  500 },
+  'JMB-OFF': { lat: -1.6100, lng: 103.6100, radiusM:  500 }
+};
+
+function _haversineM(lat1, lng1, lat2, lng2) {
+  var R  = 6371000; // radius bumi dalam meter
+  var d2r = Math.PI / 180;
+  var dLat = (lat2 - lat1) * d2r;
+  var dLng = (lng2 - lng1) * d2r;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * d2r) * Math.cos(lat2 * d2r) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 // ─── Add ──────────────────────────────────────────────────────────────────────
 
@@ -29,21 +52,45 @@ function addAbsensi(data, auth) {
     return { success: false, error: 'Sudah absen ' + data.status + ' hari ini' };
   }
 
+  var idCabang   = data.id_cabang || auth.idCabang;
+  var lat        = parseFloat(data.lat) || null;
+  var lng        = parseFloat(data.lng) || null;
+  var jarakMeter = null;
+  var diluarArea = false;
+
+  // Hitung jarak & validasi radius jika GPS dikirim
+  if (lat && lng && CABANG_KOORDINAT[idCabang]) {
+    var koord  = CABANG_KOORDINAT[idCabang];
+    jarakMeter = _haversineM(lat, lng, koord.lat, koord.lng);
+    diluarArea = jarakMeter > koord.radiusM;
+  }
+
+  // Blokir jika GPS dikirim tapi di luar radius (method === 'gps')
+  if (data.method === 'gps' && diluarArea) {
+    return {
+      success:    false,
+      error:      'Lokasi terlalu jauh dari area kerja (' + jarakMeter + ' m). Maksimal ' + CABANG_KOORDINAT[idCabang].radiusM + ' m.',
+      jarak:      jarakMeter,
+      diluarArea: true
+    };
+  }
+
   var row = {
-    id:        generateId(),
-    timestamp: formatDateTime(now),
-    tanggal:   today,
-    id_staff:  data.id_staff,
-    nama:      data.nama || '',
-    id_cabang: data.id_cabang || auth.idCabang,
-    status:    data.status,
-    lat:       data.lat || '',
-    lng:       data.lng || '',
-    method:    data.method || 'manual'
+    id:          generateId(),
+    timestamp:   formatDateTime(now),
+    tanggal:     today,
+    id_staff:    data.id_staff,
+    nama:        data.nama || '',
+    id_cabang:   idCabang,
+    status:      data.status,
+    lat:         lat || '',
+    lng:         lng || '',
+    method:      data.method || 'manual',
+    jarak_meter: jarakMeter !== null ? jarakMeter : ''
   };
 
   appendRow(PSHEET.ABSENSI, row, ABSENSI_HEADERS);
-  return { success: true, data: row };
+  return { success: true, data: row, jarak: jarakMeter, diluarArea: diluarArea };
 }
 
 // ─── Bulk Hadir ───────────────────────────────────────────────────────────────
