@@ -418,18 +418,23 @@
       <div class="divider">MASUK KE AKUN ANDA</div>
 
       <!-- Form -->
-      <form id="loginForm" onsubmit="handleLogin(event)">
+      <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+        <!-- Dummy fields: mencegah Chrome autofill ke field asli -->
+        <input type="text" name="_dummy_email" style="display:none" tabindex="-1" autocomplete="username">
+        <input type="password" name="_dummy_pw" style="display:none" tabindex="-1" autocomplete="current-password">
         <div class="form-group">
           <label class="form-label">📧 Email Staff</label>
-          <input type="email" id="loginEmail" class="form-control"
+          <input type="text" id="loginEmail" class="form-control"
             placeholder="email@rifimgemilang.com"
-            required autocomplete="off">
+            required autocomplete="nope" readonly
+            onfocus="this.removeAttribute('readonly')">
         </div>
         <div class="form-group">
           <label class="form-label">🔑 Password Akses</label>
           <input type="password" id="loginPassword" class="form-control"
             placeholder="Masukkan password"
-            required autocomplete="off">
+            required autocomplete="new-password" readonly
+            onfocus="this.removeAttribute('readonly')">
         </div>
 
         <div id="loginError"></div>
@@ -524,6 +529,16 @@
       return res.json();
     }
   };
+
+  // Paksa kosongkan field setelah browser selesai autofill
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const em = document.getElementById('loginEmail');
+      const pw = document.getElementById('loginPassword');
+      if (em) { em.value = ''; em.setAttribute('readonly', true); }
+      if (pw) { pw.value = ''; pw.setAttribute('readonly', true); }
+    }, 150);
+  });
 </script>
 </body>
 </html>
