@@ -188,24 +188,44 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 }
 
 .sidebar-logo {
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.15);
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  flex-shrink: 0;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .sidebar-logo .logo-text {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 900;
   color: var(--white);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
+  line-height: 1.1;
 }
 
 .sidebar-logo .logo-sub {
-  font-size: 9px;
-  color: rgba(255,255,255,.7);
-  letter-spacing: 1.5px;
+  font-size: 8.5px;
+  color: rgba(255,255,255,.55);
+  letter-spacing: 0.5px;
   margin-top: 2px;
   display: block;
+  font-weight: 400;
 }
 
 .sidebar-nav { flex: 1; padding: 12px 0; }

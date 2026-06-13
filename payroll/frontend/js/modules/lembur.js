@@ -135,6 +135,13 @@ const Lembur = (() => {
     hitungPreview();
   }
 
+  function tarifGolongan(gapok) {
+    const g = Number(gapok);
+    if (g <= 2600000) return 11500;
+    if (g <= 2850000) return 13000;
+    return 14500;
+  }
+
   function hitungPreview() {
     const gapok    = Number(document.getElementById('lbrGapok')?.value || 0);
     const jamMasuk = document.getElementById('lbrJamMasuk')?.value || '08:00';
@@ -144,7 +151,7 @@ const Lembur = (() => {
     const durasi = toMin(jamKeluar) - toMin(jamMasuk);
     const lembur = Math.max(0, durasi - 9 * 60);
     const jamLbr = lembur / 60;
-    const tarif  = gapok / 173;
+    const tarif  = tarifGolongan(gapok);
     const total  = jamLbr * tarif;
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };

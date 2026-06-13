@@ -32,6 +32,14 @@ var DETAIL_HEADERS = [
 var BPJS_NOMINAL  = 55000;
 var DATA_NOMINAL  = 100000;
 
+// Tarif lembur per jam berdasarkan golongan gaji (dari data Excel perusahaan)
+function _tarifLemburGolongan(gapok) {
+  var g = Number(gapok);
+  if (g <= 2600000) return 11500;  // Golongan 1
+  if (g <= 2850000) return 13000;  // Golongan 2
+  return 14500;                     // Golongan 3
+}
+
 // ─── Generate Payroll ────────────────────────────────────────────────────────
 
 function generatePayroll(periode, idCabang, auth) {
@@ -108,7 +116,7 @@ function _hitungPayrollStaff(payrollId, periode, staff, idCabang) {
 
   // Hitung hari alpha
   var absensi      = hitungAbsensiPeriode(staff.id, periode);
-  var potonganAlpha = (gapok / 26) * absensi.hariAlpha;
+  var potonganAlpha = (gapok / 30) * absensi.hariAlpha;
 
   var gajiKotor   = gapok + BPJS_NOMINAL + DATA_NOMINAL + totalLembur;
   var totalPotong = totalKasbon + potonganAlpha;
@@ -242,7 +250,7 @@ function addLembur(data, auth) {
   if (jamLembur <= 0)       return { success: false, error: 'Tidak ada jam lembur' };
 
   var gapok        = Number(data.gapok) || 0;
-  var tarifLembur  = gapok / 173; // standar Depnaker: gapok / 173 per jam
+  var tarifLembur  = _tarifLemburGolongan(gapok);
   var totalLembur  = (jamLembur / 60) * tarifLembur;
 
   // Ambil periode dari tanggal
