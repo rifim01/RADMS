@@ -162,16 +162,16 @@ function AppRoutes() {
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
 
-  // Check if first load or returning user
+  // Splash hanya sekali per device (localStorage), bukan per tab (sessionStorage)
   useEffect(() => {
-    const hasSeenSplash = sessionStorage.getItem('radms_splash_seen')
+    const hasSeenSplash = localStorage.getItem('radms_splash_seen')
     if (hasSeenSplash) {
       setShowSplash(false)
     }
   }, [])
 
   const handleSplashComplete = () => {
-    sessionStorage.setItem('radms_splash_seen', '1')
+    localStorage.setItem('radms_splash_seen', '1')
     setShowSplash(false)
     unlockAudio()
     if (Notification.permission === 'default') {

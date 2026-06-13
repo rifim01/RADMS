@@ -38,7 +38,7 @@ export default function SplashScreen({ onComplete }) {
       {/* Logo */}
       <div
         className={`relative z-10 flex flex-col items-center transition-all duration-700 ${
-          phase === 'logo' ? 'opacity-0 scale-50' : 'opacity-100 scale-100'
+          phase === 'fade' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'
         }`}
       >
         {/* RIFIM Logo: RI box + FIM outside */}
