@@ -3,6 +3,8 @@
    Tema: Merah #CC0000 · Putih #FFFFFF · Kuning #FFC107
    ═══════════════════════════════════════════════════════════ */
 
+.hidden { display: none !important; }
+
 :root {
   --red:        #CC0000;
   --red-dark:   #990000;

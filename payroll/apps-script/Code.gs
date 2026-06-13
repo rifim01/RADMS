@@ -273,56 +273,60 @@ function syncStaffFromMaster(auth) {
   }
 
   try {
-    var ss    = SpreadsheetApp.openById(SS_MASTER_STAFF);
-    var sheet = ss.getSheets()[0]; // Ambil sheet pertama
+    var ss = SpreadsheetApp.openById(SS_MASTER_STAFF);
+    // Cari sheet gid=1974631595, fallback ke sheet pertama
+    var sheet = ss.getSheets().filter(function(s) { return s.getSheetId() === 1974631595; })[0]
+                || ss.getSheets()[0];
     var data  = sheet.getDataRange().getValues();
     if (data.length < 2) return { success: false, error: 'Sheet master kosong' };
 
-    var headers    = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
-    var staffSheet = getSheet(PSHEET.STAFF);
-    var existing   = sheetToObjects(PSHEET.STAFF);
+    var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
+    var existing = sheetToObjects(PSHEET.STAFF);
     var existingEmails = existing.map(function(s) { return String(s.email).toLowerCase(); });
 
     var added = 0, skipped = 0;
+    var DEFAULT_PW = 'Rifim1234';
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
+      if (row.every(function(c) { return !c; })) continue; // skip baris kosong
+
       var obj = {};
       headers.forEach(function(h, idx) { obj[h] = row[idx]; });
 
-      // Mapping kolom fleksibel (nama kolom bisa bervariasi di sheet master)
-      var nama     = obj['nama'] || obj['nama lengkap'] || obj['name'] || '';
-      var email    = obj['email'] || '';
-      var jabatan  = obj['jabatan'] || obj['posisi'] || obj['position'] || '';
-      var cabang   = obj['id cabang'] || obj['cabang'] || obj['branch'] || '';
-      var gapok    = obj['gaji pokok'] || obj['gapok'] || obj['salary'] || 0;
-      var telp     = obj['no telp'] || obj['telepon'] || obj['phone'] || '';
-      var tglGabung = obj['tanggal bergabung'] || obj['tgl bergabung'] || formatDate();
+      // Mapping kolom fleksibel
+      var nama    = obj['nama'] || obj['nama lengkap'] || obj['name'] || '';
+      var email   = obj['email'] || '';
+      var jabatan = obj['jabatan'] || obj['posisi'] || obj['position'] || '';
+      var cabang  = obj['id_cabang'] || obj['id cabang'] || obj['cabang'] || obj['branch'] || '';
+      var gapok   = obj['gapok'] || obj['gaji pokok'] || obj['salary'] || 0;
+      var telp    = obj['nomor_hp'] || obj['no hp'] || obj['no telp'] || obj['telepon'] || obj['phone'] || '';
+      var role    = obj['role'] || 'STAFF';
 
       if (!nama || !email) { skipped++; continue; }
-      if (existingEmails.indexOf(String(email).toLowerCase()) !== -1) { skipped++; continue; }
+      if (existingEmails.indexOf(String(email).trim().toLowerCase()) !== -1) { skipped++; continue; }
 
       var newStaff = {
-        id:                generateId(),
-        nama:              String(nama).trim(),
-        email:             String(email).trim().toLowerCase(),
-        jabatan:           String(jabatan).trim(),
-        id_cabang:         String(cabang).trim(),
-        gapok:             Number(String(gapok).replace(/[^0-9]/g,'')) || 0,
-        no_telp:           String(telp).trim(),
-        tanggal_bergabung: String(tglGabung),
-        status:            'AKTIF',
-        role:              'STAFF',
-        created_at:        formatDateTime()
+        id:            generateId(),
+        nama:          String(nama).trim(),
+        email:         String(email).trim().toLowerCase(),
+        password_hash: _prHashPw(DEFAULT_PW),
+        role:          String(role).trim().toUpperCase() || 'STAFF',
+        id_cabang:     String(cabang).trim(),
+        jabatan:       String(jabatan).trim(),
+        gapok:         Number(String(gapok).replace(/[^0-9]/g,'')) || 0,
+        nomor_hp:      String(telp).trim(),
+        foto:          '',
+        status:        'AKTIF',
+        created_at:    formatDateTime()
       };
 
-      var STAFF_H = ['id','nama','email','jabatan','id_cabang','gapok','no_telp','tanggal_bergabung','status','role','created_at'];
-      appendRow(PSHEET.STAFF, newStaff, STAFF_H);
-      existingEmails.push(String(email).toLowerCase());
+      appendRow(PSHEET.STAFF, newStaff, STAFF_HEADERS);
+      existingEmails.push(String(email).trim().toLowerCase());
       added++;
     }
 
-    return { success: true, message: 'Sync selesai: ' + added + ' staff ditambahkan, ' + skipped + ' dilewati' };
+    return { success: true, message: 'Sync selesai: ' + added + ' staff ditambahkan, ' + skipped + ' dilewati. Password default: ' + DEFAULT_PW };
   } catch (e) {
     return { success: false, error: 'Gagal sync: ' + e.message };
   }
