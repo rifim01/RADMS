@@ -38,6 +38,12 @@
     <div class="nav-item" data-page="payruns" onclick="navigateTo('payruns')">
       <span class="nav-icon">💰</span> Payruns
     </div>
+    <div class="nav-item" data-page="lembur" onclick="navigateTo('lembur')">
+      <span class="nav-icon">⏰</span> Lembur
+    </div>
+    <div class="nav-item" data-page="kasbon" onclick="navigateTo('kasbon')">
+      <span class="nav-icon">💸</span> Kasbon
+    </div>
 
     <div class="nav-section">TOOLS</div>
     <div class="nav-item" data-page="idcard" onclick="navigateTo('idcard')">
@@ -330,6 +336,88 @@
       </div>
     </div>
 
+    <!-- ════════ LEMBUR ════════ -->
+    <div class="page-section" id="page-lembur">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Manajemen Lembur</div>
+          <div class="section-sub">Input & approve lembur karyawan</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline" onclick="Lembur.load()">↺ Refresh</button>
+          <button class="btn btn-primary" onclick="Lembur.showForm()" data-role-min="ADMIN_CABANG">+ Tambah Lembur</button>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <select id="lbrCabang" class="form-control" style="width:220px"></select>
+        <select id="lbrPeriode" class="form-control" style="width:160px"></select>
+        <button class="btn btn-primary" onclick="Lembur.filter()">🔍 Filter</button>
+      </div>
+
+      <!-- Info box aturan lembur -->
+      <div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+        <strong>⏰ Aturan Lembur:</strong>
+        Jam kerja normal = 9 jam · Tarif = Gapok ÷ 173 per jam · Maksimal 12 jam/hari ·
+        Lembur full day = Gapok ÷ 26
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Nama / Cabang</th><th>Jam Kerja</th>
+              <th>Jam Lembur</th><th>Tarif</th><th>Total</th>
+              <th>Keterangan</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="lemburTableBody">
+              <tr><td colspan="9"><div class="skeleton" style="height:80px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ KASBON ════════ -->
+    <div class="page-section" id="page-kasbon">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Kasbon / Advance</div>
+          <div class="section-sub">Kelola pinjaman & kasbon karyawan</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline" onclick="Kasbon.load()">↺ Refresh</button>
+          <button class="btn btn-primary" onclick="Kasbon.showForm()" data-role-min="ADMIN_CABANG">+ Tambah Kasbon</button>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <select id="ksbCabang" class="form-control" style="width:220px"></select>
+      </div>
+
+      <!-- Info box aturan kasbon -->
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+        <strong>💸 Aturan Kasbon:</strong>
+        Maksimal kasbon = 1× gaji pokok ·
+        Sistem otomatis menolak jika kasbon melebihi gapok ·
+        Kasbon dipotong pada bulan yang dipilih
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Nama</th><th>Cabang</th>
+              <th>Jumlah</th><th>Keterangan</th><th>Periode Potong</th><th>Status</th>
+            </tr></thead>
+            <tbody id="kasbonTableBody">
+              <tr><td colspan="7"><div class="skeleton" style="height:80px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ════════ ID CARD ════════ -->
     <div class="page-section" id="page-idcard">
       <div class="section-header">
@@ -443,6 +531,8 @@
 <script src="js/modules/staff.js"></script>
 <script src="js/modules/attendance.js"></script>
 <script src="js/modules/payroll.js"></script>
+<script src="js/modules/lembur.js"></script>
+<script src="js/modules/kasbon.js"></script>
 <script src="js/modules/leave.js"></script>
 <script src="js/modules/idcard.js"></script>
 <script src="js/modules/report.js"></script>

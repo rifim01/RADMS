@@ -25,7 +25,7 @@ const Dashboard = (() => {
 
   function render(d) {
     const w = d.widgets;
-    setWidget('statTotalStaff',    w.totalStaff,   formatRp);
+    setWidget('statTotalStaff',    w.totalStaff);
     setWidget('statHadir',         w.hadirHariIni);
     setWidget('statAlpha',         w.alphaHariIni);
     setWidget('statCuti',          w.cutiHariIni);
@@ -43,16 +43,24 @@ const Dashboard = (() => {
 
   function renderGrafikKehadiran(data) {
     const container = document.getElementById('chartKehadiran');
-    if (!container || !data.length) return;
+    if (!container) return;
+
+    const allZero = data.every(d => !d.hadir);
+    if (!data.length || allZero) {
+      container.innerHTML = `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px">
+        <div style="text-align:center"><div style="font-size:28px;margin-bottom:8px">📋</div>Belum ada data absensi</div></div>`;
+      return;
+    }
 
     const max = Math.max(...data.map(d => d.total || 1), 1);
     container.innerHTML = `<div class="chart-bars">` +
       data.map(d => {
-        const pct = Math.round((d.hadir / max) * 100);
+        const pct = Math.max(4, Math.round((d.hadir / max) * 100));
         const label = d.tanggal ? d.tanggal.substring(5) : '';
         return `<div class="chart-bar-wrap">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;text-align:center">${d.hadir}</div>
           <div style="flex:1;display:flex;align-items:flex-end">
-            <div class="chart-bar red" style="height:${pct}%;width:100%" title="${d.hadir}/${d.total}"></div>
+            <div class="chart-bar red" style="height:${pct}%;width:100%" title="Hadir: ${d.hadir}/${d.total}"></div>
           </div>
           <div class="chart-label">${label}</div>
         </div>`;
@@ -61,17 +69,25 @@ const Dashboard = (() => {
 
   function renderGrafikPayroll(data) {
     const container = document.getElementById('chartPayroll');
-    if (!container || !data.length) return;
+    if (!container) return;
+
+    const allZero = data.every(d => !d.total);
+    if (!data.length || allZero) {
+      container.innerHTML = `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px">
+        <div style="text-align:center"><div style="font-size:28px;margin-bottom:8px">💰</div>Belum ada data payroll</div></div>`;
+      return;
+    }
 
     const max = Math.max(...data.map(d => d.total || 1), 1);
     container.innerHTML = `<div class="chart-bars">` +
       data.map(d => {
-        const pct = Math.round((d.total / max) * 100);
+        const pct = Math.max(4, Math.round((d.total / max) * 100));
+        const shortLabel = d.periode ? d.periode.substring(2, 7).replace('-', '/') : '';
         return `<div class="chart-bar-wrap">
           <div style="flex:1;display:flex;align-items:flex-end">
             <div class="chart-bar yellow" style="height:${pct}%;width:100%" title="${formatRp(d.total)}"></div>
           </div>
-          <div class="chart-label">${formatPeriode(d.periode)}</div>
+          <div class="chart-label">${shortLabel}</div>
         </div>`;
       }).join('') + `</div>`;
   }

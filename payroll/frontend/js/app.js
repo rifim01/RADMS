@@ -120,8 +120,9 @@ const PAGE_MODULES = {
   dashboard:  () => Dashboard.load(),
   staff:      () => Staff.load(),
   attendance: () => Attendance.load(),
-  payroll:    () => Payroll.load(),
   payruns:    () => Payruns.load(),
+  lembur:     () => Lembur.load(),
+  kasbon:     () => Kasbon.load(),
   leave:      () => Leave.load(),
   idcard:     () => IDCard.load(),
   report:     () => Report.load()
@@ -141,8 +142,9 @@ function navigateTo(page) {
     dashboard:  'Dashboard',
     staff:      'Manajemen Staff',
     attendance: 'Absensi',
-    payroll:    'Payroll',
-    payruns:    'Payruns',
+    payruns:    'Payruns — Penggajian',
+    lembur:     'Lembur',
+    kasbon:     'Kasbon',
     leave:      'Cuti & Izin',
     idcard:     'ID Card Generator',
     report:     'Laporan'
