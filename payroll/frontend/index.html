@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#CC0000">
+  <title>RIFIM Payroll — Login</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .login-page { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-text">RIFIM</div>
+        <div class="logo-sub">PAYROLL & HR SYSTEM</div>
+      </div>
+      <h2 class="login-title">Selamat Datang</h2>
+      <p class="login-sub">Masuk ke sistem manajemen payroll</p>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="loginEmail" class="form-control"
+            placeholder="email@rifimgemilang.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="loginPassword" class="form-control"
+            placeholder="Password" required autocomplete="current-password">
+        </div>
+        <div id="loginError" style="color:#CC0000;font-size:13px;margin-bottom:12px;display:none"></div>
+        <button type="submit" id="loginBtn" class="btn btn-primary btn-full btn-lg">
+          Masuk
+        </button>
+      </form>
+
+      <p style="text-align:center;margin-top:20px;font-size:12px;color:#aaa">
+        PT Rifim Gemilang · Payroll System v1.0
+      </p>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <div id="loadingOverlay" class="loading-overlay" style="display:none">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Jika sudah login, redirect ke dashboard
+    if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    function toast(msg, type) {
+      const icons = { success: '✅', error: '❌', warning: '⚠️' };
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('loginError');
+      const email = document.getElementById('loginEmail').value;
+      const pw    = document.getElementById('loginPassword').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Masuk...';
+      errEl.style.display = 'none';
+
+      try {
+        await Auth.login(email, pw);
+        toast('Login berhasil!', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 800);
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+      }
+    }
+
+    // Stub API.login untuk halaman login (sebelum api.js dimuat penuh)
+    const API = {
+      login: async (email, pw) => {
+        const url = APP_CONFIG.GAS_URL;
+        if (!url || url.includes('GANTI')) throw new Error('URL Apps Script belum dikonfigurasi di config.js');
+        const res = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'login', email, password: pw }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        return res.json();
+      }
+    };
+  </script>
+</body>
+</html>

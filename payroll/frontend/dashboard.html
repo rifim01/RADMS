@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#CC0000">
+  <title>RIFIM Payroll — Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">RIFIM</div>
+    <span class="logo-sub">PAYROLL & HR SYSTEM</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">UTAMA</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+
+    <div class="nav-section">HR MANAGEMENT</div>
+    <div class="nav-item" data-page="staff" onclick="navigateTo('staff')">
+      <span class="nav-icon">👥</span> Staff
+    </div>
+    <div class="nav-item" data-page="attendance" onclick="navigateTo('attendance')">
+      <span class="nav-icon">📋</span> Absensi
+    </div>
+    <div class="nav-item" data-page="leave" onclick="navigateTo('leave')">
+      <span class="nav-icon">🏖️</span> Cuti & Izin
+    </div>
+
+    <div class="nav-section">PAYROLL</div>
+    <div class="nav-item" data-page="payruns" onclick="navigateTo('payruns')">
+      <span class="nav-icon">💰</span> Payruns
+    </div>
+
+    <div class="nav-section">TOOLS</div>
+    <div class="nav-item" data-page="idcard" onclick="navigateTo('idcard')">
+      <span class="nav-icon">🪪</span> ID Card
+    </div>
+    <div class="nav-item" data-page="report" onclick="navigateTo('report')">
+      <span class="nav-icon">📈</span> Laporan
+    </div>
+  </nav>
+
+  <div class="sidebar-user" id="userInfo">
+    <div class="user-avatar">?</div>
+    <div><div class="user-name">Loading...</div><div class="user-role">-</div></div>
+    <button class="btn-logout" id="btnLogout" title="Logout">⏻</button>
+  </div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ══════════ MAIN CONTENT ══════════ -->
+<div class="main-content">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="btn-menu" id="btnMenuToggle">☰</button>
+    <div class="top-bar-title" id="pageTitle">Dashboard</div>
+    <div class="live-clock" id="liveClock"></div>
+    <span class="role-badge" id="roleBadge">-</span>
+  </div>
+
+  <!-- Page Content -->
+  <div class="page-content">
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <div class="page-section active" id="page-dashboard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Dashboard</div>
+          <div class="section-sub">Ringkasan operasional hari ini</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">👥</div>
+          <div><div class="stat-value" id="statTotalStaff">-</div><div class="stat-label">Total Staff</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div><div class="stat-value" id="statHadir">-</div><div class="stat-label">Hadir Hari Ini</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">❌</div>
+          <div><div class="stat-value" id="statAlpha">-</div><div class="stat-label">Alpha</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow">🏖️</div>
+          <div><div class="stat-value" id="statCuti">-</div><div class="stat-label">Cuti/Izin</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">💰</div>
+          <div><div class="stat-value" id="statPayroll" style="font-size:16px">-</div><div class="stat-label">Payroll Bulan Ini</div></div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📊 Kehadiran 7 Hari</span>
+          </div>
+          <div class="card-body">
+            <div id="chartKehadiran" class="chart-container"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">💰 Payroll 6 Bulan</span>
+          </div>
+          <div class="card-body">
+            <div id="chartPayroll" class="chart-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel Cabang -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏢 Status Per Cabang</span>
+          <button class="btn btn-sm btn-outline" onclick="Dashboard.load()">Refresh</button>
+        </div>
+        <div class="card-body" id="tabelCabang">
+          <div class="skeleton" style="height:120px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ STAFF ════════ -->
+    <div class="page-section" id="page-staff">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Manajemen Staff</div>
+          <div class="section-sub">Total: <strong id="statStaffCount">-</strong> staff aktif</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline" onclick="Staff.load()">↺ Refresh</button>
+          <button class="btn btn-primary" onclick="Staff.showForm()" data-role-min="ADMIN_CABANG">+ Tambah Staff</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="filter-bar" style="margin:0;flex:1">
+            <div class="search-box" style="min-width:240px">
+              <input id="staffSearch" placeholder="Cari nama, email, jabatan..."
+                oninput="filterTable('staffSearch','staffTable')">
+            </div>
+            <select class="form-control" style="width:auto" id="staffCabangFilter"
+              onchange="Staff.load()">
+              <option value="">Semua Cabang</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="staffTable">
+            <thead><tr>
+              <th>Nama / Email</th><th>Jabatan</th><th>Cabang</th>
+              <th>Gaji Pokok</th><th>No. HP</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="staffTableBody">
+              <tr><td colspan="7"><div class="skeleton" style="height:80px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ ABSENSI ════════ -->
+    <div class="page-section" id="page-attendance">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Absensi Karyawan</div>
+          <div class="section-sub">Monitor kehadiran harian per cabang</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-yellow" onclick="Attendance.bulkHadir()" data-role-min="ADMIN_CABANG">
+            ✓ Tandai Semua Hadir
+          </button>
+          <button class="btn btn-outline" onclick="Attendance.showAddForm()" data-role-min="ADMIN_CABANG">
+            + Manual
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat bar -->
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-icon blue">👥</div>
+          <div><div class="stat-value" id="absStatTotal">-</div><div class="stat-label">Total Staff</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div><div class="stat-value" id="absStatHadir">-</div><div class="stat-label">Hadir</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">❌</div>
+          <div><div class="stat-value" id="absStatAlpha">-</div><div class="stat-label">Alpha</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow">🚪</div>
+          <div><div class="stat-value" id="absStatPulang">-</div><div class="stat-label">Sudah Pulang</div></div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-bar mb-3">
+        <select id="absCabang" class="form-control" style="width:220px"></select>
+        <input type="date" id="absDate" class="form-control" style="width:160px">
+        <button class="btn btn-primary" onclick="Attendance.search()">🔍 Cari</button>
+      </div>
+
+      <!-- Status Table -->
+      <div class="card mb-3">
+        <div class="card-header"><span class="card-title">Status Kehadiran Hari Ini</span></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Nama</th><th>Jabatan</th><th>Check In</th><th>Check Out</th></tr></thead>
+            <tbody id="absStatusTable">
+              <tr><td colspan="4"><div class="skeleton" style="height:60px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Log Absensi -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Log Absensi</span></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Tanggal</th><th>Nama</th><th>Cabang</th><th>Status</th><th>Metode</th><th>Waktu</th>
+            </tr></thead>
+            <tbody id="absListBody">
+              <tr><td colspan="6"><div class="skeleton" style="height:60px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ CUTI ════════ -->
+    <div class="page-section" id="page-leave">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Cuti & Izin</div>
+          <div class="section-sub">Kelola permohonan cuti karyawan</div>
+        </div>
+        <button class="btn btn-primary" onclick="Leave.showForm()">+ Ajukan Cuti</button>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <select id="cutiCabang" class="form-control" style="width:220px"></select>
+        <select id="cutiStatus" class="form-control" style="width:140px">
+          <option value="">Semua Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+        <button class="btn btn-primary" onclick="Leave.filter()">🔍 Filter</button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th>
+              <th>Hari</th><th>Keterangan</th><th>Status</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="cutiTableBody">
+              <tr><td colspan="8"><div class="skeleton" style="height:80px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ PAYRUNS ════════ -->
+    <div class="page-section" id="page-payruns">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Payruns — Penggajian Bulanan</div>
+          <div class="section-sub">Generate & kelola payroll per cabang per periode</div>
+        </div>
+      </div>
+
+      <!-- Generate Form -->
+      <div class="card mb-4" data-role-min="ADMIN_CABANG">
+        <div class="card-header"><span class="card-title">⚡ Generate Payroll Baru</span></div>
+        <div class="card-body">
+          <div class="d-flex gap-3 align-center" style="flex-wrap:wrap">
+            <div class="form-group" style="margin:0;min-width:180px">
+              <label class="form-label">Cabang</label>
+              <select id="prCabang" class="form-control"></select>
+            </div>
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">Periode</label>
+              <select id="prPeriode" class="form-control"></select>
+            </div>
+            <div style="padding-top:20px">
+              <button class="btn btn-primary" onclick="Payruns.generate()">
+                💰 Generate Payroll
+              </button>
+            </div>
+          </div>
+          <p class="text-muted mt-2" style="font-size:12px">
+            ⚠️ Sistem akan otomatis menghitung gapok, lembur, kasbon, dan potongan alpha dari data absensi.
+          </p>
+        </div>
+      </div>
+
+      <!-- Riwayat -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📜 Riwayat Payroll</span>
+          <button class="btn btn-sm btn-outline" onclick="Payruns.load()">↺ Refresh</button>
+        </div>
+        <div class="card-body" id="payrollRunList">
+          <div class="skeleton" style="height:100px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ ID CARD ════════ -->
+    <div class="page-section" id="page-idcard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">ID Card Generator</div>
+          <div class="section-sub">Generate kartu identitas karyawan</div>
+        </div>
+        <button class="btn btn-yellow" onclick="IDCard.generateAll()">⚡ Generate Semua</button>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <select id="idcCabang" class="form-control" style="width:240px"
+          onchange="IDCard.filterByCabang()"></select>
+        <div class="search-box">
+          <input id="idcSearch" placeholder="Cari nama staff..."
+            oninput="IDCard.filterByCabang()">
+        </div>
+      </div>
+
+      <div id="idcGrid">
+        <div class="skeleton" style="height:200px;border-radius:12px"></div>
+      </div>
+    </div>
+
+    <!-- ════════ LAPORAN ════════ -->
+    <div class="page-section" id="page-report">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Laporan</div>
+          <div class="section-sub">Generate dan export laporan sistem</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex gap-3 align-center" style="flex-wrap:wrap">
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">Jenis Laporan</label>
+              <select id="rptType" class="form-control">
+                <option value="payroll">Payroll</option>
+                <option value="attendance">Absensi</option>
+                <option value="staff">Data Staff</option>
+                <option value="cuti">Cuti</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;min-width:200px">
+              <label class="form-label">Cabang</label>
+              <select id="rptCabang" class="form-control"></select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Dari</label>
+              <input type="date" id="rptStart" class="form-control">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Sampai</label>
+              <input type="date" id="rptEnd" class="form-control">
+            </div>
+            <div style="padding-top:20px">
+              <button class="btn btn-primary" onclick="Report.generate()">📊 Generate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body" id="reportOutput">
+          <div class="empty-state">
+            <div class="empty-icon">📈</div>
+            <div class="empty-text">Pilih filter dan klik Generate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main-content -->
+
+<!-- ══════════ BOTTOM NAV (MOBILE) ══════════ -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <div class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+    </div>
+    <div class="bottom-nav-item" data-page="staff" onclick="navigateTo('staff')">
+      <span class="nav-icon">👥</span><span>Staff</span>
+    </div>
+    <div class="bottom-nav-item" data-page="attendance" onclick="navigateTo('attendance')">
+      <span class="nav-icon">📋</span><span>Absensi</span>
+    </div>
+    <div class="bottom-nav-item" data-page="payruns" onclick="navigateTo('payruns')">
+      <span class="nav-icon">💰</span><span>Payroll</span>
+    </div>
+    <div class="bottom-nav-item" data-page="report" onclick="navigateTo('report')">
+      <span class="nav-icon">📈</span><span>Laporan</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════ GLOBAL UI ══════════ -->
+<div id="toastContainer" class="toast-container"></div>
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="spinner"></div>
+</div>
+
+<!-- ══════════ SCRIPTS ══════════ -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/modules/dashboard.js"></script>
+<script src="js/modules/staff.js"></script>
+<script src="js/modules/attendance.js"></script>
+<script src="js/modules/payroll.js"></script>
+<script src="js/modules/leave.js"></script>
+<script src="js/modules/idcard.js"></script>
+<script src="js/modules/report.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
