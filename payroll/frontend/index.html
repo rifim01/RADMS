@@ -12,400 +12,459 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       min-height: 100vh;
-      overflow: hidden;
+      background: #f0f4ff;
     }
 
-    /* ── Full-screen airport background ── */
-    .login-bg {
-      position: fixed;
-      inset: 0;
-      background-color: #080810;
-      background-image:
-        linear-gradient(160deg, rgba(0,0,0,0.85) 0%, rgba(100,0,0,0.55) 50%, rgba(0,0,0,0.9) 100%),
-        url('/frontend-dashboard/public/hero-bg.png');
-      background-size: cover;
-      background-position: center;
-    }
-    .login-bg::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 70%;
-      height: 35%;
-      background: radial-gradient(ellipse at bottom, rgba(204,0,0,0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* ── Layout ── */
-    .login-page {
-      position: relative;
-      z-index: 1;
+    /* ══════════ LAYOUT ══════════ */
+    .login-wrap {
       min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+    }
+
+    /* ══════════ LEFT — Airport Hero ══════════ */
+    .hero-side {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #001133 0%, #002266 40%, #003399 70%, #0055cc 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 80px 16px 60px;
+      justify-content: flex-end;
+      padding: 0 40px 50px;
     }
 
-    /* ── Top status badge ── */
-    .login-status {
+    .hero-bg {
       position: absolute;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
+      inset: 0;
+      background: url('assets/bg-dashboard.png') center bottom / cover no-repeat;
+      opacity: 0.92;
+    }
+
+    /* Sky blue gradient overlay on top */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0,120,255,0.35) 0%,
+        rgba(0,60,150,0.25) 40%,
+        rgba(0,0,40,0.5) 100%
+      );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .hero-logo {
+      width: 340px;
+      max-width: 90%;
+      filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5)) brightness(1.05);
+      margin-bottom: 20px;
+    }
+
+    .hero-tagline {
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .hero-tagline .dot { color: #FFD700; }
+
+    .hero-sub {
+      color: rgba(255,255,255,0.55);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+    }
+
+    /* Floating badge top-left */
+    .hero-badge {
+      position: absolute;
+      top: 32px;
+      left: 32px;
+      z-index: 3;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 7px 18px;
+      color: rgba(255,255,255,0.8);
+      font-size: 10px;
+      letter-spacing: 2px;
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 100px;
-      padding: 6px 18px;
-      color: rgba(255,255,255,0.6);
-      font-size: 10px;
-      letter-spacing: 2px;
-      white-space: nowrap;
     }
-    .status-dot {
-      width: 6px; height: 6px;
+    .badge-dot {
+      width: 7px; height: 7px;
       border-radius: 50%;
       background: #4ade80;
       box-shadow: 0 0 8px #4ade80;
       animation: blink 2s ease-in-out infinite;
     }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    /* ── Glassmorphism card ── */
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(8, 8, 18, 0.8);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 22px;
-      padding: 46px 42px 38px;
-      box-shadow:
-        0 40px 80px rgba(0,0,0,0.65),
-        0 0 0 1px rgba(204,0,0,0.1) inset,
-        0 1px 0 rgba(255,255,255,0.08) inset;
-    }
-
-    /* ── RIFIM App Icon ── */
-    .rifim-icon {
-      width: 74px;
-      height: 74px;
-      border-radius: 20px;
-      background: linear-gradient(145deg, #D00000, #7A0000);
+    /* ══════════ RIGHT — Login Card ══════════ */
+    .login-side {
+      background: #ffffff;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 22px;
-      box-shadow: 0 8px 36px rgba(204,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4);
+      padding: 48px 52px;
       position: relative;
-      overflow: hidden;
+      box-shadow: -4px 0 40px rgba(0,0,80,0.12);
     }
-    .rifim-icon::before {
+
+    /* Decorative top accent bar */
+    .login-side::before {
       content: '';
       position: absolute;
-      top: 0; right: 0;
-      width: 45%; height: 45%;
-      background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent);
-      border-radius: 0 20px 0 60%;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #CC0000, #FFD700, #38BDF8, #CC0000);
+      background-size: 300% 100%;
+      animation: gradFlow 4s linear infinite;
+    }
+    @keyframes gradFlow {
+      0%   { background-position: 0% 0%; }
+      100% { background-position: 300% 0%; }
     }
 
-    /* ── Airplane SVG icon ── */
-    .icon-plane {
-      width: 42px;
-      height: 42px;
-      fill: white;
-      opacity: 0.95;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    .login-inner {
+      width: 100%;
+      max-width: 360px;
     }
 
-    /* ── App title ── */
-    .login-title {
+    /* Header — logo + title */
+    .login-header {
       text-align: center;
-      margin-bottom: 26px;
+      margin-bottom: 36px;
     }
-    .login-title h1 {
-      font-size: 30px;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: 6px;
-      line-height: 1;
+
+    .login-logo-img {
+      width: 180px;
+      max-width: 100%;
+      margin-bottom: 14px;
+      filter: drop-shadow(0 4px 16px rgba(204,0,0,0.2));
+    }
+
+    .login-app-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1a1a2e;
+      letter-spacing: 4px;
+      text-transform: uppercase;
       margin-bottom: 6px;
     }
-    .login-title h1 .accent { color: #CC0000; }
-    .login-title .company {
-      font-size: 9.5px;
-      color: rgba(255,255,255,0.45);
-      letter-spacing: 1.8px;
-      text-transform: uppercase;
-      font-weight: 500;
-      margin-bottom: 5px;
-    }
-    .login-title .module {
+
+    .login-module-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(204,0,0,0.15);
-      border: 1px solid rgba(204,0,0,0.25);
-      border-radius: 100px;
-      padding: 3px 12px;
+      background: linear-gradient(135deg, #38BDF8, #0284C7);
+      color: #fff;
       font-size: 10px;
-      color: rgba(255,80,80,0.9);
-      letter-spacing: 1px;
-      margin-top: 4px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 4px 14px;
+      border-radius: 100px;
+      text-transform: uppercase;
     }
 
-    /* ── Divider ── */
+    /* Divider */
     .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: #94a3b8;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(204,0,0,0.35), transparent);
-      margin: 20px 0 24px;
+      background: #e2e8f0;
     }
 
-    /* ── Form ── */
+    /* Form */
     .form-group { margin-bottom: 18px; }
 
     .form-label {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      color: rgba(255,255,255,0.38);
-      letter-spacing: 2px;
+      color: #64748b;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       margin-bottom: 8px;
     }
-    .label-icon { font-size: 12px; }
 
     .form-control {
       width: 100%;
       padding: 13px 16px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 11px;
-      color: #ffffff;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      color: #1e293b;
       font-size: 14px;
       outline: none;
       transition: border-color .2s, box-shadow .2s, background .2s;
     }
-    .form-control::placeholder { color: rgba(255,255,255,0.18); }
+    .form-control::placeholder { color: #cbd5e1; }
     .form-control:focus {
-      border-color: rgba(204,0,0,0.55);
-      background: rgba(255,255,255,0.08);
-      box-shadow: 0 0 0 3px rgba(204,0,0,0.12);
+      border-color: #38BDF8;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 4px rgba(56,189,248,0.12);
     }
 
-    /* ── Error ── */
+    /* Error */
     #loginError {
-      color: #ff7070;
+      color: #dc2626;
       font-size: 12.5px;
-      margin-bottom: 14px;
       display: none;
       padding: 10px 14px;
-      background: rgba(204,0,0,0.12);
-      border-radius: 9px;
+      background: #fef2f2;
+      border-radius: 10px;
       border-left: 3px solid #CC0000;
+      margin-bottom: 14px;
     }
 
-    /* ── Login button ── */
+    /* Login button */
     .btn-login {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #CC0000 0%, #8B0000 100%);
+      padding: 15px;
+      background: linear-gradient(135deg, #CC0000, #991111);
       color: #fff;
       border: none;
-      border-radius: 11px;
+      border-radius: 12px;
       font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
+      font-weight: 800;
+      letter-spacing: 1px;
       cursor: pointer;
       transition: all .2s;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 24px rgba(204,0,0,0.45);
+      box-shadow: 0 4px 20px rgba(204,0,0,0.35);
       position: relative;
       overflow: hidden;
+      margin-bottom: 14px;
     }
-    .btn-login::before {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-      transition: left .5s;
-    }
-    .btn-login:hover::before { left: 100%; }
     .btn-login:hover {
-      background: linear-gradient(135deg, #DD1111 0%, #990000 100%);
-      box-shadow: 0 6px 28px rgba(204,0,0,0.55);
+      background: linear-gradient(135deg, #EE1111, #BB0000);
+      box-shadow: 0 6px 28px rgba(204,0,0,0.45);
       transform: translateY(-1px);
     }
     .btn-login:active { transform: translateY(0); }
     .btn-login:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-    /* ── Footer link ── */
+    /* Yellow highlight strip inside button */
+    .btn-login .btn-stripe {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, transparent, #FFD700, transparent);
+      opacity: 0.7;
+    }
+
+    /* Info link */
     .login-link {
       text-align: center;
-      margin-top: 18px;
+      font-size: 12px;
+      color: #94a3b8;
     }
     .login-link a {
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
+      color: #0284C7;
       text-decoration: none;
-      transition: color .2s;
+      font-weight: 600;
     }
-    .login-link a:hover { color: rgba(255,255,255,0.65); }
+    .login-link a:hover { text-decoration: underline; }
 
-    /* ── Bottom tagline ── */
-    .tagline {
+    /* Bottom info */
+    .login-footer-info {
       position: absolute;
       bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,0.18);
-      font-size: 9px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      white-space: nowrap;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: #cbd5e1;
+      letter-spacing: 0.5px;
     }
 
-    /* ── Toast ── */
-    #toastContainer {
-      position: fixed;
-      top: 20px; right: 20px;
-      z-index: 9999;
+    /* Info boxes under form */
+    .info-chips {
       display: flex;
-      flex-direction: column;
       gap: 8px;
+      margin-top: 20px;
+    }
+    .chip {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .chip-blue  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .chip-gold  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .chip-red   { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+    .chip .chip-icon { font-size: 16px; display: block; margin-bottom: 3px; }
+
+    /* ══════════ Toast ══════════ */
+    #toastContainer {
+      position: fixed; top: 20px; right: 20px;
+      z-index: 9999; display: flex; flex-direction: column; gap: 8px;
     }
     .toast {
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 240px;
-      animation: slideIn .3s ease;
-      color: #fff;
+      padding: 12px 18px; border-radius: 10px; font-size: 13px;
+      display: flex; align-items: center; gap: 8px; min-width: 260px;
+      animation: toastIn .3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     }
-    .toast.success { background: #14532d; border: 1px solid #22c55e; }
-    .toast.error   { background: #450a0a; border: 1px solid #CC0000; }
-    .toast.warning { background: #422006; border: 1px solid #f59e0b; }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(20px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
+    .toast.success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+    .toast.error   { background: #fff1f2; color: #991b1b; border: 1px solid #fca5a5; }
+    .toast.warning { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
 
-    /* ── Loading ── */
+    /* ══════════ Loading ══════════ */
     .loading-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(255,255,255,0.85);
       display: flex; align-items: center; justify-content: center;
       z-index: 9000;
     }
     .spinner {
       width: 44px; height: 44px;
-      border: 3px solid rgba(255,255,255,0.1);
+      border: 4px solid #e2e8f0;
       border-top-color: #CC0000;
       border-radius: 50%;
       animation: spin .75s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Mobile ── */
-    @media (max-width: 480px) {
-      .login-card {
-        padding: 36px 24px 30px;
-        border-radius: 18px;
+    /* ══════════ MOBILE ══════════ */
+    @media (max-width: 768px) {
+      .login-wrap {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr;
       }
-      .login-title h1 { font-size: 26px; letter-spacing: 4px; }
-      .rifim-icon { width: 62px; height: 62px; border-radius: 16px; }
-      .login-status { display: none; }
-      .tagline { font-size: 8px; letter-spacing: 2px; }
+      .hero-side {
+        padding: 20px;
+        justify-content: center;
+      }
+      .hero-logo { width: 200px; margin-bottom: 8px; }
+      .hero-tagline, .hero-sub, .hero-badge { display: none; }
+      .login-side {
+        padding: 36px 28px;
+        box-shadow: 0 -4px 20px rgba(0,0,80,0.1);
+      }
+      .login-side::before { display: none; }
+      .info-chips { display: none; }
+      .login-footer-info { position: static; margin-top: 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .login-side { padding: 28px 20px; }
+      .login-logo-img { width: 140px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Airport background -->
-<div class="login-bg"></div>
+<div class="login-wrap">
 
-<div class="login-page">
+  <!-- ══ LEFT: Airport Hero ══ -->
+  <div class="hero-side">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
 
-  <!-- Status indicator -->
-  <div class="login-status">
-    <span class="status-dot"></span>
-    SISTEM AKTIF
+    <div class="hero-badge">
+      <span class="badge-dot"></span> SISTEM AKTIF
+    </div>
+
+    <div class="hero-content">
+      <img src="assets/rifim-logo.png" alt="RIFIM Logo" class="hero-logo">
+      <div class="hero-tagline">
+        INTEGRITAS <span class="dot">•</span>
+        INOVASI <span class="dot">•</span>
+        KUALITAS <span class="dot">•</span>
+        KEBERLANJUTAN
+      </div>
+      <div class="hero-sub">MEMBANGUN HARI INI, MENGINSPIRASI MASA DEPAN</div>
+    </div>
   </div>
 
-  <!-- Login card -->
-  <div class="login-card">
+  <!-- ══ RIGHT: Login Form ══ -->
+  <div class="login-side">
+    <div class="login-inner">
 
-    <!-- RIFIM Icon -->
-    <div class="rifim-icon">
-      <svg class="icon-plane" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <path d="M24 4 L18 20 H6 L10 25 H18 L15.5 41 L24 36.5 L32.5 41 L30 25 H38 L42 20 H30 Z"/>
-        <rect x="10" y="22" width="28" height="2.5" rx="1.25"/>
-      </svg>
-    </div>
-
-    <!-- App name & title -->
-    <div class="login-title">
-      <h1>RIFIM <span class="accent">ERP</span></h1>
-      <div class="company">PT. RIFIM INTERNATIONAL GEMILANG</div>
-      <div class="module">✈ Payroll &amp; HR Management</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Login form -->
-    <form id="loginForm" onsubmit="handleLogin(event)">
-      <div class="form-group">
-        <label class="form-label">
-          <span class="label-icon">📧</span> EMAIL STAFF
-        </label>
-        <input type="email" id="loginEmail" class="form-control"
-          placeholder="email@rifimgemilang.com"
-          required autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">
-          <span class="label-icon">🔑</span> PASSWORD AKSES
-        </label>
-        <input type="password" id="loginPassword" class="form-control"
-          placeholder="••••••••••"
-          required autocomplete="current-password">
+      <!-- Header -->
+      <div class="login-header">
+        <img src="assets/rifim-logo.png" alt="RIFIM" class="login-logo-img">
+        <div class="login-app-title">Sistem Penggajian & HR</div>
+        <div class="login-module-badge">✈ Payroll Management System</div>
       </div>
 
-      <div id="loginError"></div>
+      <div class="divider">MASUK KE AKUN ANDA</div>
 
-      <button type="submit" id="loginBtn" class="btn-login">
-        🔐 Masuk ke Sistem
-      </button>
-    </form>
+      <!-- Form -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">📧 Email Staff</label>
+          <input type="email" id="loginEmail" class="form-control"
+            placeholder="email@rifimgemilang.com"
+            required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔑 Password Akses</label>
+          <input type="password" id="loginPassword" class="form-control"
+            placeholder="Masukkan password"
+            required autocomplete="current-password">
+        </div>
 
-    <div class="login-link">
-      <a href="#">Lupa password? Hubungi Admin Cabang</a>
+        <div id="loginError"></div>
+
+        <button type="submit" id="loginBtn" class="btn-login">
+          🔐 &nbsp;MASUK KE SISTEM
+          <span class="btn-stripe"></span>
+        </button>
+      </form>
+
+      <div class="login-link">
+        Lupa password? &nbsp;<a href="#">Hubungi Admin Cabang</a>
+      </div>
+
+      <!-- Feature chips -->
+      <div class="info-chips">
+        <div class="chip chip-blue">
+          <span class="chip-icon">📊</span>
+          Dashboard
+        </div>
+        <div class="chip chip-gold">
+          <span class="chip-icon">💰</span>
+          Payroll
+        </div>
+        <div class="chip chip-red">
+          <span class="chip-icon">👥</span>
+          HR & Staff
+        </div>
+      </div>
+
     </div>
 
-  </div>
-
-  <!-- Bottom tagline -->
-  <div class="tagline">
-    INTEGRITAS &nbsp;·&nbsp; INOVASI &nbsp;·&nbsp; KUALITAS &nbsp;·&nbsp; KEBERLANJUTAN
+    <div class="login-footer-info">
+      PT. Rifim International Gemilang &nbsp;·&nbsp; Payroll System v1.0 &nbsp;·&nbsp; Est. 2024
+    </div>
   </div>
 
 </div>
@@ -424,7 +483,7 @@
     const icons = { success: '✅', error: '❌', warning: '⚠️' };
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+    el.innerHTML = `<span>${icons[type]||''}</span><span>${msg}</span>`;
     document.getElementById('toastContainer').appendChild(el);
     setTimeout(() => el.remove(), 3500);
   }
@@ -437,18 +496,18 @@
     const pw    = document.getElementById('loginPassword').value;
 
     btn.disabled = true;
-    btn.textContent = 'Memverifikasi...';
+    btn.innerHTML = '⏳ &nbsp;Memverifikasi...<span class="btn-stripe"></span>';
     errEl.style.display = 'none';
 
     try {
       await Auth.login(email, pw);
-      toast('Login berhasil! Mengalihkan...', 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 800);
-    } catch (e) {
-      errEl.textContent = '⚠️  ' + e.message;
+      toast('Login berhasil! Mengalihkan ke dashboard...', 'success');
+      setTimeout(() => window.location.href = 'dashboard.html', 900);
+    } catch (err) {
+      errEl.textContent = '⚠️  ' + err.message;
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.innerHTML = '🔐 Masuk ke Sistem';
+      btn.innerHTML = '🔐 &nbsp;MASUK KE SISTEM<span class="btn-stripe"></span>';
     }
   }
 
@@ -461,7 +520,7 @@
         body: JSON.stringify({ action: 'login', email, password: pw }),
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
       });
-      if (!res.ok) throw new Error('Server error: ' + res.status);
+      if (!res.ok) throw new Error('Server error ' + res.status);
       return res.json();
     }
   };
