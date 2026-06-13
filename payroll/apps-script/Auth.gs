@@ -94,6 +94,24 @@ function _prHashPw(pw) {
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw));
 }
 
+// ─── Ganti Password (Point 9) ─────────────────────────────────────────────────
+
+function gantiPassword(passwordLama, passwordBaru, auth) {
+  if (!passwordLama || !passwordBaru) return { success: false, error: 'Password lama dan baru wajib diisi' };
+  if (passwordBaru.length < 8) return { success: false, error: 'Password baru minimal 8 karakter' };
+
+  var staffList = sheetToObjects(PSHEET.STAFF);
+  var user = staffList.find(function(s) { return s.id === auth.userId; });
+  if (!user) return { success: false, error: 'Akun tidak ditemukan' };
+
+  if (user.password_hash !== _prHashPw(passwordLama)) {
+    return { success: false, error: 'Password lama salah' };
+  }
+
+  updateRow(PSHEET.STAFF, 'id', auth.userId, { password_hash: _prHashPw(passwordBaru) });
+  return { success: true, message: 'Password berhasil diubah. Silakan login ulang.' };
+}
+
 // ─── Setup: buat akun pertama (jalankan sekali dari Apps Script Editor) ───────
 
 function setupOwnerAccount() {

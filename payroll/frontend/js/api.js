@@ -88,6 +88,11 @@ const API = (() => {
     getReport: (type, idCabang, s, e) => get('getReport', { type, idCabang, startDate: s, endDate: e }),
 
     // ID Card
-    generateIDCard: (idStaff) => postForm('generateIDCard', { idStaff })
+    generateIDCard: (idStaff) => postForm('generateIDCard', { idStaff }),
+
+    // Settings
+    gantiPassword:       (passwordLama, passwordBaru) => postForm('gantiPassword', { passwordLama, passwordBaru }),
+    syncStaffFromMaster: ()                           => postForm('syncStaffFromMaster', {}),
+    syncAbsensiFromERP:  (tanggalMulai, tanggalSelesai) => postForm('syncAbsensiFromERP', { tanggalMulai, tanggalSelesai })
   };
 })();

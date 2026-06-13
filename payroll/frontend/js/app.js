@@ -125,7 +125,8 @@ const PAGE_MODULES = {
   kasbon:     () => Kasbon.load(),
   leave:      () => Leave.load(),
   idcard:     () => IDCard.load(),
-  report:     () => Report.load()
+  report:     () => Report.load(),
+  settings:   () => Settings.load()
 };
 
 function navigateTo(page) {
@@ -147,7 +148,8 @@ function navigateTo(page) {
     kasbon:     'Kasbon',
     leave:      'Cuti & Izin',
     idcard:     'ID Card Generator',
-    report:     'Laporan'
+    report:     'Laporan',
+    settings:   'Pengaturan'
   };
   const titleEl = document.getElementById('pageTitle');
   if (titleEl) titleEl.textContent = titles[page] || page;

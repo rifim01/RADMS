@@ -40,9 +40,14 @@ var MASTER_CABANG = [
   { id: 'BPN-APT', nama: 'ID Rifim Airport Balikpapan' },
   { id: 'MDO-APT', nama: 'ID Rifim Airport Manado' },
   { id: 'PKU-APT', nama: 'ID Rifim Airport Pekanbaru' },
+  { id: 'MKS-APT', nama: 'ID Rifim Airport Makassar' },
   { id: 'BTM-OFF', nama: 'ID Rifim Batam' },
   { id: 'JMB-OFF', nama: 'ID Rifim Jambi Luar' }
 ];
+
+// ID Spreadsheet eksternal
+var SS_MASTER_STAFF   = '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw';
+var SS_ERP_ABSENSI    = '1FU5hKMpYn1qhsl4-xZYUZrXDhTOV6aRRewYEs6gIkxA';
 
 // ─── HTTP Entry Points ────────────────────────────────────────────────────────
 
@@ -122,6 +127,13 @@ function _routePost(action, p, auth) {
 
   // ID Card
   if (action === 'generateIDCard') return generateIDCard(p.idStaff, auth);
+
+  // Sync eksternal
+  if (action === 'syncStaffFromMaster') return syncStaffFromMaster(auth);
+  if (action === 'syncAbsensiFromERP')  return syncAbsensiFromERP(p.tanggalMulai, p.tanggalSelesai, auth);
+
+  // Auth — ganti password
+  if (action === 'gantiPassword') return gantiPassword(p.passwordLama, p.passwordBaru, auth);
 
   return { success: false, error: 'Unknown action: ' + action };
 }
@@ -251,4 +263,139 @@ function getCabang() {
 function _canManageCabang(auth, idCabang) {
   if (auth.role === 'OWNER' || auth.role === 'SUPER_ADMIN') return true;
   return auth.idCabang === idCabang;
+}
+
+// ─── Sync Staff dari MASTER DATA STAFF (Point 5) ─────────────────────────────
+
+function syncStaffFromMaster(auth) {
+  if (auth.role !== 'OWNER' && auth.role !== 'SUPER_ADMIN') {
+    return { success: false, error: 'Hanya Owner/Super Admin yang bisa sync' };
+  }
+
+  try {
+    var ss    = SpreadsheetApp.openById(SS_MASTER_STAFF);
+    var sheet = ss.getSheets()[0]; // Ambil sheet pertama
+    var data  = sheet.getDataRange().getValues();
+    if (data.length < 2) return { success: false, error: 'Sheet master kosong' };
+
+    var headers    = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
+    var staffSheet = getSheet(PSHEET.STAFF);
+    var existing   = sheetToObjects(PSHEET.STAFF);
+    var existingEmails = existing.map(function(s) { return String(s.email).toLowerCase(); });
+
+    var added = 0, skipped = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var obj = {};
+      headers.forEach(function(h, idx) { obj[h] = row[idx]; });
+
+      // Mapping kolom fleksibel (nama kolom bisa bervariasi di sheet master)
+      var nama     = obj['nama'] || obj['nama lengkap'] || obj['name'] || '';
+      var email    = obj['email'] || '';
+      var jabatan  = obj['jabatan'] || obj['posisi'] || obj['position'] || '';
+      var cabang   = obj['id cabang'] || obj['cabang'] || obj['branch'] || '';
+      var gapok    = obj['gaji pokok'] || obj['gapok'] || obj['salary'] || 0;
+      var telp     = obj['no telp'] || obj['telepon'] || obj['phone'] || '';
+      var tglGabung = obj['tanggal bergabung'] || obj['tgl bergabung'] || formatDate();
+
+      if (!nama || !email) { skipped++; continue; }
+      if (existingEmails.indexOf(String(email).toLowerCase()) !== -1) { skipped++; continue; }
+
+      var newStaff = {
+        id:                generateId(),
+        nama:              String(nama).trim(),
+        email:             String(email).trim().toLowerCase(),
+        jabatan:           String(jabatan).trim(),
+        id_cabang:         String(cabang).trim(),
+        gapok:             Number(String(gapok).replace(/[^0-9]/g,'')) || 0,
+        no_telp:           String(telp).trim(),
+        tanggal_bergabung: String(tglGabung),
+        status:            'AKTIF',
+        role:              'STAFF',
+        created_at:        formatDateTime()
+      };
+
+      var STAFF_H = ['id','nama','email','jabatan','id_cabang','gapok','no_telp','tanggal_bergabung','status','role','created_at'];
+      appendRow(PSHEET.STAFF, newStaff, STAFF_H);
+      existingEmails.push(String(email).toLowerCase());
+      added++;
+    }
+
+    return { success: true, message: 'Sync selesai: ' + added + ' staff ditambahkan, ' + skipped + ' dilewati' };
+  } catch (e) {
+    return { success: false, error: 'Gagal sync: ' + e.message };
+  }
+}
+
+// ─── Sync Absensi dari RIFIM ERP ABSENSI sheet (Point 7) ─────────────────────
+
+function syncAbsensiFromERP(tanggalMulai, tanggalSelesai, auth) {
+  if (auth.role !== 'OWNER' && auth.role !== 'SUPER_ADMIN') {
+    return { success: false, error: 'Hanya Owner/Super Admin yang bisa sync absensi' };
+  }
+
+  try {
+    var ss    = SpreadsheetApp.openById(SS_ERP_ABSENSI);
+    var sheet = ss.getSheetByName('ABSENSI') || ss.getSheets()[0];
+    var data  = sheet.getDataRange().getValues();
+    if (data.length < 2) return { success: false, error: 'Sheet ABSENSI kosong' };
+
+    var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
+    var existing = sheetToObjects(PSHEET.ABSENSI);
+    var existingKeys = existing.map(function(a) { return a.id_staff + '_' + a.tanggal; });
+
+    var added = 0, skipped = 0;
+    var startD = tanggalMulai ? new Date(tanggalMulai) : null;
+    var endD   = tanggalSelesai ? new Date(tanggalSelesai) : null;
+
+    var ABSENSI_H = ['id','id_staff','nama','id_cabang','tanggal','jam_masuk','jam_keluar','status','keterangan','created_at'];
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var obj = {};
+      headers.forEach(function(h, idx) { obj[h] = row[idx]; });
+
+      var tgl      = obj['tanggal'] || obj['date'] || '';
+      var idStaff  = obj['id_staff'] || obj['id staff'] || '';
+      var nama     = obj['nama'] || obj['name'] || '';
+      var cabang   = obj['id_cabang'] || obj['cabang'] || '';
+      var status   = obj['status'] || 'HADIR';
+      var jamMasuk = obj['jam_masuk'] || obj['jam masuk'] || '';
+      var jamKeluar= obj['jam_keluar'] || obj['jam keluar'] || '';
+
+      if (!tgl || !idStaff) { skipped++; continue; }
+
+      // Filter tanggal
+      if (startD || endD) {
+        var tglDate = new Date(tgl);
+        if (startD && tglDate < startD) { skipped++; continue; }
+        if (endD   && tglDate > endD)   { skipped++; continue; }
+      }
+
+      var key = idStaff + '_' + formatDate(new Date(tgl));
+      if (existingKeys.indexOf(key) !== -1) { skipped++; continue; }
+
+      var rec = {
+        id:         generateId(),
+        id_staff:   String(idStaff),
+        nama:       String(nama),
+        id_cabang:  String(cabang),
+        tanggal:    formatDate(new Date(tgl)),
+        jam_masuk:  String(jamMasuk),
+        jam_keluar: String(jamKeluar),
+        status:     String(status).toUpperCase(),
+        keterangan: '',
+        created_at: formatDateTime()
+      };
+
+      appendRow(PSHEET.ABSENSI, rec, ABSENSI_H);
+      existingKeys.push(key);
+      added++;
+    }
+
+    return { success: true, message: 'Sync absensi selesai: ' + added + ' record ditambahkan, ' + skipped + ' dilewati' };
+  } catch (e) {
+    return { success: false, error: 'Gagal sync absensi: ' + e.message };
+  }
 }

@@ -1,16 +1,36 @@
 {
   "name": "RIFIM Payroll & HR System",
   "short_name": "RIFIM Payroll",
-  "description": "Sistem Payroll & HR Management PT Rifim Gemilang",
+  "description": "Sistem Payroll & HR Management PT Rifim International Gemilang — Airport Operations",
   "start_url": "/payroll/frontend/index.html",
+  "scope": "/payroll/frontend/",
   "display": "standalone",
-  "background_color": "#CC0000",
+  "background_color": "#ffffff",
   "theme_color": "#CC0000",
   "orientation": "any",
+  "lang": "id",
+  "dir": "ltr",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "screenshots": [],
-  "categories": ["business", "productivity"]
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/payroll/frontend/dashboard.html#dashboard",
+      "description": "Buka Dashboard"
+    },
+    {
+      "name": "Absensi",
+      "url": "/payroll/frontend/dashboard.html#attendance",
+      "description": "Lihat Data Absensi"
+    },
+    {
+      "name": "Payroll",
+      "url": "/payroll/frontend/dashboard.html#payruns",
+      "description": "Proses Penggajian"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": []
 }

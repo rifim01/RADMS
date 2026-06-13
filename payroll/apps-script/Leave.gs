@@ -5,12 +5,17 @@
  *   id | id_staff | nama | id_cabang | jenis_cuti | tanggal_mulai | tanggal_selesai |
  *   jumlah_hari | keterangan | status | approved_by | alasan_tolak | created_at
  *
- * Jenis cuti:
- *   TAHUNAN  — max 3x per tahun
- *   SAKIT    — max 2 hari tanpa potongan
- *   MENIKAH  — 7 hari
- *   HAMIL    — 90 hari (~3 bulan)
- *   IZIN     — tanpa batas, bisa kena potongan
+ * Kebijakan PT Rifim International Gemilang:
+ *   TAHUNAN          — 3 hari per tahun, di luar High Season (Des/Jan)
+ *   SAKIT            — max 2 hari tanpa potongan, lebih dianggap IZIN
+ *   MENIKAH          — 7 hari (1 minggu), sekali seumur hidup
+ *   HAMIL            — 90 hari (3 bulan), wajib cari pengganti, hanya dapat Bonus
+ *   ISTRI_MELAHIRKAN — 3 hari untuk karyawan laki-laki
+ *   IZIN             — koordinasi dengan tim lain, bisa kena potongan
+ *
+ *   Masa Training: 2 bulan pertama belum berhak THR/Bonus
+ *   THR: minimal 1 tahun masa kerja
+ *   Setiap cuti wajib mengkondisikan ke staff lain terlebih dahulu
  */
 
 var CUTI_HEADERS = [
@@ -19,11 +24,15 @@ var CUTI_HEADERS = [
 ];
 
 var KUOTA_CUTI = {
-  TAHUNAN: { maxKali: 3,  maxHari: null },
-  SAKIT:   { maxKali: null, maxHari: 2 },
-  MENIKAH: { maxKali: 1,  maxHari: 7 },
-  HAMIL:   { maxKali: 1,  maxHari: 90 }
+  TAHUNAN:          { maxKali: 1,  maxHari: 3 },
+  SAKIT:            { maxKali: null, maxHari: 2 },
+  MENIKAH:          { maxKali: 1,  maxHari: 7 },
+  HAMIL:            { maxKali: 1,  maxHari: 90 },
+  ISTRI_MELAHIRKAN: { maxKali: 1,  maxHari: 3 }
 };
+
+// Bulan High Season (1=Jan, 12=Des) — cuti TAHUNAN tidak boleh diambil
+var HIGH_SEASON_MONTHS = [1, 12];
 
 // ─── Ajukan Cuti ──────────────────────────────────────────────────────────────
 
@@ -39,6 +48,12 @@ function ajukanCuti(data, auth) {
 
   var hariKerja = _hitungHariKerja(start, end);
   var tahun     = start.getFullYear();
+  var bulanMulai = start.getMonth() + 1;
+
+  // Blokir cuti TAHUNAN saat High Season (Des & Jan)
+  if (jenis === 'TAHUNAN' && HIGH_SEASON_MONTHS.indexOf(bulanMulai) !== -1) {
+    return { success: false, error: 'Cuti Tahunan tidak dapat diambil saat High Season (Desember & Januari)' };
+  }
 
   // Cek kuota
   var kuotaCheck = _cekKuota(data.id_staff, jenis, tahun, hariKerja);
