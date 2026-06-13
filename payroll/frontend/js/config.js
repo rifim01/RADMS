@@ -4,7 +4,7 @@
  */
 
 window.APP_CONFIG = {
-  GAS_URL: 'GANTI_DENGAN_URL_APPS_SCRIPT_KAMU',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbze5uExLZ8mukFg0uC5xQ_Z71EeSrKTNa9h8aq0fxib57HfmY09UPaz1sWfFYs4ees/exec',
   APP_NAME: 'RIFIM Payroll',
   VERSION: '1.0.0',
 
