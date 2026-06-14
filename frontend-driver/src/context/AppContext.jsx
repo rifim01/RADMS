@@ -22,7 +22,7 @@ import {
   DEFAULT_AIRPORT_ID,
   resolveAirportKey,
 } from '../services/mockData.js';
-import { listenDriverTrips, listenMyQueueStatus, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
+import { listenDriverTrips, listenMyQueueStatus, updateDriverLocation, setDriverOnlineStatus } from '../services/supabaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
@@ -93,36 +93,33 @@ export function AppProvider({ children }) {
       // GPS always-on: start tracking immediately regardless of online status
       startTracking();
 
-      // Listen to real trips and queue status from Firebase
-      let unsubTrips = () => {};
-      let unsubQueue = () => {};
-      ensureAuth().then(() => {
-        unsubTrips = listenDriverTrips(driver.id, (trips) => {
-          if (trips.length > 0) setHistory(trips);
-        });
+      // Listen to real trips and queue status from Supabase
+      const unsubTrips = listenDriverTrips(driver.id, (trips) => {
+        if (trips.length > 0) setHistory(trips);
+      });
 
-        // Real-time queue status listener — shows CALLED alert to driver
-        if (driver.airportId) {
-          unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
-            if (!entry) {
-              setMyQueueEntry(null);
-              prevQueueStatusRef.current = null;
-              return;
-            }
-            setMyQueueEntry(entry);
-            // Trigger CALLED alert when status transitions to CALLED
-            if (entry.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
-              setCalledAlert(true);
-              addSystemNotification(
-                'Anda Dipanggil!',
-                'Segera menuju zona penjemputan penumpang.',
-                'CALLED'
-              );
-            }
-            prevQueueStatusRef.current = entry.status;
-          });
-        }
-      }).catch(() => {});
+      // Real-time queue status listener — shows CALLED alert to driver
+      let unsubQueue = () => {};
+      if (driver.airportId) {
+        unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
+          if (!entry) {
+            setMyQueueEntry(null);
+            prevQueueStatusRef.current = null;
+            return;
+          }
+          setMyQueueEntry(entry);
+          // Trigger CALLED alert when status transitions to CALLED
+          if (entry.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
+            setCalledAlert(true);
+            addSystemNotification(
+              'Anda Dipanggil!',
+              'Segera menuju zona penjemputan penumpang.',
+              'CALLED'
+            );
+          }
+          prevQueueStatusRef.current = entry.status;
+        });
+      }
 
       return () => {
         unsubTrips();
@@ -223,11 +220,9 @@ export function AppProvider({ children }) {
     setIsOnline(newStatus);
     updateDriver?.({ online: newStatus });
 
-    // Update Firebase online status
+    // Update Supabase online status
     if (driver?.id) {
-      ensureAuth().then(() => {
-        setDriverOnlineStatus(driver.id, newStatus);
-      }).catch(() => {});
+      setDriverOnlineStatus(driver.id, newStatus);
     }
 
     if (newStatus) {
@@ -261,13 +256,11 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Throttle Firebase writes to max once per 15 seconds (saves bandwidth for 400 drivers)
+      // Throttle Supabase writes to max once per 15 seconds (saves bandwidth for 400 drivers)
       const now = Date.now();
       if (driver?.id && now - lastFirebaseWriteRef.current >= 15000) {
         lastFirebaseWriteRef.current = now;
-        ensureAuth().then(() => {
-          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
-        }).catch(() => {});
+        updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
       }
     };
 
