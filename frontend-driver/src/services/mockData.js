@@ -11,10 +11,10 @@ export const AIRPORTS = {
     iata: 'UPG',
     lat: -5.0614,
     lng: 119.5542,
-    geofenceRadius: 500, // meter
+    geofenceRadius: 500,
     address: 'Jl. Bandara Hasanuddin, Maros, Sulawesi Selatan 90552',
     phone: '+62 411 555 1234',
-    terminals: ['Terminal A', 'Terminal B', 'Terminal Domestik', 'Terminal Internasional'],
+    terminals: ['Terminal Domestik', 'Terminal Internasional'],
     zones: [
       { id: 'Z1', name: 'Zona Kedatangan Domestik', lat: -5.0610, lng: 119.5538 },
       { id: 'Z2', name: 'Zona Kedatangan Internasional', lat: -5.0620, lng: 119.5550 },
@@ -22,7 +22,121 @@ export const AIRPORTS = {
       { id: 'Z4', name: 'Zona Parkir Taksi', lat: -5.0625, lng: 119.5545 },
     ],
   },
+  'bandara-sultan-thaha': {
+    id: 'bandara-sultan-thaha',
+    name: 'Bandara Sultan Thaha',
+    city: 'Jambi',
+    province: 'Jambi',
+    iata: 'DJB',
+    lat: -1.6318367703997263,
+    lng: 103.64383210805866,
+    geofenceRadius: 500,
+    address: 'Jl. Sultan Thaha, Jambi 36137',
+    phone: '+62 741 555 1234',
+    terminals: ['Terminal Domestik'],
+    zones: [
+      { id: 'Z1', name: 'Zona Kedatangan', lat: -1.6318, lng: 103.6438 },
+      { id: 'Z2', name: 'Zona Keberangkatan', lat: -1.6310, lng: 103.6432 },
+      { id: 'Z3', name: 'Zona Parkir Taksi', lat: -1.6325, lng: 103.6445 },
+    ],
+  },
+  'bandara-hang-nadim': {
+    id: 'bandara-hang-nadim',
+    name: 'Bandara Internasional Hang Nadim',
+    city: 'Batam',
+    province: 'Kepulauan Riau',
+    iata: 'BTH',
+    lat: 1.1210,
+    lng: 104.1189,
+    geofenceRadius: 500,
+    address: 'Jl. Hang Nadim, Batam 29432',
+    phone: '+62 778 555 1234',
+    terminals: ['Terminal Domestik', 'Terminal Internasional'],
+    zones: [
+      { id: 'Z1', name: 'Zona Kedatangan', lat: 1.1210, lng: 104.1189 },
+      { id: 'Z2', name: 'Zona Keberangkatan', lat: 1.1200, lng: 104.1180 },
+      { id: 'Z3', name: 'Zona Parkir Taksi', lat: 1.1220, lng: 104.1195 },
+    ],
+  },
+  'bandara-sepinggan': {
+    id: 'bandara-sepinggan',
+    name: 'Bandara Internasional Sultan Aji Muhammad Sulaiman',
+    city: 'Balikpapan',
+    province: 'Kalimantan Timur',
+    iata: 'BPN',
+    lat: -1.2683,
+    lng: 116.8936,
+    geofenceRadius: 500,
+    address: 'Jl. Marsma Iswahyudi, Balikpapan 76115',
+    phone: '+62 542 555 1234',
+    terminals: ['Terminal Domestik', 'Terminal Internasional'],
+    zones: [
+      { id: 'Z1', name: 'Zona Kedatangan', lat: -1.2683, lng: 116.8936 },
+      { id: 'Z2', name: 'Zona Keberangkatan', lat: -1.2675, lng: 116.8928 },
+      { id: 'Z3', name: 'Zona Parkir Taksi', lat: -1.2690, lng: 116.8943 },
+    ],
+  },
+  'bandara-sam-ratulangi': {
+    id: 'bandara-sam-ratulangi',
+    name: 'Bandara Internasional Sam Ratulangi',
+    city: 'Manado',
+    province: 'Sulawesi Utara',
+    iata: 'MDC',
+    lat: 1.5492,
+    lng: 124.9260,
+    geofenceRadius: 500,
+    address: 'Jl. AA Maramis, Manado 95371',
+    phone: '+62 431 555 1234',
+    terminals: ['Terminal Domestik', 'Terminal Internasional'],
+    zones: [
+      { id: 'Z1', name: 'Zona Kedatangan', lat: 1.5492, lng: 124.9260 },
+      { id: 'Z2', name: 'Zona Keberangkatan', lat: 1.5483, lng: 124.9252 },
+      { id: 'Z3', name: 'Zona Parkir Taksi', lat: 1.5500, lng: 124.9268 },
+    ],
+  },
+  'bandara-sultan-syarif': {
+    id: 'bandara-sultan-syarif',
+    name: 'Bandara Internasional Sultan Syarif Kasim II',
+    city: 'Pekanbaru',
+    province: 'Riau',
+    iata: 'PKU',
+    lat: 0.4608,
+    lng: 101.4448,
+    geofenceRadius: 500,
+    address: 'Jl. Pramuka, Pekanbaru 28284',
+    phone: '+62 761 555 1234',
+    terminals: ['Terminal Domestik', 'Terminal Internasional'],
+    zones: [
+      { id: 'Z1', name: 'Zona Kedatangan', lat: 0.4608, lng: 101.4448 },
+      { id: 'Z2', name: 'Zona Keberangkatan', lat: 0.4600, lng: 101.4440 },
+      { id: 'Z3', name: 'Zona Parkir Taksi', lat: 0.4615, lng: 101.4455 },
+    ],
+  },
 };
+
+// Maps driver.airportId (from Firebase/Google Sheets) to AIRPORTS key
+export const AIRPORT_ID_MAP = {
+  'ID Rifim Airport Jambi': 'bandara-sultan-thaha',
+  'ID Rifim Airport Batam': 'bandara-hang-nadim',
+  'ID Rifim Airport Balikpapan': 'bandara-sepinggan',
+  'ID Rifim Airport Manado': 'bandara-sam-ratulangi',
+  'ID Rifim Airport Pekanbaru': 'bandara-sultan-syarif',
+  'ID Rifim Airport Makassar': 'bandara-hassanuddin',
+  // fallback keys (short form)
+  'jambi': 'bandara-sultan-thaha',
+  'batam': 'bandara-hang-nadim',
+  'balikpapan': 'bandara-sepinggan',
+  'manado': 'bandara-sam-ratulangi',
+  'pekanbaru': 'bandara-sultan-syarif',
+  'makassar': 'bandara-hassanuddin',
+};
+
+/** Resolve a driver.airportId string to an AIRPORTS key */
+export function resolveAirportKey(airportId) {
+  if (!airportId) return 'bandara-hassanuddin';
+  if (AIRPORTS[airportId]) return airportId; // already a valid key
+  return AIRPORT_ID_MAP[airportId] || 'bandara-hassanuddin';
+}
 
 export const DEFAULT_AIRPORT_ID = 'bandara-hassanuddin';
 
