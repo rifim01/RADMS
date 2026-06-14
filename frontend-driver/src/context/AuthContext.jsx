@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MOCK_DRIVERS } from '../services/mockData.js';
 import { findDriverByNik } from '../services/sheetsService.js';
-import { ensureAuth, setDriverOnlineStatus } from '../services/firebaseService.js';
+import { setDriverOnlineStatus } from '../services/supabaseService.js';
 
 const AuthContext = createContext(null);
 
@@ -79,7 +79,6 @@ export function AuthProvider({ children }) {
         return { success: false, error: msg };
       }
 
-      try { await ensureAuth() } catch { /* Anonymous auth optional; RTDB will work if enabled */ }
 
       const driverData = {
         id: foundDriver.id || foundDriver.nik,

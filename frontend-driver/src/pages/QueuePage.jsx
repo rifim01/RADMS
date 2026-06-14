@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw, ListOrdered, Clock, Users, Info, CheckCircle, X } from 'lucide-react';
 import { findStaffById } from '../services/sheetsService.js';
-import { recordValidation } from '../services/firebaseService.js';
+import { recordValidation } from '../services/supabaseService.js';
 import Header from '../components/Header.jsx';
 import QueueCard from '../components/QueueCard.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';

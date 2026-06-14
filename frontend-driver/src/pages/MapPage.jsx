@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigation, Crosshair, Layers, Users, RefreshCw } from 'lucide-react';
-import { ref, onValue, off } from 'firebase/database';
-import { db } from '../firebase/config.js';
+import { supabase } from '../supabase/config.js';
 import Header from '../components/Header.jsx';
 import { useApp } from '../context/AppContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -32,17 +31,28 @@ export default function MapPage() {
   } = useApp();
   const [onlineDrivers, setOnlineDrivers] = useState([]);
 
-  // Listen to Firebase RTDB for nearby drivers in same branch
+  // Listen to Supabase for nearby drivers in same branch
   useEffect(() => {
-    const r = ref(db, 'drivers');
-    const unsub = onValue(r, snap => {
-      const val = snap.val() || {};
-      const nearby = Object.entries(val)
-        .filter(([id, d]) => d.location?.branchId === driver?.airportId && d.location?.isOnline && id !== driver?.id)
-        .map(([id, d]) => ({ id, ...d.location }));
-      setOnlineDrivers(nearby);
-    });
-    return () => off(r);
+    if (!driver?.airportId) return;
+
+    const fetchDrivers = () => {
+      supabase
+        .from('driver_locations')
+        .select('*')
+        .eq('branch_id', driver.airportId)
+        .eq('is_online', true)
+        .neq('driver_id', driver.id)
+        .then(({ data }) => setOnlineDrivers(data || []));
+    };
+
+    fetchDrivers();
+
+    const channel = supabase
+      .channel('driver_locations_map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, fetchDrivers)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [driver?.airportId, driver?.id]);
 
   const airportCenter = airport
