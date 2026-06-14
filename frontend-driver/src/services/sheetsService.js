@@ -2,9 +2,10 @@
 const SHEET_IDS = {
   DRIVER_AIRPORT:  '1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc',
   DRIVER_EXTERNAL: '1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc',
+  DATABASE_STAFF:  '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw',
 }
 
-const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru','ID Rifim Airport Makassar']
+const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru']
 const EXTERNAL_SHEETS = ['ID Rifim Batam','ID Rifim Jambi Luar']
 
 async function fetchGviz(sheetId, sheetName) {
@@ -23,16 +24,13 @@ function cellVal(cell) {
 
 async function fetchSheet(sheetId, sheetName) {
   const data = await fetchGviz(sheetId, sheetName)
-  // Do NOT slice(1) — GVIZ may exclude header for sheets with few rows.
-  // Guard against header row instead.
-  const rows = data.table?.rows || []
+  const rows = (data.table?.rows || []).slice(1)
   return rows.map(row => {
     const c = row.c || []
     const driverId = cellVal(c[1])
     const name     = cellVal(c[2])
     const branch   = cellVal(c[3]) || sheetName
-    // Skip header row if GVIZ includes it
-    if (!name || name === 'Nama Driver' || name === 'Nama' || driverId === 'ID Driver') return null
+    if (!name) return null
     return { id: driverId, nik: driverId, name, airportId: branch }
   }).filter(Boolean)
 }
@@ -61,25 +59,19 @@ export async function findDriverByNik(nik) {
 }
 
 // ─── Staff lookup for validation ──────────────────────────────────────────────
-const STAFF_SHEET_ID = '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw'
-
 export async function findStaffById(staffId) {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${STAFF_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.DATABASE_STAFF}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
     const res = await fetch(url)
     const text = await res.text()
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
-    // Do NOT slice(1) — GVIZ may already exclude the header row from rows[]
-    // Add a guard to skip any row that looks like a header
-    const rows = json.table?.rows || []
+    const rows = (json.table?.rows || []).slice(1)
     for (const row of rows) {
       const c = row.c || []
-      const id   = c[4]?.v ? String(c[4].v).trim() : ''  // kolom E = ID Staff
-      const nama = c[1]?.v ? String(c[1].v).trim() : ''  // kolom B = Nama
-      const cabang = c[3]?.v ? String(c[3].v).trim() : ''  // kolom D = ID CABANG
-      // Skip header rows (e.g. "ID Staff", "Nama", etc.)
-      if (!id || id.toUpperCase() === 'ID STAFF' || id.toUpperCase() === 'ID') continue
-      if (id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
+      const id = c[4]?.v ? String(c[4].v).trim() : ''
+      const nama = c[1]?.v ? String(c[1].v).trim() : ''
+      const cabang = c[3]?.v ? String(c[3].v).trim() : ''
+      if (id && id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
         return { id, nama, cabang }
       }
     }
