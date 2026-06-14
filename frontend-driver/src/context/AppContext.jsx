@@ -50,6 +50,7 @@ export function AppProvider({ children }) {
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
   const prevQueueStatusRef = useRef(null);
+  const lastFirebaseWriteRef = useRef(0); // throttle Firebase location writes
 
   const airportKey = resolveAirportKey(driver?.airportId);
   const airport = AIRPORTS[airportKey];
@@ -260,8 +261,10 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Update Firebase location regardless of online status
-      if (driver?.id) {
+      // Throttle Firebase writes to max once per 15 seconds (saves bandwidth for 400 drivers)
+      const now = Date.now();
+      if (driver?.id && now - lastFirebaseWriteRef.current >= 15000) {
+        lastFirebaseWriteRef.current = now;
         ensureAuth().then(() => {
           updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
         }).catch(() => {});
