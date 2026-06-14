@@ -16,7 +16,6 @@ import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
   generateQueueData,
   generateNotifications,
-  generateHistory,
   generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
@@ -50,7 +49,7 @@ export function AppProvider({ children }) {
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
   const prevQueueStatusRef = useRef(null);
-  const lastWriteRef = useRef(0); // throttle Supabase location writes
+  const lastFirebaseWriteRef = useRef(0); // throttle Firebase location writes
 
   const airportKey = resolveAirportKey(driver?.airportId);
   const airport = AIRPORTS[airportKey];
@@ -68,8 +67,7 @@ export function AppProvider({ children }) {
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
 
-      const hist = generateHistory(driver.id);
-      setHistory(hist);
+      setHistory([]);
 
       setOnlineDrivers(generateOnlineDrivers());
 
@@ -95,7 +93,7 @@ export function AppProvider({ children }) {
 
       // Listen to real trips and queue status from Supabase
       const unsubTrips = listenDriverTrips(driver.id, (trips) => {
-        if (trips.length > 0) setHistory(trips);
+        setHistory(trips);
       });
 
       // Real-time queue status listener — shows CALLED alert to driver
@@ -133,7 +131,14 @@ export function AppProvider({ children }) {
     if (!driver || !isOnline) return;
 
     queueRefreshRef.current = setInterval(() => {
-      setQueueData((prev) => prev.map((entry) => entry));
+      // Simulasi pergerakan antrian
+      setQueueData((prev) => {
+        const updated = prev.map((entry) => {
+          if (entry.driverId === driver.id) return entry;
+          return entry;
+        });
+        return updated;
+      });
     }, 30000);
 
     return () => {
@@ -162,6 +167,7 @@ export function AppProvider({ children }) {
 
   const handleGeofenceEnter = useCallback((result) => {
     setInGeofence(true);
+    // Auto-add to queue jika online
     addSystemNotification(
       'Geofence Aktif',
       `Anda memasuki area ${result.airport?.name}. Nomor antrian akan diberikan otomatis.`,
@@ -179,11 +185,13 @@ export function AppProvider({ children }) {
   }, []);
 
   const addSystemNotification = useCallback((title, message, type = 'SYSTEM') => {
+    // Play sound based on notification type
     if (type === 'CALLED')   playCalled()
     else if (type === 'PANIC') playPanic()
     else if (type === 'GEOFENCE') playSuccess()
     else playNotification()
 
+    // Browser Notification API if permitted
     if (Notification.permission === 'granted') {
       new Notification(title, { body: message, icon: '/icon-192.svg', badge: '/icon-192.svg' })
     }
@@ -202,19 +210,32 @@ export function AppProvider({ children }) {
     setUnreadCount((prev) => prev + 1);
   }, []);
 
+  /**
+   * Toggle status online/offline driver
+   */
   const toggleOnlineStatus = useCallback(async () => {
     const newStatus = !isOnline;
     setIsOnline(newStatus);
     updateDriver?.({ online: newStatus });
 
+    // Update Supabase online status
     if (driver?.id) {
       setDriverOnlineStatus(driver.id, newStatus);
     }
 
     if (newStatus) {
-      addSystemNotification('Status Online', 'Anda sekarang online dan siap menerima penumpang.', 'STATUS');
+      addSystemNotification(
+        'Status Online',
+        'Anda sekarang online dan siap menerima penumpang.',
+        'STATUS'
+      );
     } else {
-      addSystemNotification('Status Offline', 'Anda sekarang offline. Lokasi tetap dipantau.', 'STATUS');
+      // GPS tetap aktif saat offline — hanya update status
+      addSystemNotification(
+        'Status Offline',
+        'Anda sekarang offline. Lokasi tetap dipantau.',
+        'STATUS'
+      );
     }
   }, [isOnline, updateDriver, driver?.id]);
 
@@ -233,10 +254,10 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Throttle Supabase writes to max once per 15 seconds
+      // Throttle Supabase writes to max once per 15 seconds (saves bandwidth for 400 drivers)
       const now = Date.now();
-      if (driver?.id && now - lastWriteRef.current >= 15000) {
-        lastWriteRef.current = now;
+      if (driver?.id && now - lastFirebaseWriteRef.current >= 15000) {
+        lastFirebaseWriteRef.current = now;
         updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
       }
     };
@@ -244,6 +265,7 @@ export function AppProvider({ children }) {
     const handleLocationError = (err) => {
       setLocationError(err.message);
       console.warn('[AppContext] GPS error:', err.message);
+      // Do NOT fall back to simulation — show error state instead
     };
 
     if (isGeolocationAvailable()) {
@@ -262,6 +284,7 @@ export function AppProvider({ children }) {
     stopLocationTracking();
   }, []);
 
+  // Cleanup saat unmount
   useEffect(() => {
     return () => {
       stopTracking();
@@ -269,6 +292,9 @@ export function AppProvider({ children }) {
     };
   }, []);
 
+  /**
+   * Tandai notifikasi sebagai dibaca
+   */
   const markNotificationRead = useCallback((notifId) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
@@ -281,12 +307,16 @@ export function AppProvider({ children }) {
     setUnreadCount(0);
   }, []);
 
+  /**
+   * Kirim Panic Button alert
+   */
   const triggerPanic = useCallback(async () => {
     if (panicCooldown) return;
 
     setPanicActive(true);
     setPanicCooldown(true);
 
+    // Simulasi kirim alert darurat
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     addSystemNotification(
@@ -297,10 +327,20 @@ export function AppProvider({ children }) {
       'PANIC'
     );
 
-    panicTimeoutRef.current = setTimeout(() => setPanicActive(false), 5000);
-    setTimeout(() => setPanicCooldown(false), 60000);
+    // Reset panic state setelah 5 detik
+    panicTimeoutRef.current = setTimeout(() => {
+      setPanicActive(false);
+    }, 5000);
+
+    // Cooldown 60 detik
+    setTimeout(() => {
+      setPanicCooldown(false);
+    }, 60000);
   }, [panicCooldown, location, addSystemNotification]);
 
+  /**
+   * Update posisi manual (untuk testing)
+   */
   const updateLocation = useCallback(
     (lat, lng) => {
       const loc = { lat, lng, speed: 0, timestamp: Date.now() };
@@ -312,14 +352,46 @@ export function AppProvider({ children }) {
   );
 
   const value = {
-    location, locationError, updateLocation, startTracking, stopTracking,
-    isOnline, toggleOnlineStatus, networkStatus,
-    inGeofence, geofenceDistance, airport,
-    queueData, myQueueEntry,
-    notifications, unreadCount, markNotificationRead, markAllNotificationsRead, addSystemNotification,
+    // Location
+    location,
+    locationError,
+    updateLocation,
+    startTracking,
+    stopTracking,
+
+    // Status
+    isOnline,
+    toggleOnlineStatus,
+    networkStatus,
+
+    // Geofence
+    inGeofence,
+    geofenceDistance,
+    airport,
+
+    // Queue
+    queueData,
+    myQueueEntry,
+
+    // Notifications
+    notifications,
+    unreadCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    addSystemNotification,
+
+    // History
     history,
+
+    // Map
     onlineDrivers,
-    panicActive, panicCooldown, triggerPanic,
+
+    // Panic
+    panicActive,
+    panicCooldown,
+    triggerPanic,
+
+    // CALLED overlay
     calledAlert,
     dismissCalledAlert: () => setCalledAlert(false),
   };
