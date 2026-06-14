@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MOCK_DRIVERS } from '../services/mockData.js';
 import { findDriverByNik } from '../services/sheetsService.js';
-import { ensureAuth, setDriverOnlineStatus, registerDeviceSession } from '../services/firebaseService.js';
+import { setDriverOnlineStatus } from '../services/supabaseService.js';
 
 const AuthContext = createContext(null);
 
@@ -37,12 +37,6 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  /**
-   * Login dengan nomor HP dan password
-   * @param {string} phone
-   * @param {string} password
-   * @returns {Promise<{success: boolean, error?: string}>}
-   */
   const login = useCallback(async (nik, nameInput) => {
     setError(null);
     if (!nik.trim() || !nameInput.trim()) {
@@ -53,32 +47,19 @@ export function AuthProvider({ children }) {
     try {
       // Try Google Sheets first
       let foundDriver = null;
-      let nikFoundButNameWrong = false;
       try {
         const sheetDriver = await findDriverByNik(nik.trim());
         if (sheetDriver) {
-          const sheetNameRaw  = sheetDriver.name.toLowerCase();
-          const sheetNameNorm = sheetNameRaw.replace(/\s+/g, '');
-          const inputRaw      = nameInput.trim().toLowerCase();
-          const inputNorm     = inputRaw.replace(/\s+/g, '');
-          const inputFirst    = inputRaw.split(/\s+/)[0];
-          const nameMatch =
-            sheetNameNorm.includes(inputNorm) ||
-            inputNorm.includes(sheetNameNorm) ||
-            sheetNameNorm.startsWith(inputNorm) ||
-            inputNorm.startsWith(sheetNameNorm) ||
-            (inputFirst.length >= 3 && sheetNameNorm.startsWith(inputFirst)) ||
-            (inputFirst.length >= 3 && sheetNameRaw.includes(inputFirst));
-          if (nameMatch) {
+          const sheetName = sheetDriver.name.toLowerCase();
+          const input     = nameInput.trim().toLowerCase();
+          if (sheetName.includes(input) || input.includes(sheetName.split(' ')[0])) {
             foundDriver = sheetDriver;
-          } else {
-            nikFoundButNameWrong = true;
           }
         }
       } catch { /* fallback below */ }
 
       // Fallback: mock data (for demo/development)
-      if (!foundDriver && !nikFoundButNameWrong) {
+      if (!foundDriver) {
         const cleanNik  = nik.replace(/\D/g, '');
         const mockFound = MOCK_DRIVERS.find(d => (d.nik || d.id || '').replace(/\D/g,'') === cleanNik);
         if (mockFound) {
@@ -87,14 +68,10 @@ export function AuthProvider({ children }) {
       }
 
       if (!foundDriver) {
-        const msg = nikFoundButNameWrong
-          ? 'Nama tidak sesuai data RIFIM. Ketik nama persis seperti tercatat (contoh: nama lengkap tanpa singkatan).'
-          : 'ID Driver (NIK) tidak ditemukan. Pastikan NIK sesuai data RIFIM.';
+        const msg = 'ID Driver tidak ditemukan. Pastikan NIK sesuai data RIFIM.';
         setError(msg);
         return { success: false, error: msg };
       }
-
-      try { await ensureAuth() } catch { /* Anonymous auth optional */ }
 
       const driverData = {
         id: foundDriver.id || foundDriver.nik,
@@ -105,10 +82,6 @@ export function AuthProvider({ children }) {
         plateNumber: foundDriver.plateNumber || '',
         online: false,
       };
-
-      // Daftarkan device ini sebagai satu-satunya device aktif untuk akun ini
-      try { await registerDeviceSession(driverData.id) } catch { /* non-critical */ }
-
       const session = { loginAt: Date.now(), driverId: driverData.id };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       localStorage.setItem(DRIVER_KEY, JSON.stringify(driverData));
@@ -121,9 +94,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  /**
-   * Logout driver
-   */
   const logout = useCallback(async () => {
     if (driver) setDriverOnlineStatus(driver.id, false).catch(() => {});
     localStorage.removeItem(SESSION_KEY);
@@ -133,10 +103,6 @@ export function AuthProvider({ children }) {
     setError(null);
   }, [driver]);
 
-  /**
-   * Update data driver (simulasi)
-   * @param {Object} updates
-   */
   const updateDriver = useCallback((updates) => {
     setDriver((prev) => {
       if (!prev) return prev;

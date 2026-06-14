@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigation, Crosshair, Layers, Users, RefreshCw } from 'lucide-react';
-import { ref, onValue, off } from 'firebase/database';
-import { db } from '../firebase/config.js';
+import { supabase } from '../supabase/config.js';
 import Header from '../components/Header.jsx';
 import { useApp } from '../context/AppContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -32,17 +31,28 @@ export default function MapPage() {
   } = useApp();
   const [onlineDrivers, setOnlineDrivers] = useState([]);
 
-  // Listen to Firebase RTDB for nearby drivers in same branch
+  // Listen to Supabase for nearby drivers in same branch
   useEffect(() => {
-    const r = ref(db, 'drivers');
-    const unsub = onValue(r, snap => {
-      const val = snap.val() || {};
-      const nearby = Object.entries(val)
-        .filter(([id, d]) => d.location?.branchId === driver?.airportId && d.location?.isOnline && id !== driver?.id)
-        .map(([id, d]) => ({ id, ...d.location }));
-      setOnlineDrivers(nearby);
-    });
-    return () => off(r);
+    if (!driver?.airportId) return;
+
+    const fetchDrivers = () => {
+      supabase
+        .from('driver_locations')
+        .select('*')
+        .eq('branch_id', driver.airportId)
+        .eq('is_online', true)
+        .neq('driver_id', driver.id)
+        .then(({ data }) => setOnlineDrivers(data || []));
+    };
+
+    fetchDrivers();
+
+    const channel = supabase
+      .channel('driver_locations_map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, fetchDrivers)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [driver?.airportId, driver?.id]);
 
   const airportCenter = airport
@@ -143,7 +153,6 @@ export default function MapPage() {
 
     const map = leafletMapRef.current;
 
-    // Create/update user location marker
     const userIcon = L.divIcon({
       className: '',
       html: `<div style="
@@ -188,7 +197,6 @@ export default function MapPage() {
       markersRef.current.userMarker = marker;
     }
 
-    // Accuracy circle
     if (location.accuracy) {
       if (markersRef.current.accuracyCircle) {
         markersRef.current.accuracyCircle.setLatLng([location.lat, location.lng]);
@@ -212,7 +220,6 @@ export default function MapPage() {
 
     const map = leafletMapRef.current;
 
-    // Remove old other-driver markers
     Object.keys(markersRef.current).forEach((key) => {
       if (key.startsWith('otherDriver-')) {
         markersRef.current[key].remove();
@@ -236,7 +243,7 @@ export default function MapPage() {
           font-size: 12px;
           color: white;
           font-weight: bold;
-        ">${d.queueNumber}</div>`,
+        ">${d.queue_number || '?'}</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       });
@@ -245,11 +252,11 @@ export default function MapPage() {
         .addTo(map)
         .bindPopup(`
           <div style="font-family: Inter, sans-serif;">
-            <strong style="color:#1e293b;">${d.name}</strong><br/>
-            <span style="color:${statusColor};font-size:12px;font-weight:600;">Antrian #${d.queueNumber}</span>
+            <strong style="color:#1e293b;">${d.driver_id}</strong><br/>
+            <span style="color:${statusColor};font-size:12px;font-weight:600;">${d.is_online ? 'Online' : 'Offline'}</span>
           </div>
         `);
-      markersRef.current[`otherDriver-${d.id}`] = marker;
+      markersRef.current[`otherDriver-${d.driver_id}`] = marker;
     });
   }, [onlineDrivers, mapReady, showDrivers]);
 
@@ -269,31 +276,22 @@ export default function MapPage() {
     <div className="min-h-screen bg-slate-950 pb-20 flex flex-col">
       <Header title="Peta Lokasi" />
 
-      {/* Map controls overlay */}
       <div className="relative flex-1" style={{ minHeight: '60vh' }}>
-        {/* Map container */}
         <div
           ref={mapRef}
           className="absolute inset-0"
           style={{ zIndex: 1 }}
         />
 
-        {/* Error state */}
         {mapError && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-900 z-10">
             <div className="text-center px-6">
               <p className="text-red-400 font-medium mb-2">{mapError}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="text-blue-400 text-sm underline"
-              >
-                Muat Ulang
-              </button>
+              <button onClick={() => window.location.reload()} className="text-blue-400 text-sm underline">Muat Ulang</button>
             </div>
           </div>
         )}
 
-        {/* Loading state */}
         {!mapReady && !mapError && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-900 z-10">
             <div className="text-center">
@@ -303,46 +301,26 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Map controls - top right */}
         {mapReady && (
           <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
-            <button
-              onClick={centerOnUser}
-              disabled={!location}
-              className="w-10 h-10 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-lg disabled:opacity-40"
-            >
-              {centeringOnUser ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Crosshair className="w-4 h-4" />
-              )}
+            <button onClick={centerOnUser} disabled={!location} className="w-10 h-10 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-lg disabled:opacity-40">
+              {centeringOnUser ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
             </button>
-            <button
-              onClick={centerOnAirport}
-              className="w-10 h-10 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-lg"
-            >
+            <button onClick={centerOnAirport} className="w-10 h-10 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
               <Navigation className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => setShowDrivers((v) => !v)}
-              className={`w-10 h-10 backdrop-blur border rounded-xl flex items-center justify-center transition-colors shadow-lg ${
-                showDrivers
-                  ? 'bg-blue-600/90 border-blue-500 text-white'
-                  : 'bg-slate-900/90 border-slate-700 text-slate-400'
-              }`}
-            >
+            <button onClick={() => setShowDrivers((v) => !v)} className={`w-10 h-10 backdrop-blur border rounded-xl flex items-center justify-center transition-colors shadow-lg ${
+              showDrivers ? 'bg-blue-600/90 border-blue-500 text-white' : 'bg-slate-900/90 border-slate-700 text-slate-400'
+            }`}>
               <Users className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* Geofence status badge - top left */}
         {mapReady && (
           <div className="absolute top-3 left-3 z-10">
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur border text-xs font-semibold shadow-lg ${
-              inGeofence
-                ? 'bg-blue-600/90 border-blue-500 text-white'
-                : 'bg-slate-900/90 border-slate-700 text-slate-400'
+              inGeofence ? 'bg-blue-600/90 border-blue-500 text-white' : 'bg-slate-900/90 border-slate-700 text-slate-400'
             }`}>
               <span className={`w-2 h-2 rounded-full ${inGeofence ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
               {inGeofence ? 'Dalam Geofence' : 'Luar Geofence'}
@@ -351,7 +329,6 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* Bottom info panel */}
       <div className="bg-slate-900/95 backdrop-blur border-t border-slate-700/50 px-4 py-4 z-20">
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
@@ -375,12 +352,7 @@ export default function MapPage() {
         {locationError && (
           <div className="mt-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
             <p className="text-yellow-400 text-xs">GPS: {locationError}</p>
-            <button
-              onClick={startTracking}
-              className="text-blue-400 text-xs underline mt-1"
-            >
-              Coba lagi
-            </button>
+            <button onClick={startTracking} className="text-blue-400 text-xs underline mt-1">Coba lagi</button>
           </div>
         )}
 
@@ -389,11 +361,6 @@ export default function MapPage() {
             <p className="text-slate-600 text-xs font-mono">
               {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
             </p>
-            {location.simulated && (
-              <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
-                Simulasi
-              </span>
-            )}
           </div>
         )}
       </div>
