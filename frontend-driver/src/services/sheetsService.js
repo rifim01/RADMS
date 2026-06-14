@@ -2,6 +2,7 @@
 const SHEET_IDS = {
   DRIVER_AIRPORT:  '1FEZxyHPx_GCQKw92hLSf6QxxkXgZn5R1sRswOYM_Tlc',
   DRIVER_EXTERNAL: '1suoDC-RsWOgTHiLq4max6iIsWe39Ou-RMddRXl5DVJc',
+  DATABASE_STAFF:  '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw',
 }
 
 const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru']
@@ -58,11 +59,9 @@ export async function findDriverByNik(nik) {
 }
 
 // ─── Staff lookup for validation ──────────────────────────────────────────────
-const STAFF_SHEET_ID = '1fcraqPKwqLaqPHZnpZB8dHCjZ0gj8NJMf5H30Sm7aZA'
-
 export async function findStaffById(staffId) {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${STAFF_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.DATABASE_STAFF}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
     const res = await fetch(url)
     const text = await res.text()
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))

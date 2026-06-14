@@ -16,7 +16,6 @@ import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
   generateQueueData,
   generateNotifications,
-  generateHistory,
   generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
@@ -68,8 +67,7 @@ export function AppProvider({ children }) {
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
 
-      const hist = generateHistory(driver.id);
-      setHistory(hist);
+      setHistory([]);
 
       setOnlineDrivers(generateOnlineDrivers());
 
@@ -95,7 +93,7 @@ export function AppProvider({ children }) {
 
       // Listen to real trips and queue status from Supabase
       const unsubTrips = listenDriverTrips(driver.id, (trips) => {
-        if (trips.length > 0) setHistory(trips);
+        setHistory(trips);
       });
 
       // Real-time queue status listener — shows CALLED alert to driver
