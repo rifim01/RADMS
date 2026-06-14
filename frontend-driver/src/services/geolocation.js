@@ -4,12 +4,14 @@
 
 const LOCATION_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 10000,
-  maximumAge: 5000,
+  timeout: 15000,
+  maximumAge: 10000,
 };
 
+// Minimum accuracy threshold — reject positions worse than this (meters)
+const MAX_ACCURACY_METERS = 150;
+
 let watchId = null;
-let updateInterval = null;
 
 /**
  * Mendapatkan posisi saat ini sekali
@@ -29,41 +31,29 @@ export function getCurrentPosition() {
  * Memulai pemantauan posisi secara real-time
  * @param {Function} onUpdate - Callback saat posisi berubah
  * @param {Function} onError - Callback saat error
- * @param {number} intervalMs - Interval update dalam ms (default 15 detik)
  * @returns {Function} Fungsi untuk menghentikan pemantauan
  */
-export function startLocationTracking(onUpdate, onError, intervalMs = 15000) {
+export function startLocationTracking(onUpdate, onError) {
   if (!navigator.geolocation) {
     onError?.(new Error('Geolocation tidak didukung oleh browser ini'));
     return () => {};
   }
 
-  // Watch position untuk update real-time
+  // watchPosition only — no competing interval (prevents GPS jitter)
   watchId = navigator.geolocation.watchPosition(
     (position) => {
-      const locationData = extractLocationData(position);
-      onUpdate?.(locationData);
+      // Reject inaccurate fixes to prevent GPS jumping
+      if (position.coords.accuracy > MAX_ACCURACY_METERS) {
+        console.warn('[GPS] Akurasi rendah, dilewati:', Math.round(position.coords.accuracy), 'm');
+        return;
+      }
+      onUpdate?.(extractLocationData(position));
     },
     (error) => {
-      const errorMsg = getGeolocationErrorMessage(error);
-      onError?.(new Error(errorMsg));
+      onError?.(new Error(getGeolocationErrorMessage(error)));
     },
     LOCATION_OPTIONS
   );
-
-  // Interval tambahan untuk memastikan update reguler
-  updateInterval = setInterval(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const locationData = extractLocationData(position);
-        onUpdate?.(locationData);
-      },
-      (error) => {
-        console.warn('[Geolocation] Interval update error:', error.message);
-      },
-      LOCATION_OPTIONS
-    );
-  }, intervalMs);
 
   return () => stopLocationTracking();
 }
@@ -75,10 +65,6 @@ export function stopLocationTracking() {
   if (watchId !== null) {
     navigator.geolocation?.clearWatch(watchId);
     watchId = null;
-  }
-  if (updateInterval !== null) {
-    clearInterval(updateInterval);
-    updateInterval = null;
   }
 }
 
@@ -131,7 +117,6 @@ export function isGeolocationAvailable() {
  */
 export async function requestLocationPermission() {
   if (!navigator.permissions) {
-    // Fallback: coba getCurrentPosition untuk trigger permission dialog
     try {
       await getCurrentPosition();
       return 'granted';
@@ -146,36 +131,4 @@ export async function requestLocationPermission() {
   } catch {
     return 'prompt';
   }
-}
-
-/**
- * Simulasi lokasi (untuk development/demo)
- * Berjalan di sekitar Bandara Sultan Hasanuddin
- * @param {Function} onUpdate
- * @returns {Function} stop function
- */
-export function startSimulatedTracking(onUpdate) {
-  const centerLat = -5.0614;
-  const centerLng = 119.5542;
-  let angle = 0;
-  const radius = 0.002; // ~200 meter
-
-  const interval = setInterval(() => {
-    angle += 0.05;
-    const lat = centerLat + Math.cos(angle) * radius;
-    const lng = centerLng + Math.sin(angle) * radius;
-
-    onUpdate?.({
-      lat,
-      lng,
-      accuracy: 10,
-      speed: 5 + Math.random() * 3,
-      heading: (angle * 180) / Math.PI,
-      altitude: null,
-      timestamp: Date.now(),
-      simulated: true,
-    });
-  }, 3000);
-
-  return () => clearInterval(interval);
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Home, ListOrdered, Map, Bell, History, User, LogOut } from 'lucide-react'
+import { Home, ListOrdered, Map, Bell, History, User, LogOut, PhoneCall } from 'lucide-react'
 import { useApp } from '../context/AppContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import RifimLogo from './RifimLogo.jsx'
@@ -16,12 +16,33 @@ const navItems = [
 ]
 
 export default function AppShell({ children }) {
-  const { unreadCount } = useApp()
+  const { unreadCount, calledAlert, dismissCalledAlert } = useApp()
   const { driver, logout } = useAuth()
   const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-slate-950 lg:flex">
+
+      {/* Full-screen CALLED alert overlay */}
+      {calledAlert && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, #CC0000 0%, #7f0000 100%)' }}>
+          <div className="animate-bounce mb-6">
+            <PhoneCall className="w-24 h-24 text-white" />
+          </div>
+          <h1 className="text-white text-4xl font-black mb-3 text-center px-4">ANDA DIPANGGIL!</h1>
+          <p className="text-red-200 text-lg text-center px-8 mb-8">
+            Segera menuju zona penjemputan penumpang
+          </p>
+          <button
+            onClick={() => { dismissCalledAlert(); navigate('/queue') }}
+            className="px-10 py-4 bg-white text-red-700 font-black text-xl rounded-2xl shadow-2xl active:scale-95 transition-transform"
+          >
+            OK — Menuju Antrian
+          </button>
+        </div>
+      )}
+
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-slate-900 border-r border-slate-700/50">
         <div className="p-5 border-b border-slate-700/50">

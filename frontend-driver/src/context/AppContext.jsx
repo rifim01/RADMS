@@ -10,27 +10,24 @@ import { useAuth } from './AuthContext.jsx';
 import {
   startLocationTracking,
   stopLocationTracking,
-  startSimulatedTracking,
   isGeolocationAvailable,
 } from '../services/geolocation.js';
 import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
+  generateQueueData,
   generateNotifications,
+  generateHistory,
+  generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
-import {
-  listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus,
-  writeDriverInfo, joinQueue, leaveQueue, listenQueue, markQueuePickup,
-  completeQueueEntry, recordTripCompletion,
-  getOrCreateDeviceId, listenDeviceSession, setOnDisconnectOffline,
-} from '../services/firebaseService.js';
+import { listenDriverTrips, listenMyQueueStatus, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const { driver, updateDriver, logout } = useAuth();
+  const { driver, updateDriver } = useAuth();
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
@@ -38,7 +35,6 @@ export function AppProvider({ children }) {
   const [geofenceDistance, setGeofenceDistance] = useState(null);
   const [queueData, setQueueData] = useState([]);
   const [myQueueEntry, setMyQueueEntry] = useState(null);
-  const [queueLoading, setQueueLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [history, setHistory] = useState([]);
@@ -46,33 +42,36 @@ export function AppProvider({ children }) {
   const [panicActive, setPanicActive] = useState(false);
   const [panicCooldown, setPanicCooldown] = useState(false);
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
+  const [calledAlert, setCalledAlert] = useState(false); // full-screen CALLED overlay
 
   const geofenceMonitorRef = useRef(null);
   const stopTrackingRef = useRef(null);
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
-  const isOnlineRef = useRef(false);          // always-current isOnline for async callbacks
-  const prevQueueStatusRef = useRef(null);    // track myQueueEntry.status transitions
+  const prevQueueStatusRef = useRef(null);
 
-  // Use driver's real airport, fallback to mock
-  const airport = driver?.airportId
-    ? (AIRPORTS[driver.airportId] || AIRPORTS[DEFAULT_AIRPORT_ID])
-    : AIRPORTS[DEFAULT_AIRPORT_ID];
+  const airport = AIRPORTS[DEFAULT_AIRPORT_ID];
 
   // Init data
   useEffect(() => {
     if (driver) {
+      const queue = generateQueueData(DEFAULT_AIRPORT_ID, driver.id);
+      setQueueData(queue);
+      const myEntry = queue.find((q) => q.driverId === driver.id);
+      setMyQueueEntry(myEntry || null);
+
       const notifs = generateNotifications();
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
 
-      // History starts empty; Firebase fills it
-      setHistory([]);
+      const hist = generateHistory(driver.id);
+      setHistory(hist);
 
-      // Init geofence monitor using driver's real airport
-      const airportId = driver.airportId || DEFAULT_AIRPORT_ID;
+      setOnlineDrivers(generateOnlineDrivers());
+
+      // Init geofence monitor
       geofenceMonitorRef.current = new GeofenceMonitor(
-        airportId,
+        DEFAULT_AIRPORT_ID,
         handleGeofenceEnter,
         handleGeofenceExit
       );
@@ -87,36 +86,36 @@ export function AppProvider({ children }) {
         checkAndUpdateGeofence(loc.lat, loc.lng);
       }
 
-      // GPS always-on: start tracking immediately
+      // GPS always-on: start tracking immediately regardless of online status
       startTracking();
 
+      // Listen to real trips and queue status from Firebase
       let unsubTrips = () => {};
       let unsubQueue = () => {};
-      let unsubDevice = () => {};
-
       ensureAuth().then(() => {
-        // Register onDisconnect: Firebase auto-sets isOnline=false saat app ditutup
-        setOnDisconnectOffline(driver.id);
-
-        // Single-device enforcement: logout jika device lain login dengan akun ini
-        const myDeviceId = getOrCreateDeviceId();
-        unsubDevice = listenDeviceSession(driver.id, myDeviceId, () => {
-          sessionStorage.setItem('radms_kicked', '1');
-          logout();
-        });
-
-        // Listen to real trips — always update (even if empty)
         unsubTrips = listenDriverTrips(driver.id, (trips) => {
-          setHistory(trips);
+          if (trips.length > 0) setHistory(trips);
         });
 
-        // Listen to real RTDB queue for driver's branch
-        const branchId = driver.airportId;
-        if (branchId) {
-          unsubQueue = listenQueue(branchId, (entries) => {
-            setQueueData(entries);
-            const myEntry = entries.find(e => e.driverId === driver.id || e.driverId === driver.nik);
-            setMyQueueEntry(myEntry || null);
+        // Real-time queue status listener — shows CALLED alert to driver
+        if (driver.airportId) {
+          unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
+            if (!entry) {
+              setMyQueueEntry(null);
+              prevQueueStatusRef.current = null;
+              return;
+            }
+            setMyQueueEntry(entry);
+            // Trigger CALLED alert when status transitions to CALLED
+            if (entry.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
+              setCalledAlert(true);
+              addSystemNotification(
+                'Anda Dipanggil!',
+                'Segera menuju zona penjemputan penumpang.',
+                'CALLED'
+              );
+            }
+            prevQueueStatusRef.current = entry.status;
           });
         }
       }).catch(() => {});
@@ -124,10 +123,28 @@ export function AppProvider({ children }) {
       return () => {
         unsubTrips();
         unsubQueue();
-        unsubDevice();
       };
     }
   }, [driver?.id]);
+
+  // Refresh queue simulasi setiap 30 detik
+  useEffect(() => {
+    if (!driver || !isOnline) return;
+
+    queueRefreshRef.current = setInterval(() => {
+      setQueueData((prev) => {
+        const updated = prev.map((entry) => {
+          if (entry.driverId === driver.id) return entry;
+          return entry;
+        });
+        return updated;
+      });
+    }, 30000);
+
+    return () => {
+      if (queueRefreshRef.current) clearInterval(queueRefreshRef.current);
+    };
+  }, [driver?.id, isOnline]);
 
   // Network status
   useEffect(() => {
@@ -141,36 +158,15 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  // Keep isOnlineRef current so async GPS callbacks always use latest value
-  useEffect(() => { isOnlineRef.current = isOnline; }, [isOnline]);
-
-  // Sync online status to Firebase whenever it changes (also handles session restore)
-  useEffect(() => {
-    if (!driver?.id) return;
-    ensureAuth().then(() => {
-      setDriverOnlineStatus(driver.id, isOnline);
-      // Write name + branchId so dashboard can display driver info
-      if (driver.name && driver.airportId) {
-        writeDriverInfo(driver.id, driver.name, driver.airportId);
-      }
-    }).catch(() => {});
-  }, [isOnline, driver?.id]);
-
   const checkAndUpdateGeofence = useCallback((lat, lng) => {
     if (!geofenceMonitorRef.current) return;
-    // Rebuild monitor if airportId changed
-    const airportId = driver?.airportId || DEFAULT_AIRPORT_ID;
-    if (geofenceMonitorRef.current.airportId !== airportId) {
-      geofenceMonitorRef.current = new GeofenceMonitor(airportId, handleGeofenceEnter, handleGeofenceExit);
-    }
     const result = geofenceMonitorRef.current.update(lat, lng);
     setInGeofence(result.inside);
     setGeofenceDistance(result.distance);
-  }, [driver?.airportId]);
+  }, []);
 
   const handleGeofenceEnter = useCallback((result) => {
     setInGeofence(true);
-    // Auto-add to queue jika online
     addSystemNotification(
       'Geofence Aktif',
       `Anda memasuki area ${result.airport?.name}. Nomor antrian akan diberikan otomatis.`,
@@ -259,29 +255,25 @@ export function AppProvider({ children }) {
         lastUpdate: new Date().toISOString(),
       });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Update Firebase location regardless of online status (use ref to avoid stale closure)
+      // Update Firebase location regardless of online status
       if (driver?.id) {
         ensureAuth().then(() => {
-          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnlineRef.current);
+          updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
         }).catch(() => {});
       }
     };
 
     const handleLocationError = (err) => {
       setLocationError(err.message);
-      // Fallback ke simulasi jika GPS error
-      console.warn('[AppContext] GPS error, menggunakan simulasi:', err.message);
-      const stopSim = startSimulatedTracking(handleLocationUpdate);
-      stopTrackingRef.current = stopSim;
+      console.warn('[AppContext] GPS error:', err.message);
+      // Do NOT fall back to simulation — show error state instead
     };
 
     if (isGeolocationAvailable()) {
-      const stopFn = startLocationTracking(handleLocationUpdate, handleLocationError, 15000);
+      const stopFn = startLocationTracking(handleLocationUpdate, handleLocationError);
       stopTrackingRef.current = stopFn;
     } else {
-      // Gunakan simulasi jika geolocation tidak tersedia
-      const stopSim = startSimulatedTracking(handleLocationUpdate);
-      stopTrackingRef.current = stopSim;
+      setLocationError('Perangkat tidak mendukung GPS');
     }
   }, [checkAndUpdateGeofence, updateDriver]);
 
@@ -316,16 +308,6 @@ export function AppProvider({ children }) {
     setUnreadCount(0);
   }, []);
 
-  // Detect CALLED status change → play sound + show notification
-  useEffect(() => {
-    const prev = prevQueueStatusRef.current;
-    const curr = myQueueEntry?.status ?? null;
-    if (prev !== 'CALLED' && curr === 'CALLED') {
-      addSystemNotification('Anda Dipanggil!', 'Segera menuju zona penjemputan.', 'CALLED');
-    }
-    prevQueueStatusRef.current = curr;
-  }, [myQueueEntry?.status]); // eslint-disable-line react-hooks/exhaustive-deps
-
   /**
    * Kirim Panic Button alert
    */
@@ -356,67 +338,6 @@ export function AppProvider({ children }) {
       setPanicCooldown(false);
     }, 60000);
   }, [panicCooldown, location, addSystemNotification]);
-
-  const enterQueue = useCallback(async () => {
-    if (!driver?.id || !driver?.airportId) return;
-    // Block if >2000m from airport
-    if (geofenceDistance != null && geofenceDistance > 2000) {
-      addSystemNotification(
-        'Di Luar Area Bandara',
-        `Anda ${Math.round(geofenceDistance)}m dari bandara. Harus dalam radius 2 km untuk masuk antrian.`,
-        'GEOFENCE'
-      );
-      return;
-    }
-    setQueueLoading(true);
-    try {
-      await ensureAuth();
-      await joinQueue(driver.id, driver.name, driver.plateNumber || '', driver.airportId);
-      addSystemNotification('Masuk Antrian', 'Anda berhasil masuk antrian. Tunggu giliran Anda.', 'GEOFENCE');
-    } catch {
-      addSystemNotification('Antrian', 'Gagal masuk antrian. Coba lagi.', 'SYSTEM');
-    } finally {
-      setQueueLoading(false);
-    }
-  }, [driver?.id, driver?.name, driver?.plateNumber, driver?.airportId, geofenceDistance]);
-
-  const exitQueue = useCallback(async () => {
-    if (!driver?.id || !driver?.airportId) return;
-    setQueueLoading(true);
-    try {
-      await ensureAuth();
-      await leaveQueue(driver.id, driver.airportId);
-    } catch {
-      addSystemNotification('Antrian', 'Gagal keluar antrian. Coba lagi.', 'SYSTEM');
-    } finally {
-      setQueueLoading(false);
-    }
-  }, [driver?.id, driver?.airportId]);
-
-  // Confirm pickup by staff — sets status PICKUP
-  const pickupQueue = useCallback(async () => {
-    if (!driver?.id || !driver?.airportId) return;
-    try {
-      await ensureAuth();
-      await markQueuePickup(driver.id, driver.airportId);
-    } catch {}
-  }, [driver?.id, driver?.airportId]);
-
-  // Driver completes the trip — removes from queue, records trip
-  const completeTrip = useCallback(async () => {
-    if (!driver?.id || !driver?.airportId) return;
-    setQueueLoading(true);
-    try {
-      await ensureAuth();
-      await completeQueueEntry(driver.id, driver.airportId);
-      await recordTripCompletion(driver.id, driver.name, driver.airportId, driver.plateNumber || '');
-      addSystemNotification('Perjalanan Selesai', 'Perjalanan berhasil diselesaikan. Anda dapat masuk antrian kembali.', 'COMPLETED');
-    } catch {
-      addSystemNotification('Error', 'Gagal menyelesaikan perjalanan. Coba lagi.', 'SYSTEM');
-    } finally {
-      setQueueLoading(false);
-    }
-  }, [driver?.id, driver?.name, driver?.airportId, driver?.plateNumber]);
 
   /**
    * Update posisi manual (untuk testing)
@@ -452,11 +373,6 @@ export function AppProvider({ children }) {
     // Queue
     queueData,
     myQueueEntry,
-    queueLoading,
-    enterQueue,
-    exitQueue,
-    pickupQueue,
-    completeTrip,
 
     // Notifications
     notifications,
@@ -475,6 +391,10 @@ export function AppProvider({ children }) {
     panicActive,
     panicCooldown,
     triggerPanic,
+
+    // CALLED overlay
+    calledAlert,
+    dismissCalledAlert: () => setCalledAlert(false),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
