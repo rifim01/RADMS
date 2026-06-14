@@ -4,6 +4,7 @@
 
 const SlipGaji = (() => {
   let _staffCache = [];
+  let _lastSlip   = null;
 
   async function load() {
     const user = Auth.getUser();
@@ -49,6 +50,7 @@ const SlipGaji = (() => {
     try {
       const res = await API.getPayrollSlip(idStaff, periode);
       if (!res.success) throw new Error(res.error || 'Slip tidak ditemukan untuk periode ini');
+      _lastSlip = res.data;
       _renderSlip(res.data, el);
     } catch (e) {
       el.innerHTML = `<div class="empty-state">
@@ -77,12 +79,15 @@ const SlipGaji = (() => {
     const bersih         = Number(d.gaji_bersih || (gapok + totalTunjangan + lembur - totalPotongan - kasbon));
 
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px">
         <div>
           <div style="font-size:14px;font-weight:700">SLIP GAJI — ${formatPeriode(d.periode)}</div>
           <div style="font-size:12px;color:#666">Dicetak: ${new Date().toLocaleDateString('id-ID')}</div>
         </div>
-        <button class="btn btn-primary" onclick="SlipGaji.cetakSlip()">🖨️ Cetak / PDF</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="SlipGaji.cetakSlip()">🖨️ Cetak / PDF</button>
+          <button class="btn btn-secondary" onclick="SlipGaji.bagikanWA()">📱 WhatsApp</button>
+        </div>
       </div>
       <div id="slipCetakArea">
         <div style="background:#f8f9fa;padding:14px;border-radius:8px;margin-bottom:16px">
@@ -153,5 +158,38 @@ const SlipGaji = (() => {
     win.document.close();
   }
 
-  return { load, cari, cetakSlip };
+  function bagikanWA() {
+    const d = _lastSlip;
+    if (!d) { toast('Tidak ada slip untuk dibagikan', 'warning'); return; }
+
+    const gapok   = Number(d.gapok || 0);
+    const lembur  = Number(d.total_lembur || 0);
+    const kasbon  = Number(d.total_kasbon || 0);
+    const bersih  = Number(d.gaji_bersih || (gapok + lembur - kasbon));
+    const rp      = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
+
+    const pesan = [
+      `*SLIP GAJI KARYAWAN*`,
+      `PT. Rifim International Gemilang`,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `👤 Nama    : ${d.nama || '-'}`,
+      `🏢 Cabang  : ${d.id_cabang || '-'}`,
+      `💼 Jabatan : ${d.jabatan || '-'}`,
+      `📅 Periode : ${formatPeriode(d.periode)}`,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `💰 Gaji Pokok   : ${rp(gapok)}`,
+      lembur  ? `⏰ Lembur        : ${rp(lembur)}`  : '',
+      kasbon  ? `💸 Cicilan Kasbon: (${rp(kasbon)})` : '',
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `✅ *GAJI BERSIH : ${rp(bersih)}*`,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `_Dikirim via RIFIM Payroll System_`
+    ].filter(Boolean).join('\n');
+
+    const nomor = d.nomor_hp || '';
+    const url   = `https://wa.me/${nomor.replace(/\D/g,'')}?text=${encodeURIComponent(pesan)}`;
+    window.open(url, '_blank');
+  }
+
+  return { load, cari, cetakSlip, bagikanWA };
 })();

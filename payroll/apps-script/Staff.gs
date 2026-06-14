@@ -85,7 +85,9 @@ function updateStaff(id, data, auth) {
   if (data.jabatan !== undefined) update.jabatan = data.jabatan;
   if (data.gapok !== undefined)   update.gapok   = Number(data.gapok);
   if (data.nomor_hp)  update.nomor_hp  = data.nomor_hp;
-  if (data.foto !== undefined)    update.foto    = data.foto;
+  if (data.foto !== undefined)     update.foto     = data.foto;
+  if (data.bg_url !== undefined)   update.bg_url   = data.bg_url;
+  if (data.logo_url !== undefined) update.logo_url = data.logo_url;
   if (data.status)    update.status    = data.status;
   if (data.id_cabang && _canManageCabang(auth, data.id_cabang)) update.id_cabang = data.id_cabang;
   if (data.password)  update.password_hash = _prHashPw(data.password);

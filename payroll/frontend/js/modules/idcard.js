@@ -47,18 +47,24 @@ const IDCard = (() => {
   function _cardFrontHtml(staff, nomorId) {
     const cabang    = _getCabangInfo(staff.id_cabang);
     const photoSrc  = staff.foto || '';
+    const bgStyle   = staff.bg_url
+      ? `background:url('${staff.bg_url}') center/cover no-repeat;`
+      : `background:${WHITE};`;
     const photoHtml = photoSrc
       ? `<img src="${photoSrc}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid ${YELLOW}">`
       : `<div style="width:80px;height:80px;border-radius:50%;background:${YELLOW};display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:${NAVY};border:3px solid ${NAVY}">${(staff.nama||'?').charAt(0).toUpperCase()}</div>`;
+    const logoHtml  = staff.logo_url
+      ? `<img src="${staff.logo_url}" style="height:28px;object-fit:contain">`
+      : `<div style="font-size:22px;font-weight:900;color:#CC0000;letter-spacing:-1px">RIFIM</div>`;
 
     return `
-      <div style="width:252px;min-height:390px;background:${WHITE};border-radius:14px;
+      <div style="width:252px;min-height:390px;${bgStyle}border-radius:14px;
                   box-shadow:0 4px 18px rgba(0,0,0,0.18);font-family:Arial,sans-serif;
                   overflow:hidden;display:inline-block;vertical-align:top">
 
-        <!-- Header putih dengan logo -->
-        <div style="background:${WHITE};padding:10px 12px 6px;display:flex;align-items:center;gap:8px;border-bottom:2px solid ${YELLOW}">
-          <div style="font-size:22px;font-weight:900;color:#CC0000;letter-spacing:-1px">RIFIM</div>
+        <!-- Header dengan logo (custom atau default) -->
+        <div style="background:rgba(255,255,255,0.92);padding:10px 12px 6px;display:flex;align-items:center;gap:8px;border-bottom:2px solid ${YELLOW}">
+          ${logoHtml}
           <div style="flex:1;text-align:right;font-size:8px;color:${NAVY};line-height:1.3;font-weight:600">
             PT RIFIM<br>INTERNATIONAL<br>GEMILANG
           </div>
@@ -170,6 +176,7 @@ const IDCard = (() => {
                 🪪 Preview
               </button>
               <button class="btn btn-outline btn-sm" onclick="IDCard.editFoto('${s.id}')">📷 Foto</button>
+              <button class="btn btn-outline btn-sm" onclick="IDCard.editKartu('${s.id}')">🎨 Kartu</button>
               <button class="btn btn-secondary btn-sm" onclick="IDCard.printCard('${s.id}')">🖨️ Print</button>
             </div>
           </div>
@@ -301,9 +308,76 @@ const IDCard = (() => {
     }
   }
 
+  // ── Edit Kartu (Background + Logo) ────────────────────────────────────────
+  function editKartu(idStaff) {
+    const staff = staffList.find(s => s.id === idStaff);
+    if (!staff) return;
+    createModal({
+      id: 'idcKartuModal',
+      title: '🎨 Edit Tampilan Kartu — ' + staff.nama,
+      body: `
+        <div class="form-group">
+          <label class="form-label">URL Background Kartu</label>
+          <input id="idcBgUrl" class="form-control"
+            placeholder="https://... (kosongkan untuk warna default)"
+            value="${staff.bg_url || ''}">
+          <p style="font-size:11px;color:#888;margin-top:4px">
+            Gambar background untuk kartu depan (PNG/JPG, ukuran 252×390px ideal).
+          </p>
+        </div>
+        <div id="idcBgPreview" style="margin-bottom:12px">
+          ${staff.bg_url ? `<img src="${staff.bg_url}" style="max-width:100%;max-height:80px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">` : ''}
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL Logo Perusahaan</label>
+          <input id="idcLogoUrl" class="form-control"
+            placeholder="https://... (kosongkan untuk teks RIFIM default)"
+            value="${staff.logo_url || ''}">
+          <p style="font-size:11px;color:#888;margin-top:4px">
+            Logo PNG transparan untuk header kartu (maks 80px tinggi).
+          </p>
+        </div>
+        <div id="idcLogoPreview" style="margin-bottom:4px">
+          ${staff.logo_url ? `<img src="${staff.logo_url}" style="max-height:50px;border-radius:4px" onerror="this.style.display='none'">` : ''}
+        </div>`,
+      confirmText: '💾 Simpan Tampilan',
+      onConfirm: () => saveKartu(idStaff)
+    });
+
+    document.getElementById('idcBgUrl').addEventListener('input', function() {
+      const el = document.getElementById('idcBgPreview');
+      if (el) el.innerHTML = this.value
+        ? `<img src="${this.value}" style="max-width:100%;max-height:80px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">`
+        : '';
+    });
+    document.getElementById('idcLogoUrl').addEventListener('input', function() {
+      const el = document.getElementById('idcLogoPreview');
+      if (el) el.innerHTML = this.value
+        ? `<img src="${this.value}" style="max-height:50px;border-radius:4px" onerror="this.style.display='none'">`
+        : '';
+    });
+  }
+
+  async function saveKartu(idStaff) {
+    const bgUrl   = document.getElementById('idcBgUrl')?.value.trim();
+    const logoUrl = document.getElementById('idcLogoUrl')?.value.trim();
+    showLoading(true);
+    try {
+      const res = await API.updateStaff(idStaff, { bg_url: bgUrl, logo_url: logoUrl });
+      if (!res.success) throw new Error(res.error);
+      toast('Tampilan kartu berhasil disimpan', 'success');
+      closeModal('idcKartuModal');
+      load();
+    } catch (e) {
+      toast('Gagal simpan: ' + e.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
+
   // expose generate/preview aliases
   function generate(idStaff)  { showPreview(idStaff); }
   function preview(idStaff)   { showPreview(idStaff); }
 
-  return { load, generate, preview, showPreview, printCard, filterByCabang, generateAll, editFoto };
+  return { load, generate, preview, showPreview, printCard, filterByCabang, generateAll, editFoto, editKartu };
 })();

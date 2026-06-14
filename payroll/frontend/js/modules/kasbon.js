@@ -3,7 +3,10 @@
  */
 
 const Kasbon = (() => {
-  let staffList = [];
+  let staffList    = [];
+  let _allKasbon   = [];
+  let _page        = 1;
+  const PAGE_SIZE  = 50;
 
   async function load() {
     showLoading(true);
@@ -21,11 +24,12 @@ const Kasbon = (() => {
       const staffMap = {};
       staffList.forEach(s => { staffMap[s.id] = s.nama; });
 
-      const allKasbon = kasbonRes.success
+      _allKasbon = kasbonRes.success
         ? (kasbonRes.data || []).map(k => ({ ...k, _nama: staffMap[k.id_staff] || k.nama || '-' }))
         : [];
+      _page = 1;
 
-      renderTable(allKasbon);
+      renderTable(_allKasbon.slice(0, PAGE_SIZE));
       populateCabangSelect('ksbCabang', true);
     } catch (e) {
       toast('Gagal memuat data kasbon: ' + e.message, 'error');
@@ -43,10 +47,11 @@ const Kasbon = (() => {
         <div class="empty-icon">💸</div>
         <div class="empty-text">Tidak ada data kasbon</div>
       </div></td></tr>`;
+      _renderLoadMore();
       return;
     }
 
-    // Sort by tanggal desc
+    // Sort by tanggal desc (already sorted from getAllKasbon, but ensure)
     data.sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
 
     el.innerHTML = data.map(k => `<tr>
@@ -58,6 +63,34 @@ const Kasbon = (() => {
       <td>${k.periode_potong ? formatPeriode(k.periode_potong) : '-'}</td>
       <td><span class="badge ${k.status === 'LUNAS' ? 'badge-green' : 'badge-yellow'}">${k.status}</span></td>
     </tr>`).join('');
+
+    _renderLoadMore();
+  }
+
+  function _renderLoadMore() {
+    const container = document.getElementById('kasbonLoadMore');
+    if (!container) return;
+    const shown = Math.min(_page * PAGE_SIZE, _allKasbon.length);
+    const total  = _allKasbon.length;
+    if (shown >= total) {
+      container.innerHTML = total
+        ? `<div style="text-align:center;font-size:12px;color:#888;padding:8px">Menampilkan semua ${total} record</div>`
+        : '';
+    } else {
+      container.innerHTML = `
+        <div style="text-align:center;padding:12px">
+          <span style="font-size:12px;color:#888">Menampilkan ${shown} dari ${total} record</span>
+          <button class="btn btn-outline btn-sm" style="margin-left:12px" onclick="Kasbon.loadMore()">
+            Muat ${Math.min(PAGE_SIZE, total - shown)} data lagi ▼
+          </button>
+        </div>`;
+    }
+  }
+
+  function loadMore() {
+    _page++;
+    const sliced = _allKasbon.slice(0, _page * PAGE_SIZE);
+    renderTable(sliced);
   }
 
   function showForm() {
@@ -145,5 +178,5 @@ const Kasbon = (() => {
     finally { showLoading(false); }
   }
 
-  return { load, showForm, onStaffChange };
+  return { load, showForm, onStaffChange, loadMore };
 })();

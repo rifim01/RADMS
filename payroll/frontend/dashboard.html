@@ -461,6 +461,7 @@
             </tbody>
           </table>
         </div>
+        <div id="kasbonLoadMore"></div>
       </div>
     </div>
 
@@ -535,7 +536,9 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
             <button class="btn btn-outline" onclick="Report.exportPDFCabang()">📄 PDF per Cabang</button>
             <button class="btn btn-outline" onclick="Report.exportPDFStaff()">👤 PDF per Staff</button>
-            <button class="btn btn-outline" onclick="Report.exportCSV()">📥 Export CSV</button>
+            <button class="btn btn-secondary" onclick="Report.exportExcelCabang()">📊 Excel per Cabang</button>
+            <button class="btn btn-secondary" onclick="Report.exportExcelStaff()">📊 Excel per Staff</button>
+            <button class="btn btn-outline" onclick="Report.exportCSV()">📥 CSV</button>
             <button class="btn btn-outline" onclick="Report.print()">🖨️ Print</button>
           </div>
         </div>

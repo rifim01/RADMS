@@ -281,5 +281,113 @@ const Report = (() => {
     win.document.close();
   }
 
-  return { load, generate, exportCSV, print, exportPDFCabang, exportPDFStaff };
+  // ── Excel per Cabang ────────────────────────────────────────────────────────
+  async function exportExcelCabang() {
+    const idCabang = document.getElementById('rptCabang')?.value;
+    const start    = document.getElementById('rptStart')?.value;
+    const end      = document.getElementById('rptEnd')?.value;
+    const type     = document.getElementById('rptType')?.value || 'payroll';
+    if (!start || !end) { toast('Pilih periode terlebih dahulu', 'warning'); return; }
+
+    showLoading(true);
+    try {
+      const [res, staffRes] = await Promise.all([
+        API.getReport(type, idCabang, start, end),
+        API.getStaff(idCabang)
+      ]);
+      const data  = res.success      ? (res.data      || []) : [];
+      const staff = staffRes.success ? (staffRes.data || []) : [];
+      const cabang = (APP_CONFIG.CABANG || []).find(c => c.id === idCabang);
+      const nama   = cabang ? cabang.nama : (idCabang || 'Semua Cabang');
+      _downloadExcel(data, `Laporan-${type}-${nama}-${start}-${end}`,
+        `Laporan ${type.toUpperCase()} | ${nama} | ${start} s/d ${end} | ${staff.length} staff`);
+    } catch (e) { toast('Gagal export: ' + e.message, 'error'); }
+    finally { showLoading(false); }
+  }
+
+  // ── Excel per Staff ──────────────────────────────────────────────────────────
+  async function exportExcelStaff() {
+    const idStaff  = document.getElementById('rptStaff')?.value;
+    const start    = document.getElementById('rptStart')?.value;
+    const end      = document.getElementById('rptEnd')?.value;
+    const idCabang = document.getElementById('rptCabang')?.value;
+    if (!idStaff) { toast('Pilih staff terlebih dahulu', 'warning'); return; }
+    if (!start || !end) { toast('Pilih periode terlebih dahulu', 'warning'); return; }
+
+    showLoading(true);
+    try {
+      const [staffRes, absRes, kasbonRes] = await Promise.all([
+        API.getStaffById(idStaff),
+        API.getAbsensi({ idCabang, startDate: start, endDate: end }),
+        API.getKasbon(idStaff)
+      ]);
+      const staff  = staffRes.success  ? staffRes.data : {};
+      const absen  = absRes.success    ? (absRes.data || []).filter(a => a.id_staff === idStaff) : [];
+      const kasbon = kasbonRes.success ? (kasbonRes.data || []) : [];
+
+      // Gabungkan 2 sheet: absensi + kasbon
+      const rowsAbsen  = absen.map(a => ({ Tanggal: a.tanggal, Status: a.status, 'Jam Masuk': a.jam_masuk || '-', 'Jam Keluar': a.jam_keluar || '-' }));
+      const rowsKasbon = kasbon.map(k => ({ Tanggal: k.tanggal, 'Jumlah (Rp)': k.jumlah, Keterangan: k.keterangan, Status: k.status }));
+
+      const titleLine = `${staff.nama || ''} | ${staff.jabatan || ''} | ${staff.id_cabang || ''} | ${start} s/d ${end}`;
+      _downloadExcelMultiSheet(
+        [{ nama: 'Absensi', data: rowsAbsen }, { nama: 'Kasbon', data: rowsKasbon }],
+        `Laporan-Staff-${(staff.nama || idStaff).replace(/\s+/g,'-')}-${start}`,
+        titleLine
+      );
+    } catch (e) { toast('Gagal export: ' + e.message, 'error'); }
+    finally { showLoading(false); }
+  }
+
+  // Helper: download single-sheet Excel (HTML table as .xls)
+  function _downloadExcel(data, filename, subtitle) {
+    if (!data.length) { toast('Tidak ada data untuk di-export', 'warning'); return; }
+    const cols = Object.keys(data[0]);
+    const tableHtml = `
+      <table border="1">
+        <tr><th colspan="${cols.length}" style="background:#1A3A6B;color:white;font-size:14px">PT. RIFIM INTERNATIONAL GEMILANG</th></tr>
+        <tr><td colspan="${cols.length}">${subtitle}</td></tr>
+        <tr>${cols.map(c => `<th style="background:#F7C520;font-weight:bold">${c}</th>`).join('')}</tr>
+        ${data.map(row => `<tr>${cols.map(c => `<td>${row[c] ?? ''}</td>`).join('')}</tr>`).join('')}
+      </table>`;
+    _saveAsXls(tableHtml, filename);
+    toast('Export Excel berhasil', 'success');
+  }
+
+  // Helper: download multi-sheet Excel (separate tables)
+  function _downloadExcelMultiSheet(sheets, filename, subtitle) {
+    let html = `<style>th{background:#1A3A6B;color:white}td,th{border:1px solid #ccc;padding:4px}</style>`;
+    html += `<p><strong>PT. RIFIM INTERNATIONAL GEMILANG</strong><br>${subtitle}</p>`;
+    sheets.forEach(s => {
+      html += `<h3>${s.nama}</h3>`;
+      if (!s.data.length) { html += '<p>(tidak ada data)</p>'; return; }
+      const cols = Object.keys(s.data[0]);
+      html += `<table border="1">
+        <tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>
+        ${s.data.map(row => `<tr>${cols.map(c => `<td>${row[c] ?? ''}</td>`).join('')}</tr>`).join('')}
+      </table><br>`;
+    });
+    _saveAsXls(html, filename);
+    toast('Export Excel berhasil', 'success');
+  }
+
+  function _saveAsXls(html, filename) {
+    const full = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="UTF-8"><!--[if gte mso 9]><xml>
+        <x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+          <x:Name>Laporan</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+      </head><body>${html}</body></html>`;
+    const blob = new Blob(['﻿' + full], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename + '.xls';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return { load, generate, exportCSV, print, exportPDFCabang, exportPDFStaff, exportExcelCabang, exportExcelStaff };
 })();
