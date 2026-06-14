@@ -20,6 +20,7 @@ import {
   generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
+  resolveAirportKey,
 } from '../services/mockData.js';
 import { listenDriverTrips, listenMyQueueStatus, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
@@ -50,12 +51,14 @@ export function AppProvider({ children }) {
   const queueRefreshRef = useRef(null);
   const prevQueueStatusRef = useRef(null);
 
-  const airport = AIRPORTS[DEFAULT_AIRPORT_ID];
+  const airportKey = resolveAirportKey(driver?.airportId);
+  const airport = AIRPORTS[airportKey];
 
   // Init data
   useEffect(() => {
     if (driver) {
-      const queue = generateQueueData(DEFAULT_AIRPORT_ID, driver.id);
+      const resolvedKey = resolveAirportKey(driver.airportId);
+      const queue = generateQueueData(resolvedKey, driver.id);
       setQueueData(queue);
       const myEntry = queue.find((q) => q.driverId === driver.id);
       setMyQueueEntry(myEntry || null);
@@ -69,9 +72,9 @@ export function AppProvider({ children }) {
 
       setOnlineDrivers(generateOnlineDrivers());
 
-      // Init geofence monitor
+      // Init geofence monitor using driver's actual airport
       geofenceMonitorRef.current = new GeofenceMonitor(
-        DEFAULT_AIRPORT_ID,
+        resolvedKey,
         handleGeofenceEnter,
         handleGeofenceExit
       );
@@ -132,6 +135,7 @@ export function AppProvider({ children }) {
     if (!driver || !isOnline) return;
 
     queueRefreshRef.current = setInterval(() => {
+      // Simulasi pergerakan antrian
       setQueueData((prev) => {
         const updated = prev.map((entry) => {
           if (entry.driverId === driver.id) return entry;
@@ -167,6 +171,7 @@ export function AppProvider({ children }) {
 
   const handleGeofenceEnter = useCallback((result) => {
     setInGeofence(true);
+    // Auto-add to queue jika online
     addSystemNotification(
       'Geofence Aktif',
       `Anda memasuki area ${result.airport?.name}. Nomor antrian akan diberikan otomatis.`,
