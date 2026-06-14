@@ -10,7 +10,6 @@ import { useAuth } from './AuthContext.jsx';
 import {
   startLocationTracking,
   stopLocationTracking,
-  startSimulatedTracking,
   isGeolocationAvailable,
 } from '../services/geolocation.js';
 import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
@@ -22,7 +21,7 @@ import {
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
 } from '../services/mockData.js';
-import { listenDriverTrips, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
+import { listenDriverTrips, listenMyQueueStatus, ensureAuth, updateDriverLocation, setDriverOnlineStatus } from '../services/firebaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
@@ -43,11 +42,13 @@ export function AppProvider({ children }) {
   const [panicActive, setPanicActive] = useState(false);
   const [panicCooldown, setPanicCooldown] = useState(false);
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
+  const [calledAlert, setCalledAlert] = useState(false); // full-screen CALLED overlay
 
   const geofenceMonitorRef = useRef(null);
   const stopTrackingRef = useRef(null);
   const panicTimeoutRef = useRef(null);
   const queueRefreshRef = useRef(null);
+  const prevQueueStatusRef = useRef(null);
 
   const airport = AIRPORTS[DEFAULT_AIRPORT_ID];
 
@@ -88,21 +89,40 @@ export function AppProvider({ children }) {
       // GPS always-on: start tracking immediately regardless of online status
       startTracking();
 
-      // Listen to real trips from Firebase
+      // Listen to real trips and queue status from Firebase
       let unsubTrips = () => {};
+      let unsubQueue = () => {};
       ensureAuth().then(() => {
         unsubTrips = listenDriverTrips(driver.id, (trips) => {
-          if (trips.length > 0) {
-            setHistory(trips);
-          }
-          // If no Firebase trips yet, keep mock data as fallback
+          if (trips.length > 0) setHistory(trips);
         });
-      }).catch(() => {
-        // If auth fails, keep mock data
-      });
+
+        // Real-time queue status listener — shows CALLED alert to driver
+        if (driver.airportId) {
+          unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
+            if (!entry) {
+              setMyQueueEntry(null);
+              prevQueueStatusRef.current = null;
+              return;
+            }
+            setMyQueueEntry(entry);
+            // Trigger CALLED alert when status transitions to CALLED
+            if (entry.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
+              setCalledAlert(true);
+              addSystemNotification(
+                'Anda Dipanggil!',
+                'Segera menuju zona penjemputan penumpang.',
+                'CALLED'
+              );
+            }
+            prevQueueStatusRef.current = entry.status;
+          });
+        }
+      }).catch(() => {});
 
       return () => {
         unsubTrips();
+        unsubQueue();
       };
     }
   }, [driver?.id]);
@@ -247,19 +267,15 @@ export function AppProvider({ children }) {
 
     const handleLocationError = (err) => {
       setLocationError(err.message);
-      // Fallback ke simulasi jika GPS error
-      console.warn('[AppContext] GPS error, menggunakan simulasi:', err.message);
-      const stopSim = startSimulatedTracking(handleLocationUpdate);
-      stopTrackingRef.current = stopSim;
+      console.warn('[AppContext] GPS error:', err.message);
+      // Do NOT fall back to simulation — show error state instead
     };
 
     if (isGeolocationAvailable()) {
-      const stopFn = startLocationTracking(handleLocationUpdate, handleLocationError, 15000);
+      const stopFn = startLocationTracking(handleLocationUpdate, handleLocationError);
       stopTrackingRef.current = stopFn;
     } else {
-      // Gunakan simulasi jika geolocation tidak tersedia
-      const stopSim = startSimulatedTracking(handleLocationUpdate);
-      stopTrackingRef.current = stopSim;
+      setLocationError('Perangkat tidak mendukung GPS');
     }
   }, [checkAndUpdateGeofence, updateDriver]);
 
@@ -377,6 +393,10 @@ export function AppProvider({ children }) {
     panicActive,
     panicCooldown,
     triggerPanic,
+
+    // CALLED overlay
+    calledAlert,
+    dismissCalledAlert: () => setCalledAlert(false),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
