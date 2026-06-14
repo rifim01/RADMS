@@ -3,12 +3,32 @@
  */
 
 const Report = (() => {
+  let _staffCache = [];
+
   async function load() {
-    populateCabangSelect('rptCabang', true);
+    const user = Auth.getUser();
+    populateCabangSelect('rptCabang', user.role !== 'ADMIN_CABANG');
+    if (user.role === 'ADMIN_CABANG') {
+      const sel = document.getElementById('rptCabang');
+      if (sel) { sel.value = user.idCabang; sel.disabled = true; }
+    }
     const today = new Date().toISOString().substring(0, 10);
     const firstDay = today.substring(0, 7) + '-01';
-    if (document.getElementById('rptStart')) document.getElementById('rptStart').value = firstDay;
-    if (document.getElementById('rptEnd'))   document.getElementById('rptEnd').value   = today;
+    const s = document.getElementById('rptStart'), e = document.getElementById('rptEnd');
+    if (s && !s.value) s.value = firstDay;
+    if (e && !e.value) e.value = today;
+
+    const idCabang = user.role === 'ADMIN_CABANG' ? user.idCabang : '';
+    const staffRes = await API.getStaff(idCabang);
+    _staffCache = staffRes.success ? (staffRes.data || []) : [];
+    _populateStaffSelect();
+  }
+
+  function _populateStaffSelect() {
+    const sel = document.getElementById('rptStaff');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Pilih Staff (untuk PDF per staff) —</option>' +
+      _staffCache.map(s => `<option value="${s.id}">${s.nama} (${s.id_cabang})</option>`).join('');
   }
 
   async function generate() {
@@ -123,5 +143,143 @@ const Report = (() => {
     w.print();
   }
 
-  return { load, generate, exportCSV, print };
+  // ── PDF per Cabang ─────────────────────────────────────────────────────────
+  async function exportPDFCabang() {
+    const idCabang = document.getElementById('rptCabang')?.value;
+    const start    = document.getElementById('rptStart')?.value;
+    const end      = document.getElementById('rptEnd')?.value;
+    const type     = document.getElementById('rptType')?.value || 'payroll';
+    if (!start || !end) { toast('Pilih periode terlebih dahulu', 'warning'); return; }
+
+    showLoading(true);
+    try {
+      const [res, staffRes] = await Promise.all([
+        API.getReport(type, idCabang, start, end),
+        API.getStaff(idCabang)
+      ]);
+      const data  = res.success      ? (res.data      || []) : [];
+      const staff = staffRes.success ? (staffRes.data || []) : [];
+      const cabang = (APP_CONFIG.CABANG || []).find(c => c.id === idCabang);
+      const cabangNama = cabang ? cabang.nama : (idCabang || 'Semua Cabang');
+      _openPrintWindow(_buildCabangHTML(data, staff, type, cabangNama, start, end));
+    } catch (e) { toast('Gagal export: ' + e.message, 'error'); }
+    finally { showLoading(false); }
+  }
+
+  function _buildCabangHTML(data, staff, type, cabangNama, start, end) {
+    const tipeLabel = { payroll: 'Payroll', attendance: 'Absensi', staff: 'Data Staff', cuti: 'Cuti' };
+    const cols = data.length ? Object.keys(data[0]) : [];
+    return `
+      <div class="header">
+        <div class="logo">RIFIM</div>
+        <div>
+          <div class="company">PT. RIFIM INTERNATIONAL GEMILANG</div>
+          <div class="report-title">LAPORAN ${(tipeLabel[type] || type).toUpperCase()} — ${cabangNama.toUpperCase()}</div>
+          <div class="period">Periode: ${start} s/d ${end} &nbsp;·&nbsp; Total staff: ${staff.length}</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${data.map(row => `<tr>${cols.map(c => `<td>${row[c] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+      <div class="footer">Dicetak: ${new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})} &nbsp;·&nbsp; RIFIM Payroll System</div>`;
+  }
+
+  // ── PDF per Staff ───────────────────────────────────────────────────────────
+  async function exportPDFStaff() {
+    const idStaff  = document.getElementById('rptStaff')?.value;
+    const start    = document.getElementById('rptStart')?.value;
+    const end      = document.getElementById('rptEnd')?.value;
+    const idCabang = document.getElementById('rptCabang')?.value;
+    if (!idStaff) { toast('Pilih staff terlebih dahulu untuk PDF per staff', 'warning'); return; }
+    if (!start || !end) { toast('Pilih periode terlebih dahulu', 'warning'); return; }
+
+    showLoading(true);
+    try {
+      const [staffRes, absRes, kasbonRes] = await Promise.all([
+        API.getStaffById(idStaff),
+        API.getAbsensi({ idCabang, startDate: start, endDate: end }),
+        API.getKasbon(idStaff)
+      ]);
+      const staff  = staffRes.success  ? staffRes.data : null;
+      const absen  = absRes.success    ? (absRes.data  || []).filter(a => a.id_staff === idStaff) : [];
+      const kasbon = kasbonRes.success ? (kasbonRes.data || []) : [];
+      if (!staff) { toast('Data staff tidak ditemukan', 'error'); return; }
+      _openPrintWindow(_buildStaffHTML(staff, absen, kasbon, start, end));
+    } catch (e) { toast('Gagal export: ' + e.message, 'error'); }
+    finally { showLoading(false); }
+  }
+
+  function _buildStaffHTML(staff, absen, kasbon, start, end) {
+    const hadir = absen.filter(a => a.status === 'Masuk' || a.status === 'HADIR').length;
+    const totalKasbon = kasbon.reduce((s, k) => s + Number(k.jumlah || 0), 0);
+    return `
+      <div class="header">
+        <div class="logo">RIFIM</div>
+        <div>
+          <div class="company">PT. RIFIM INTERNATIONAL GEMILANG</div>
+          <div class="report-title">LAPORAN INDIVIDUAL KARYAWAN</div>
+          <div class="period">Periode: ${start} s/d ${end}</div>
+        </div>
+      </div>
+      <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:20px">
+        <table style="width:100%;font-size:12px">
+          <tr><td style="width:140px;color:#666">Nama</td><td><strong>${staff.nama}</strong></td>
+              <td style="width:140px;color:#666">Jabatan</td><td>${staff.jabatan || '-'}</td></tr>
+          <tr><td style="color:#666">Email</td><td>${staff.email}</td>
+              <td style="color:#666">Cabang</td><td>${staff.id_cabang}</td></tr>
+          <tr><td style="color:#666">Gaji Pokok</td><td><strong>Rp ${Number(staff.gapok||0).toLocaleString('id-ID')}</strong></td>
+              <td style="color:#666">Status</td><td>${staff.status}</td></tr>
+        </table>
+      </div>
+      <h3 style="font-size:13px;margin-bottom:8px">Rekap Absensi (${hadir} hari hadir dari ${absen.length} record)</h3>
+      <table>
+        <thead><tr><th>Tanggal</th><th>Status</th><th>Metode</th><th>Jam Masuk</th></tr></thead>
+        <tbody>${absen.map(a => `<tr>
+          <td>${a.tanggal || '-'}</td><td>${a.status}</td>
+          <td>${a.method || 'manual'}</td>
+          <td>${a.jam_masuk || a.timestamp?.substring(11,16) || '-'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      ${kasbon.length ? `
+      <h3 style="font-size:13px;margin:16px 0 8px">Kasbon (Total: Rp ${totalKasbon.toLocaleString('id-ID')})</h3>
+      <table>
+        <thead><tr><th>Tanggal</th><th>Jumlah</th><th>Keterangan</th><th>Status</th></tr></thead>
+        <tbody>${kasbon.map(k => `<tr>
+          <td>${k.tanggal||'-'}</td>
+          <td>Rp ${Number(k.jumlah||0).toLocaleString('id-ID')}</td>
+          <td>${k.keterangan||'-'}</td><td>${k.status}</td>
+        </tr>`).join('')}</tbody>
+      </table>` : ''}
+      <div class="footer">Dicetak: ${new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})} &nbsp;·&nbsp; RIFIM Payroll System</div>`;
+  }
+
+  function _openPrintWindow(bodyContent) {
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`<!DOCTYPE html><html><head>
+      <title>Laporan RIFIM</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#222}
+        .header{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;border-bottom:2px solid #CC0000;padding-bottom:12px}
+        .logo{font-size:28px;font-weight:900;color:#CC0000;letter-spacing:-1px}
+        .company{font-size:11px;color:#666}
+        .report-title{font-size:16px;font-weight:700;margin:4px 0}
+        .period{font-size:11px;color:#666}
+        table{width:100%;border-collapse:collapse;margin-bottom:16px}
+        th{background:#1A3A6B;color:white;padding:8px;text-align:left;font-size:11px}
+        td{padding:6px 8px;border-bottom:1px solid #eee;font-size:11px}
+        tr:nth-child(even){background:#f9f9f9}
+        .footer{margin-top:20px;font-size:10px;color:#aaa;text-align:right;border-top:1px solid #eee;padding-top:8px}
+        .print-btn{background:#CC0000;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer;margin-bottom:16px}
+        @media print{.print-btn{display:none}}
+      </style>
+    </head><body>
+      <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+      ${bodyContent}
+    </body></html>`);
+    win.document.close();
+  }
+
+  return { load, generate, exportCSV, print, exportPDFCabang, exportPDFStaff };
 })();

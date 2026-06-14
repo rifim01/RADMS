@@ -55,6 +55,9 @@
     <div class="nav-item" data-page="report" onclick="navigateTo('report')">
       <span class="nav-icon">📈</span> Laporan
     </div>
+    <div class="nav-item" data-page="slip-gaji" onclick="navigateTo('slip-gaji')">
+      <span class="nav-icon">📄</span> Slip Gaji
+    </div>
     <div class="nav-item" data-page="settings" onclick="navigateTo('settings')">
       <span class="nav-icon">⚙️</span> Pengaturan
     </div>
@@ -523,6 +526,18 @@
               <button class="btn btn-primary" onclick="Report.generate()">📊 Generate</button>
             </div>
           </div>
+          <!-- Filter per Staff (untuk PDF individual) -->
+          <div class="form-group" style="margin-top:12px;margin-bottom:0">
+            <label class="form-label">Staff (untuk PDF per Staff)</label>
+            <select id="rptStaff" class="form-control" style="max-width:400px"></select>
+          </div>
+          <!-- Tombol PDF -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn btn-outline" onclick="Report.exportPDFCabang()">📄 PDF per Cabang</button>
+            <button class="btn btn-outline" onclick="Report.exportPDFStaff()">👤 PDF per Staff</button>
+            <button class="btn btn-outline" onclick="Report.exportCSV()">📥 Export CSV</button>
+            <button class="btn btn-outline" onclick="Report.print()">🖨️ Print</button>
+          </div>
         </div>
       </div>
 
@@ -531,6 +546,51 @@
           <div class="empty-state">
             <div class="empty-icon">📈</div>
             <div class="empty-text">Pilih filter dan klik Generate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ SLIP GAJI ════════ -->
+    <div class="page-section" id="page-slip-gaji">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Slip Gaji</div>
+          <div class="section-sub">Lihat dan cetak slip gaji per karyawan</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex gap-3 align-center" style="flex-wrap:wrap">
+            <div class="form-group" style="margin:0;min-width:200px">
+              <label class="form-label">Cabang</label>
+              <select id="sgCabang" class="form-control"></select>
+            </div>
+            <div class="form-group" style="margin:0;min-width:220px">
+              <label class="form-label">Staff</label>
+              <select id="sgStaff" class="form-control">
+                <option value="">— Pilih Staff —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">Periode</label>
+              <select id="sgPeriode" class="form-control"></select>
+            </div>
+            <div style="padding-top:20px">
+              <button class="btn btn-primary" onclick="SlipGaji.cari()">🔍 Cari Slip</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hasil -->
+      <div class="card">
+        <div class="card-body" id="slipGajiOutput">
+          <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <div class="empty-text">Pilih staff dan periode, lalu klik Cari Slip</div>
           </div>
         </div>
       </div>
@@ -569,47 +629,86 @@
           </div>
         </div>
 
-        <!-- Sinkronisasi (OWNER & SUPER_ADMIN only) -->
-        <div class="card" data-role-min="SUPER_ADMIN">
-          <div class="card-header">🔄 Sinkronisasi Data</div>
-          <div class="card-body">
-            <p style="font-size:13px;color:#666;margin-bottom:16px">
-              Tarik data terbaru dari Google Sheets master untuk memperbarui sistem.
-            </p>
-
-            <div class="form-group">
-              <button class="btn btn-secondary" style="width:100%;margin-bottom:10px" onclick="Settings.syncStaff()">
-                👥 Sync Staff dari Master Data
-              </button>
-              <p style="font-size:11px;color:#888;margin:0">
-                Menarik data dari sheet MASTER DATA STAFF. Staff baru ditambah, yang sudah ada dilewati.
-              </p>
-            </div>
-
-            <hr style="border:none;border-top:1px solid #eee;margin:16px 0">
-
-            <div class="form-group">
-              <label class="form-label">Periode Absensi (Dari)</label>
-              <input type="date" id="setSyncStart" class="form-control">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Periode Absensi (Sampai)</label>
-              <input type="date" id="setSyncEnd" class="form-control">
-            </div>
-            <button class="btn btn-secondary" style="width:100%" onclick="Settings.syncAbsensi()">
-              📋 Sync Absensi dari RIFIM ERP
-            </button>
-            <p style="font-size:11px;color:#888;margin-top:6px">
-              Menarik data absensi dari RIFIM ERP ABSENSI sheet sesuai periode yang dipilih.
-            </p>
-          </div>
-        </div>
-
         <!-- Info Akun -->
         <div class="card" style="grid-column:1/-1">
           <div class="card-header">👤 Info Akun</div>
           <div class="card-body" id="settingsUserInfo">
             <div class="skeleton" style="height:60px;border-radius:8px"></div>
+          </div>
+        </div>
+
+        <!-- Integrasi Absensi (OWNER & SUPER_ADMIN only) -->
+        <div class="card" style="grid-column:1/-1" data-role-min="SUPER_ADMIN">
+          <div class="card-header">🔗 Integrasi Absensi — RIFIM Attendance App</div>
+          <div class="card-body">
+
+            <!-- Status panel -->
+            <div id="integrasiStatusPanel" style="background:#f8f9fa;border-radius:8px;padding:14px;margin-bottom:16px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;font-size:13px">
+                <div>
+                  <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Status Koneksi</div>
+                  <div id="integrasiStatus" style="font-weight:600;margin-top:4px">
+                    <span style="color:#888">⏳ Belum dicek</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Attendance App</div>
+                  <div style="font-weight:600;margin-top:4px">
+                    <a href="https://rifim01.github.io/rifim-attendance/" target="_blank" style="color:#1A3A6B;font-size:12px">
+                      rifim01.github.io/rifim-attendance ↗
+                    </a>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Data Masuk Via</div>
+                  <div style="font-weight:600;margin-top:4px;font-size:12px">Google Sheet ERP Absensi</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Sync Terakhir</div>
+                  <div id="integrasiLastSync" style="font-weight:600;margin-top:4px;font-size:12px">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+              <button class="btn btn-secondary" onclick="Settings.syncStaff()">
+                👥 Sync Staff
+              </button>
+              <button class="btn btn-secondary" onclick="Settings.syncAbsensiQuick()">
+                📋 Sync Absensi
+              </button>
+              <button class="btn btn-primary" onclick="Settings.syncSemua()">
+                🔄 Sync Semua
+              </button>
+              <button class="btn btn-outline" onclick="Settings.cekKoneksi()">
+                🔌 Cek Koneksi
+              </button>
+            </div>
+
+            <!-- Periode khusus absensi -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Periode Absensi Dari</label>
+                <input type="date" id="setSyncStart" class="form-control">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Periode Absensi Sampai</label>
+                <input type="date" id="setSyncEnd" class="form-control">
+              </div>
+              <button class="btn btn-secondary" onclick="Settings.syncAbsensi()">
+                📥 Sync Absensi (Periode Ini)
+              </button>
+            </div>
+
+            <!-- Sync Log -->
+            <div>
+              <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Log Sinkronisasi</div>
+              <div id="integrasiLog" style="background:#1a1a2e;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;color:#a8d8a8;max-height:160px;overflow-y:auto">
+                <span style="color:#666">— belum ada aktivitas sync —</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -659,6 +758,7 @@
 <script src="js/modules/leave.js"></script>
 <script src="js/modules/idcard.js"></script>
 <script src="js/modules/report.js"></script>
+<script src="js/modules/slip-gaji.js"></script>
 <script src="js/modules/settings.js"></script>
 <script src="js/app.js"></script>
 

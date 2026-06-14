@@ -74,8 +74,9 @@ const API = (() => {
     rejectLembur:  (id)                => postForm('rejectLembur', { id }),
 
     // Kasbon
-    getKasbon:  (idStaff) => get('getKasbon', { idStaff }),
-    addKasbon:  (data)    => postForm('addKasbon', { data }),
+    getKasbon:    (idStaff)  => get('getKasbon',    { idStaff }),
+    getAllKasbon:  (idCabang) => get('getAllKasbon',  { idCabang: idCabang || '' }),
+    addKasbon:    (data)     => postForm('addKasbon', { data }),
 
     // Cuti
     getCuti:       (idCabang, status) => get('getCuti', { idCabang, status }),

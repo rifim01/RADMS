@@ -126,6 +126,7 @@ const PAGE_MODULES = {
   leave:      () => Leave.load(),
   idcard:     () => IDCard.load(),
   report:     () => Report.load(),
+  'slip-gaji': () => SlipGaji.load(),
   settings:   () => Settings.load()
 };
 
@@ -149,6 +150,7 @@ function navigateTo(page) {
     leave:      'Cuti & Izin',
     idcard:     'ID Card Generator',
     report:     'Laporan',
+    'slip-gaji': 'Slip Gaji',
     settings:   'Pengaturan'
   };
   const titleEl = document.getElementById('pageTitle');

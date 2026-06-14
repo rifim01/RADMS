@@ -158,7 +158,8 @@ function _routeGet(action, p, auth) {
   if (action === 'getLembur')  return getLembur(p.idCabang, p.periode, auth);
 
   // Kasbon
-  if (action === 'getKasbon')  return getKasbon(p.idStaff, auth);
+  if (action === 'getKasbon')   return getKasbon(p.idStaff, auth);
+  if (action === 'getAllKasbon') return getAllKasbon(p.idCabang, auth);
 
   // Cuti
   if (action === 'getCuti')    return getCutiList(p.idCabang, p.status, auth);
@@ -265,71 +266,21 @@ function _canManageCabang(auth, idCabang) {
   return auth.idCabang === idCabang;
 }
 
-// ─── Sync Staff dari MASTER DATA STAFF (Point 5) ─────────────────────────────
+// ─── syncStaffFromMaster dipindah ke Staff.gs (versi user) ──────────────────
+// Fungsi ini sekarang ada di Staff.gs dengan baca sheet "MASTER DATA STAFF"
+// by name dan kolom: email[0],nama[1],gapok[2],id_cabang[3],id[4],jabatan[5]
 
-function syncStaffFromMaster(auth) {
-  if (auth.role !== 'OWNER' && auth.role !== 'SUPER_ADMIN') {
-    return { success: false, error: 'Hanya Owner/Super Admin yang bisa sync' };
+// ─── Get All Kasbon (satu call, lebih cepat dari N+1) ────────────────────────
+
+function getAllKasbon(idCabang, auth) {
+  var list = sheetToObjects(PSHEET.KASBON);
+  if (idCabang) {
+    list = list.filter(function(k) { return k.id_cabang === idCabang; });
+  } else if (auth.role !== 'OWNER' && auth.role !== 'SUPER_ADMIN') {
+    list = list.filter(function(k) { return k.id_cabang === auth.idCabang; });
   }
-
-  try {
-    var ss = SpreadsheetApp.openById(SS_MASTER_STAFF);
-    // Cari sheet gid=1974631595, fallback ke sheet pertama
-    var sheet = ss.getSheets().filter(function(s) { return s.getSheetId() === 1974631595; })[0]
-                || ss.getSheets()[0];
-    var data  = sheet.getDataRange().getValues();
-    if (data.length < 2) return { success: false, error: 'Sheet master kosong' };
-
-    var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
-    var existing = sheetToObjects(PSHEET.STAFF);
-    var existingEmails = existing.map(function(s) { return String(s.email).toLowerCase(); });
-
-    var added = 0, skipped = 0;
-    var DEFAULT_PW = 'Rifim1234';
-
-    for (var i = 1; i < data.length; i++) {
-      var row = data[i];
-      if (row.every(function(c) { return !c; })) continue; // skip baris kosong
-
-      var obj = {};
-      headers.forEach(function(h, idx) { obj[h] = row[idx]; });
-
-      // Mapping kolom fleksibel
-      var nama    = obj['nama'] || obj['nama lengkap'] || obj['name'] || '';
-      var email   = obj['email'] || '';
-      var jabatan = obj['jabatan'] || obj['posisi'] || obj['position'] || '';
-      var cabang  = obj['id_cabang'] || obj['id cabang'] || obj['cabang'] || obj['branch'] || '';
-      var gapok   = obj['gapok'] || obj['gaji pokok'] || obj['salary'] || 0;
-      var telp    = obj['nomor_hp'] || obj['no hp'] || obj['no telp'] || obj['telepon'] || obj['phone'] || '';
-      var role    = obj['role'] || 'STAFF';
-
-      if (!nama || !email) { skipped++; continue; }
-      if (existingEmails.indexOf(String(email).trim().toLowerCase()) !== -1) { skipped++; continue; }
-
-      var newStaff = {
-        id:            generateId(),
-        nama:          String(nama).trim(),
-        email:         String(email).trim().toLowerCase(),
-        password_hash: _prHashPw(DEFAULT_PW),
-        role:          String(role).trim().toUpperCase() || 'STAFF',
-        id_cabang:     String(cabang).trim(),
-        jabatan:       String(jabatan).trim(),
-        gapok:         Number(String(gapok).replace(/[^0-9]/g,'')) || 0,
-        nomor_hp:      String(telp).trim(),
-        foto:          '',
-        status:        'AKTIF',
-        created_at:    formatDateTime()
-      };
-
-      appendRow(PSHEET.STAFF, newStaff, STAFF_HEADERS);
-      existingEmails.push(String(email).trim().toLowerCase());
-      added++;
-    }
-
-    return { success: true, message: 'Sync selesai: ' + added + ' staff ditambahkan, ' + skipped + ' dilewati. Password default: ' + DEFAULT_PW };
-  } catch (e) {
-    return { success: false, error: 'Gagal sync: ' + e.message };
-  }
+  list.sort(function(a, b) { return String(b.tanggal).localeCompare(String(a.tanggal)); });
+  return { success: true, data: list };
 }
 
 // ─── Sync Absensi dari RIFIM ERP ABSENSI sheet (Point 7) ─────────────────────

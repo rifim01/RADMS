@@ -9,7 +9,11 @@ const Staff = (() => {
     showLoading(true);
     try {
       const user = Auth.getUser();
-      const idCabang = (user.role === 'ADMIN_CABANG') ? user.idCabang : '';
+      populateCabangSelect('staffCabangFilter', true);
+      const filterSel = document.getElementById('staffCabangFilter');
+      const idCabang = (user.role === 'ADMIN_CABANG')
+        ? user.idCabang
+        : (filterSel?.value || '');
       const res = await API.getStaff(idCabang);
       if (!res.success) throw new Error(res.error);
       list = res.data || [];

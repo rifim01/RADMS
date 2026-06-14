@@ -165,10 +165,11 @@ const IDCard = (() => {
             <div style="display:flex;justify-content:center;margin-bottom:10px">
               ${_cardFrontHtml(s, nomorId)}
             </div>
-            <div style="display:flex;gap:8px;margin-top:8px">
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
               <button class="btn btn-primary btn-sm" style="flex:1" onclick="IDCard.showPreview('${s.id}')">
-                🪪 Preview Kartu
+                🪪 Preview
               </button>
+              <button class="btn btn-outline btn-sm" onclick="IDCard.editFoto('${s.id}')">📷 Foto</button>
               <button class="btn btn-secondary btn-sm" onclick="IDCard.printCard('${s.id}')">🖨️ Print</button>
             </div>
           </div>
@@ -254,9 +255,55 @@ const IDCard = (() => {
     });
   }
 
+  // ── Edit Foto Staff ────────────────────────────────────────────────────────
+  function editFoto(idStaff) {
+    const staff = staffList.find(s => s.id === idStaff);
+    if (!staff) return;
+    createModal({
+      id: 'idcFotoModal',
+      title: '📷 Upload Foto — ' + staff.nama,
+      body: `
+        <div class="form-group">
+          <label class="form-label">URL Foto (Google Drive / URL Gambar Publik)</label>
+          <input id="idcFotoUrl" class="form-control" placeholder="https://drive.google.com/..."
+            value="${staff.foto || ''}">
+          <p style="font-size:11px;color:#888;margin-top:6px">
+            Gunakan link foto publik. Google Drive: klik foto → Share → Anyone with link → salin URL.
+          </p>
+        </div>
+        <div id="idcFotoPreview" style="text-align:center;margin-top:8px">
+          ${staff.foto ? `<img src="${staff.foto}" style="max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;border:3px solid #F7C520">` : ''}
+        </div>`,
+      confirmText: '💾 Simpan Foto',
+      onConfirm: () => saveFoto(idStaff)
+    });
+    document.getElementById('idcFotoUrl').addEventListener('input', function() {
+      const prev = document.getElementById('idcFotoPreview');
+      if (prev) prev.innerHTML = this.value
+        ? `<img src="${this.value}" style="max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;border:3px solid #F7C520" onerror="this.style.display='none'">`
+        : '';
+    });
+  }
+
+  async function saveFoto(idStaff) {
+    const fotoUrl = document.getElementById('idcFotoUrl')?.value.trim();
+    showLoading(true);
+    try {
+      const res = await API.updateStaff(idStaff, { foto: fotoUrl });
+      if (!res.success) throw new Error(res.error);
+      toast('Foto berhasil disimpan', 'success');
+      closeModal('idcFotoModal');
+      load();
+    } catch (e) {
+      toast('Gagal simpan foto: ' + e.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
+
   // expose generate/preview aliases
   function generate(idStaff)  { showPreview(idStaff); }
   function preview(idStaff)   { showPreview(idStaff); }
 
-  return { load, generate, preview, showPreview, printCard, filterByCabang, generateAll };
+  return { load, generate, preview, showPreview, printCard, filterByCabang, generateAll, editFoto };
 })();

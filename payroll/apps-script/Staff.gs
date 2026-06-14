@@ -1,5 +1,5 @@
 /**
- * Staff.gs — CRUD staff management
+ * Staff.gs — CRUD staff management + sync dari MASTER DATA STAFF
  *
  * Sheet STAFF columns:
  *   id | nama | email | password_hash | role | id_cabang | jabatan |
@@ -85,7 +85,7 @@ function updateStaff(id, data, auth) {
   if (data.jabatan !== undefined) update.jabatan = data.jabatan;
   if (data.gapok !== undefined)   update.gapok   = Number(data.gapok);
   if (data.nomor_hp)  update.nomor_hp  = data.nomor_hp;
-  if (data.foto)      update.foto      = data.foto;
+  if (data.foto !== undefined)    update.foto    = data.foto;
   if (data.status)    update.status    = data.status;
   if (data.id_cabang && _canManageCabang(auth, data.id_cabang)) update.id_cabang = data.id_cabang;
   if (data.password)  update.password_hash = _prHashPw(data.password);
@@ -104,6 +104,96 @@ function deleteStaff(id, auth) {
 
   updateRow(PSHEET.STAFF, 'id', id, { status: 'DELETED' });
   return { success: true, message: 'Staff berhasil dihapus' };
+}
+
+// ─── Sync dari MASTER DATA STAFF Sheet ───────────────────────────────────────
+// Sheet: https://docs.google.com/spreadsheets/d/1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw
+// Tab: MASTER DATA STAFF | Kolom: email[0] nama[1] gapok[2] id_cabang[3] id[4] jabatan[5]
+
+function syncStaffFromMaster(auth) {
+  if (!auth || (auth.role !== 'OWNER' && auth.role !== 'SUPER_ADMIN')) {
+    return { success: false, error: 'Akses ditolak' };
+  }
+
+  var MASTER_SPREADSHEET_ID = '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw';
+  var MASTER_SHEET_NAME     = 'MASTER DATA STAFF';
+  var DEFAULT_PW            = 'Rifim1234';
+
+  var ss    = SpreadsheetApp.openById(MASTER_SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(MASTER_SHEET_NAME);
+
+  if (!sheet) {
+    return { success: false, error: 'Sheet "' + MASTER_SHEET_NAME + '" tidak ditemukan' };
+  }
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) {
+    return { success: true, added: 0, updated: 0, total: 0, message: 'Tidak ada data staff di sheet master' };
+  }
+
+  var payrollStaff = sheetToObjects(PSHEET.STAFF);
+  var added = 0, updated = 0;
+
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (row.every(function(c) { return !c; })) continue;
+
+    var email    = String(row[0] || '').trim();
+    var nama     = String(row[1] || '').trim();
+    var gapok    = Number(row[2] || 0);
+    var idCabang = String(row[3] || '').trim();
+    var idStaff  = String(row[4] || '').trim();
+    var jabatan  = String(row[5] || '').trim();
+
+    if (!idStaff || !nama) continue;
+
+    var existing = payrollStaff.find(function(s) { return String(s.id) === idStaff; });
+
+    if (!existing) {
+      appendRow(
+        PSHEET.STAFF,
+        {
+          id:            idStaff,
+          nama:          nama,
+          email:         email,
+          password_hash: _prHashPw(DEFAULT_PW),
+          role:          'STAFF',
+          id_cabang:     idCabang,
+          jabatan:       jabatan,
+          gapok:         gapok,
+          nomor_hp:      '',
+          foto:          '',
+          status:        'AKTIF',
+          created_at:    formatDateTime()
+        },
+        STAFF_HEADERS
+      );
+      added++;
+    } else {
+      updateRow(
+        PSHEET.STAFF,
+        'id',
+        idStaff,
+        {
+          nama:      nama,
+          email:     email,
+          id_cabang: idCabang,
+          jabatan:   jabatan,
+          gapok:     gapok,
+          status:    'AKTIF'
+        }
+      );
+      updated++;
+    }
+  }
+
+  return {
+    success: true,
+    added:   added,
+    updated: updated,
+    total:   added + updated,
+    message: added + ' staff baru ditambahkan, ' + updated + ' diperbarui. Password default: ' + DEFAULT_PW
+  };
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────

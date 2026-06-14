@@ -3,7 +3,7 @@
  * Cache-first untuk aset statis, network-first untuk API calls
  */
 
-const CACHE_NAME = 'rifim-payroll-v2';
+const CACHE_NAME = 'rifim-payroll-v3';
 const STATIC_ASSETS = [
   './index.html',
   './dashboard.html',
@@ -21,6 +21,7 @@ const STATIC_ASSETS = [
   './js/modules/leave.js',
   './js/modules/idcard.js',
   './js/modules/report.js',
+  './js/modules/slip-gaji.js',
   './js/modules/settings.js'
 ];
 

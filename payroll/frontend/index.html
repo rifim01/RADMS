@@ -482,7 +482,7 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+  // Tidak auto-redirect ke dashboard — user harus login manual setiap sesi
 
   function toast(msg, type) {
     const icons = { success: '✅', error: '❌', warning: '⚠️' };

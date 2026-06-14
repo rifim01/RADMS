@@ -9,18 +9,22 @@ const Kasbon = (() => {
     showLoading(true);
     try {
       const user = Auth.getUser();
-      const idCabang = user.role === 'ADMIN_CABANG' ? user.idCabang : '';
-      const staffRes = await API.getStaff(idCabang);
-      staffList = staffRes.success ? (staffRes.data || []) : [];
+      const idCabang = user.role === 'ADMIN_CABANG' ? user.idCabang : (document.getElementById('ksbCabang')?.value || '');
 
-      // Ambil kasbon semua staff
-      const allKasbon = [];
-      for (const s of staffList.slice(0, 20)) { // limit 20 utk performa
-        try {
-          const r = await API.getKasbon(s.id);
-          if (r.success) allKasbon.push(...(r.data || []).map(k => ({ ...k, _nama: s.nama })));
-        } catch (e) { /* skip */ }
-      }
+      // Satu API call untuk semua data (staff + kasbon)
+      const [staffRes, kasbonRes] = await Promise.all([
+        API.getStaff(idCabang),
+        API.getAllKasbon(idCabang)
+      ]);
+
+      staffList = staffRes.success ? (staffRes.data || []) : [];
+      const staffMap = {};
+      staffList.forEach(s => { staffMap[s.id] = s.nama; });
+
+      const allKasbon = kasbonRes.success
+        ? (kasbonRes.data || []).map(k => ({ ...k, _nama: staffMap[k.id_staff] || k.nama || '-' }))
+        : [];
+
       renderTable(allKasbon);
       populateCabangSelect('ksbCabang', true);
     } catch (e) {
