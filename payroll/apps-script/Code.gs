@@ -186,7 +186,7 @@ function sheetToObjects(name) {
   var s    = getSheet(name);
   var data = s.getDataRange().getValues();
   if (data.length < 2) return [];
-  var headers = data[0].map(function(h) { return String(h).trim(); });
+  var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
   return data.slice(1).map(function(row) {
     var obj = {};
     headers.forEach(function(h, i) { obj[h] = row[i]; });
@@ -204,7 +204,7 @@ function appendRow(name, obj, headers) {
 function updateRow(name, keyCol, keyVal, obj) {
   var s       = getSheet(name);
   var data    = s.getDataRange().getValues();
-  var headers = data[0].map(function(h) { return String(h).trim(); });
+  var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
   var colIdx  = headers.indexOf(keyCol);
   if (colIdx < 0) throw new Error('Kolom tidak ditemukan: ' + keyCol);
   for (var i = 1; i < data.length; i++) {
@@ -222,7 +222,7 @@ function updateRow(name, keyCol, keyVal, obj) {
 function deleteRow(name, keyCol, keyVal) {
   var s       = getSheet(name);
   var data    = s.getDataRange().getValues();
-  var headers = data[0].map(function(h) { return String(h).trim(); });
+  var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });
   var colIdx  = headers.indexOf(keyCol);
   for (var i = data.length - 1; i >= 1; i--) {
     if (String(data[i][colIdx]).trim() === String(keyVal).trim()) {
