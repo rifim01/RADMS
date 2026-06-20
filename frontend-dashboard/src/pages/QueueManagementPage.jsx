@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { PhoneCall, CheckCircle, Trash2, RefreshCw, AlertTriangle } from 'lucide-react'
-import { ref, onValue, off, update, set, serverTimestamp } from 'firebase/database'
-import { db } from '../firebase/config'
+import { listenQueueByBranch, updateQueueStatus, removeFromQueue as removeFromQueueDb } from '../services/realtimeService'
 import StatusBadge from '../components/StatusBadge'
 import Modal from '../components/Modal'
 import { AIRPORTS } from '../services/mockData'
@@ -30,10 +29,7 @@ export default function QueueManagementPage() {
       setQueue([])
       return
     }
-    const r = ref(db, `queue/${branchId}`)
-    const unsub = onValue(r, snap => {
-      const val = snap.val() || {}
-      const entries = Object.values(val).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+    const unsub = listenQueueByBranch(branchId, entries => {
       // Play sound when queue grows (new driver joins)
       if (entries.length > prevQueueLen.current) {
         playNotification()
@@ -41,7 +37,7 @@ export default function QueueManagementPage() {
       prevQueueLen.current = entries.length
       setQueue(entries)
     })
-    return () => off(r)
+    return unsub
   }, [branchId])
 
   // Unlock audio on first interaction
@@ -58,23 +54,20 @@ export default function QueueManagementPage() {
       playCalled()
       logJadwalKerja({ ...user, airportId: user.airportId || branchId })
     }
-    update(ref(db, `queue/${branchId}/${driverId}`), {
-      status: newStatus,
-      calledAt: newStatus === 'CALLED' ? serverTimestamp() : null,
-    })
+    updateQueueStatus(branchId, driverId, newStatus)
   }
 
   function removeFromQueue(driverId) {
     if (!branchId || branchId === 'all') return
     logJadwalKerja({ ...user, airportId: user.airportId || branchId })
-    set(ref(db, `queue/${branchId}/${driverId}`), null)
+    removeFromQueueDb(branchId, driverId)
   }
 
   function handleReset() {
     // Reset all entries in current branch back to WAITING
     queue.forEach(q => {
       if (q.driverId && branchId && branchId !== 'all') {
-        update(ref(db, `queue/${branchId}/${q.driverId}`), { status: 'WAITING', calledAt: null })
+        updateQueueStatus(branchId, q.driverId, 'WAITING')
       }
     })
     setShowResetModal(false)
