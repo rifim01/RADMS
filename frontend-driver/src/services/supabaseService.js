@@ -1,19 +1,19 @@
 import { supabase } from '../supabase/config.js'
 
-// ─── GPS Location ──────────────────────────────────────────────────────────────────────────────────
-const updateDriverLocation = async (driverId, branchId, lat, lng, isOnline) => {
+// âââ GPS Location ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const updateDriverLocation = async (driverId, branchId, lat, lng, isOnline, speed = 0) => {
   return supabase
-    .from('driver_locations')
-    .upsert({ driver_id: driverId, branch_id: branchId, lat, lng, is_online: isOnline, updated_at: new Date().toISOString() })
+    .from('radms_driver_locations')
+    .upsert({ driver_id: driverId, branch_id: branchId, lat, lng, is_online: isOnline, speed, updated_at: new Date().toISOString() })
 }
 
 const setDriverOnlineStatus = async (driverId, isOnline) => {
   return supabase
-    .from('drivers')
+    .from('radms_drivers')
     .upsert({ driver_id: driverId, is_online: isOnline, last_seen: new Date().toISOString() })
 }
 
-// ─── Queue ─────────────────────────────────────────────────────────────────────────────────────────────
+// âââ Queue âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const joinQueue = async (driverId, driverName, plateNumber, branchId) => {
   return supabase
     .from('queue')
@@ -25,7 +25,7 @@ const joinQueue = async (driverId, driverName, plateNumber, branchId) => {
       status: 'WAITING',
       joined_at: new Date().toISOString(),
       called_at: null,
-    })
+    }, { onConflict: 'driver_id,branch_id' })
 }
 
 const leaveQueue = async (driverId, branchId) => {
@@ -87,10 +87,10 @@ const listenMyQueueStatus = (driverId, branchId, callback) => {
   return () => supabase.removeChannel(channel)
 }
 
-// ─── Notifications ─────────────────────────────────────────────────────────────────────────────────────────────────
+// âââ Notifications âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const listenNotifications = (driverId, callback) => {
   supabase
-    .from('notifications')
+    .from('radms_notifications')
     .select('*')
     .eq('driver_id', driverId)
     .order('created_at', { ascending: false })
@@ -98,9 +98,9 @@ const listenNotifications = (driverId, callback) => {
 
   const channel = supabase
     .channel(`notif:${driverId}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `driver_id=eq.${driverId}` }, () => {
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'radms_notifications', filter: `driver_id=eq.${driverId}` }, () => {
       supabase
-        .from('notifications')
+        .from('radms_notifications')
         .select('*')
         .eq('driver_id', driverId)
         .order('created_at', { ascending: false })
@@ -113,20 +113,20 @@ const listenNotifications = (driverId, callback) => {
 
 const markNotificationRead = async (driverId, notifId) => {
   return supabase
-    .from('notifications')
+    .from('radms_notifications')
     .update({ read: true })
     .eq('id', notifId)
     .eq('driver_id', driverId)
 }
 
-// ─── Panic ─────────────────────────────────────────────────────────────────────────────────────────────
+// âââ Panic âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const sendPanic = async (driverId, driverName, branchId, lat, lng) => {
   return supabase
     .from('panic')
     .insert({ driver_id: driverId, driver_name: driverName, branch_id: branchId, lat, lng, sent_at: new Date().toISOString() })
 }
 
-// ─── Trips / Riwayat ────────────────────────────────────────────────────────────────────────────────────────────
+// âââ Trips / Riwayat ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const listenDriverTrips = (driverId, callback) => {
   supabase
     .from('trips')
@@ -156,7 +156,7 @@ const recordTrip = async (driverId, tripData) => {
     .insert({ driver_id: driverId, ...tripData, created_at: new Date().toISOString() })
 }
 
-// ─── Staff Validation ─────────────────────────────────────────────────────────────────────────────────────────────
+// âââ Staff Validation âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const recordValidation = async (driverId, driverName, branchId, staffId, staffName) => {
   return supabase
     .from('validations')
