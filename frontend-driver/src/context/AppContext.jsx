@@ -96,7 +96,7 @@ export function AppProvider({ children }) {
         setHistory(trips);
       });
 
-      // Real-time queue status listener — shows CALLED alert to driver
+      // Real-time queue status listener â shows CALLED alert to driver
       let unsubQueue = () => {};
       if (driver.airportId) {
         unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
@@ -230,7 +230,7 @@ export function AppProvider({ children }) {
         'STATUS'
       );
     } else {
-      // GPS tetap aktif saat offline — hanya update status
+      // GPS tetap aktif saat offline â hanya update status
       addSystemNotification(
         'Status Offline',
         'Anda sekarang offline. Lokasi tetap dipantau.',
@@ -258,14 +258,14 @@ export function AppProvider({ children }) {
       const now = Date.now();
       if (driver?.id && now - lastFirebaseWriteRef.current >= 15000) {
         lastFirebaseWriteRef.current = now;
-        updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline);
+        updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline, loc.speed || 0);
       }
     };
 
     const handleLocationError = (err) => {
       setLocationError(err.message);
       console.warn('[AppContext] GPS error:', err.message);
-      // Do NOT fall back to simulation — show error state instead
+      // Do NOT fall back to simulation â show error state instead
     };
 
     if (isGeolocationAvailable()) {
