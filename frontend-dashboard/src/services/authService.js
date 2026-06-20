@@ -3,9 +3,24 @@ import { fetchUsers, fetchStaff } from './sheetsService'
 
 // Role-based redirect paths after login
 export const ROLE_REDIRECTS = {
-      super_admin:  '/national',
-      coordinator:  '/airport',
-      staff:        '/airport',
+      super_admin:  '/national-dashboard',
+      coordinator:  '/airport-dashboard',
+      staff:        '/airport-dashboard',
+}
+
+// Human-readable role labels for display in Header/Settings
+export const ROLE_LABELS = {
+      super_admin: 'Super Admin',
+      coordinator: 'Koordinator Bandara',
+      staff:       'Staf',
+}
+
+// Permission keys per role — must mirror NAV_ITEMS in components/Sidebar.jsx
+// and the permission props on routes in App.jsx
+export const ROLE_PERMISSIONS = {
+      super_admin: ['national_dashboard', 'airport_dashboard', 'drivers', 'queue', 'trips_history', 'attendance', 'kpi', 'reporting', 'staff', 'airports', 'settings'],
+      coordinator: ['airport_dashboard', 'drivers', 'queue', 'trips_history', 'attendance', 'kpi', 'reporting', 'settings'],
+      staff:       ['airport_dashboard', 'drivers', 'queue', 'trips_history', 'attendance', 'settings'],
 }
 
 // Static role mapping for known admin accounts
