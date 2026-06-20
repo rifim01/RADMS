@@ -6,8 +6,7 @@ import DataTable from '../components/DataTable'
 import { DRIVERS as INITIAL_DRIVERS, AIRPORTS } from '../services/mockData'
 import { fetchAllDrivers } from '../services/sheetsService'
 import { useAuth } from '../context/AuthContext'
-import { ref, update, set, onValue, off, serverTimestamp } from 'firebase/database'
-import { db } from '../firebase/config'
+import { listenAllDriverStatus, callDriverToQueue, updateQueueStatus } from '../services/realtimeService'
 
 const emptyForm = {
   name: '', nik: '', phone: '', vehicle: '', plateNumber: '',
@@ -25,12 +24,13 @@ export default function DriversPage() {
 
   useEffect(() => {
     loadDrivers()
-    // Listen to RTDB drivers node for real-time online status
-    const driversRef = ref(db, 'drivers')
-    const unsub = onValue(driversRef, snap => {
-      setOnlineNiks(snap.val() || {})
+    // Listen to Supabase realtime for online status (written by driver app)
+    const unsub = listenAllDriverStatus(rows => {
+      const map = {}
+      rows.forEach(r => { map[r.driver_id] = { isOnline: r.is_online } })
+      setOnlineNiks(map)
     })
-    return () => off(driversRef)
+    return unsub
   }, [])
 
   async function loadDrivers() {
@@ -139,13 +139,7 @@ export default function DriversPage() {
             title="Panggil Driver"
             onClick={() => {
               if (!branchId || !driverId) return
-              update(ref(db, `queue/${branchId}/${driverId}`), {
-                driverId, driverName: row.name, plateNumber: row.plateNumber || '', branchId,
-                status: 'CALLED', calledAt: serverTimestamp(),
-              }).catch(() => set(ref(db, `queue/${branchId}/${driverId}`), {
-                driverId, driverName: row.name, plateNumber: row.plateNumber || '', branchId,
-                status: 'CALLED', joinedAt: serverTimestamp(), calledAt: serverTimestamp(),
-              }))
+              callDriverToQueue(branchId, driverId, row.name, row.plateNumber || '')
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-xs font-medium"
           >
@@ -155,7 +149,7 @@ export default function DriversPage() {
             title="Selesai Order"
             onClick={() => {
               if (!branchId || !driverId) return
-              update(ref(db, `queue/${branchId}/${driverId}`), { status: 'COMPLETED' })
+              updateQueueStatus(branchId, driverId, 'COMPLETED')
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition text-xs font-medium"
           >
