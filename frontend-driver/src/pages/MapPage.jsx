@@ -37,7 +37,7 @@ export default function MapPage() {
 
     const fetchDrivers = () => {
       supabase
-        .from('driver_locations')
+        .from('radms_driver_locations')
         .select('*')
         .eq('branch_id', driver.airportId)
         .eq('is_online', true)
@@ -49,7 +49,7 @@ export default function MapPage() {
 
     const channel = supabase
       .channel('driver_locations_map')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, fetchDrivers)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'radms_driver_locations' }, fetchDrivers)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
@@ -102,7 +102,7 @@ export default function MapPage() {
             border: 3px solid white;
             box-shadow: 0 4px 12px rgba(37,99,235,0.5);
             display: flex; align-items: center; justify-content: center;
-          "><span style="transform: rotate(45deg); font-size: 16px;">✈</span></div>`,
+          "><span style="transform: rotate(45deg); font-size: 16px;">â</span></div>`,
           iconSize: [36, 36],
           iconAnchor: [18, 36],
           popupAnchor: [0, -36],
