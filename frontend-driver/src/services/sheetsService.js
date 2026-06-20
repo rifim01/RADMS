@@ -5,7 +5,7 @@ const SHEET_IDS = {
   DATABASE_STAFF:  '1fcraq3QHqIaD-13Ebzt6stT9aA6j_loTXeAtpNX12kw',
 }
 
-const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru']
+const AIRPORT_SHEETS  = ['ID Rifim Airport Batam','ID Rifim Airport Jambi','ID Rifim Airport Balikpapan','ID Rifim Airport Manado','ID Rifim Airport Pekanbaru','ID Rifim Airport Makassar']
 const EXTERNAL_SHEETS = ['ID Rifim Batam','ID Rifim Jambi Luar']
 
 async function fetchGviz(sheetId, sheetName) {
@@ -24,13 +24,14 @@ function cellVal(cell) {
 
 async function fetchSheet(sheetId, sheetName) {
   const data = await fetchGviz(sheetId, sheetName)
-  const rows = (data.table?.rows || []).slice(1)
+  // Do NOT slice(1) — GVIZ may already exclude the header; guard against header row instead
+  const rows = data.table?.rows || []
   return rows.map(row => {
     const c = row.c || []
     const driverId = cellVal(c[1])
     const name     = cellVal(c[2])
     const branch   = cellVal(c[3]) || sheetName
-    if (!name) return null
+    if (!name || name === 'Nama Driver' || name === 'Nama' || driverId === 'ID Driver') return null
     return { id: driverId, nik: driverId, name, airportId: branch }
   }).filter(Boolean)
 }
@@ -58,19 +59,20 @@ export async function findDriverByNik(nik) {
   return drivers.find(d => d.nik.replace(/\D/g, '') === clean) || null
 }
 
-// ─── Staff lookup for validation ──────────────────────────────────────────────
+// âââ Staff lookup for validation ââââââââââââââââââââââââââââââââââââââââââââââ
 export async function findStaffById(staffId) {
   try {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.DATABASE_STAFF}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('MASTER DATA STAFF')}`
     const res = await fetch(url)
     const text = await res.text()
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
-    const rows = (json.table?.rows || []).slice(1)
+    const rows = json.table?.rows || []
     for (const row of rows) {
       const c = row.c || []
       const id = c[4]?.v ? String(c[4].v).trim() : ''
       const nama = c[1]?.v ? String(c[1].v).trim() : ''
       const cabang = c[3]?.v ? String(c[3].v).trim() : ''
+      if (!nama || nama.toLowerCase() === 'nama') continue  // skip header if included
       if (id && id.replace(/\s/g,'').toLowerCase() === staffId.replace(/\s/g,'').toLowerCase()) {
         return { id, nama, cabang }
       }
