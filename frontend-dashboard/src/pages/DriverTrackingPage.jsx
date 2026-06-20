@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
-import { ref, onValue, off } from 'firebase/database'
-import { db } from '../firebase/config'
+import { listenAllDriverStatus, listenAllDriverLocations } from '../services/realtimeService'
 import DriverMap from '../maps/DriverMap'
 import StatusBadge from '../components/StatusBadge'
 import { AIRPORTS } from '../services/mockData'
@@ -10,26 +9,49 @@ import { formatRelativeTime } from '../utils/formatters'
 import { fetchAllDrivers } from '../services/sheetsService'
 
 // Module-level caches — survive tab navigation without re-fetching
-let _rtdbCache = {}
+let _statusCache = []
+let _locationCache = []
 let _sheetCache = []
 
 export default function DriverTrackingPage() {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [rtdbDrivers, setRtdbDrivers] = useState(_rtdbCache)   // init from cache
+  const [statusRows, setStatusRows] = useState(_statusCache)
+  const [locationRows, setLocationRows] = useState(_locationCache)
   const [sheetDrivers, setSheetDrivers] = useState(_sheetCache)
   const [loading, setLoading] = useState(_sheetCache.length === 0)
 
-  // Listen to Firebase RTDB for real-time driver locations + online status
+  // Listen to Supabase realtime for online status + GPS locations (written by driver app)
   useEffect(() => {
-    const driversRef = ref(db, 'drivers')
-    const unsub = onValue(driversRef, snap => {
-      _rtdbCache = snap.val() || {}
-      setRtdbDrivers(_rtdbCache)
+    const unsubStatus = listenAllDriverStatus(rows => {
+      _statusCache = rows
+      setStatusRows(rows)
     })
-    return () => off(driversRef)
+    const unsubLocation = listenAllDriverLocations(rows => {
+      _locationCache = rows
+      setLocationRows(rows)
+    })
+    return () => { unsubStatus(); unsubLocation() }
   }, [])
+
+  // Merge status + location rows into one map keyed by driver_id (= NIK)
+  const rtdbDrivers = useMemo(() => {
+    const map = {}
+    statusRows.forEach(r => {
+      map[r.driver_id] = { ...(map[r.driver_id] || {}), isOnline: r.is_online, lastSeen: r.last_seen }
+    })
+    locationRows.forEach(r => {
+      const existing = map[r.driver_id] || {}
+      map[r.driver_id] = {
+        ...existing,
+        location: { lat: r.lat, lng: r.lng, isOnline: r.is_online, branchId: r.branch_id, speed: r.speed || 0 },
+        isOnline: existing.isOnline !== undefined ? existing.isOnline : r.is_online,
+        lastSeen: existing.lastSeen !== undefined ? existing.lastSeen : r.updated_at,
+      }
+    })
+    return map
+  }, [statusRows, locationRows])
 
   // Load driver list from sheet (cache in module var — re-uses 5-min cache from sheetsService)
   useEffect(() => {
@@ -116,7 +138,7 @@ export default function DriverTrackingPage() {
     <div className="space-y-6 fade-in">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Pelacakan Driver</h1>
-        <p className="text-gray-500 text-sm mt-1">Pantau posisi dan status driver secara real-time dari Firebase</p>
+        <p className="text-gray-500 text-sm mt-1">Pantau posisi dan status driver secara real-time</p>
       </div>
 
       {/* Filters */}
