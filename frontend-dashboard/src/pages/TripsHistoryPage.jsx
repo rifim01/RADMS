@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ref, onValue, off } from 'firebase/database'
-import { db } from '../firebase/config'
+import { listenAllTrips } from '../services/realtimeService'
 import { Car, Clock, MapPin, CheckCircle, Filter, RefreshCw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { formatRelativeTime } from '../utils/formatters'
@@ -19,24 +18,22 @@ export default function TripsHistoryPage() {
   const [filterDate, setFilterDate] = useState('all')
 
   useEffect(() => {
-    // Listen to all trips in Firebase RTDB `trips/`
-    const tripsRef = ref(db, 'trips')
-    const unsub = onValue(tripsRef, snap => {
-      const val = snap.val() || {}
-      const allTrips = []
-      Object.entries(val).forEach(([driverId, driverTrips]) => {
-        if (typeof driverTrips === 'object' && driverTrips) {
-          Object.entries(driverTrips).forEach(([tripId, trip]) => {
-            allTrips.push({ id: tripId, driverId, ...trip })
-          })
-        }
-      })
-      // Sort newest first
-      allTrips.sort((a, b) => (b.createdAt || b.startTime || 0) - (a.createdAt || a.startTime || 0))
-      setTrips(allTrips)
+    // Listen to Supabase realtime trips table (written by driver app)
+    const unsub = listenAllTrips(rows => {
+      const mapped = rows.map(r => ({
+        id: r.id,
+        driverId: r.driver_id,
+        driverName: r.driver_name,
+        branchId: r.branch_id,
+        plateNumber: r.plate_number,
+        status: r.status,
+        createdAt: r.created_at,
+        startTime: r.start_time,
+      }))
+      setTrips(mapped)
       setLoading(false)
     })
-    return () => off(tripsRef)
+    return unsub
   }, [])
 
   // Filter by branch for non-super_admin
@@ -68,7 +65,7 @@ export default function TripsHistoryPage() {
     <div className="space-y-6 fade-in">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Riwayat Pengantaran</h1>
-        <p className="text-gray-500 text-sm mt-1">Data real-time perjalanan driver dari Firebase</p>
+        <p className="text-gray-500 text-sm mt-1">Data real-time perjalanan driver</p>
       </div>
 
       {/* Summary cards */}
@@ -182,8 +179,8 @@ export default function TripsHistoryPage() {
                           ? 'bg-purple-50 text-purple-700'
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {trip.status === 'COMPLETED' ? '✓ Selesai'
-                          : trip.status === 'PICKUP' ? '🚗 Mengantarkan'
+                        {trip.status === 'COMPLETED' ? 'â Selesai'
+                          : trip.status === 'PICKUP' ? 'ð Mengantarkan'
                           : trip.status || 'Proses'}
                       </span>
                     </td>
