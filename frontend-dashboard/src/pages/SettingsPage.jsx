@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { User, Bell, Shield, Save, Eye, EyeOff } from 'lucide-react'
+import { User, Bell, Shield, Save, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { ROLE_LABELS } from '../services/authService'
+import { ROLE_LABELS, changePassword } from '../services/authService'
 import { AIRPORTS } from '../services/mockData'
 
 export default function SettingsPage() {
@@ -9,6 +9,9 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [saved, setSaved] = useState(false)
   const [showPw, setShowPw] = useState(false)
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError] = useState('')
+  const [pwSuccess, setPwSuccess] = useState(false)
 
   const [profile, setProfile] = useState({
     name: user?.name || '',
@@ -40,6 +43,28 @@ export default function SettingsPage() {
   function handleSave() {
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function handleChangePassword() {
+    setPwError('')
+    setPwSuccess(false)
+
+    if (profile.newPassword !== profile.confirmPassword) {
+      setPwError('Konfirmasi password tidak cocok.')
+      return
+    }
+
+    setPwLoading(true)
+    try {
+      await changePassword(user.email, profile.currentPassword, profile.newPassword)
+      setPwSuccess(true)
+      setProfile(p => ({ ...p, currentPassword: '', newPassword: '', confirmPassword: '' }))
+      setTimeout(() => setPwSuccess(false), 4000)
+    } catch (err) {
+      setPwError(err.message || 'Gagal mengubah password.')
+    } finally {
+      setPwLoading(false)
+    }
   }
 
   const airport = user?.airportId ? AIRPORTS.find(a => a.id === user.airportId) : null
@@ -136,6 +161,18 @@ export default function SettingsPage() {
 
                 <div className="border-t border-gray-100 pt-6">
                   <h3 className="font-semibold text-gray-800 mb-4">Ubah Password</h3>
+
+                  {pwError && (
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm max-w-md">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {pwError}
+                    </div>
+                  )}
+                  {pwSuccess && (
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm max-w-md">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Password berhasil diubah.
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Saat Ini</label>
@@ -150,13 +187,24 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Baru</label>
-                      <input type="password" value={profile.newPassword} onChange={e => setProfile(p => ({ ...p, newPassword: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" />
+                      <input type={showPw ? 'text' : 'password'} value={profile.newPassword} onChange={e => setProfile(p => ({ ...p, newPassword: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Minimal 6 karakter" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Konfirmasi Password</label>
-                      <input type="password" value={profile.confirmPassword} onChange={e => setProfile(p => ({ ...p, confirmPassword: e.target.value }))}
+                      <input type={showPw ? 'text' : 'password'} value={profile.confirmPassword} onChange={e => setProfile(p => ({ ...p, confirmPassword: e.target.value }))}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleChangePassword}
+                        disabled={pwLoading || !profile.currentPassword || !profile.newPassword || !profile.confirmPassword}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm rounded-lg transition font-medium"
+                      >
+                        {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                        {pwLoading ? 'Memproses...' : 'Ubah Password'}
+                      </button>
                     </div>
                   </div>
                 </div>

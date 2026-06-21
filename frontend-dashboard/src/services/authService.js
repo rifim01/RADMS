@@ -94,6 +94,24 @@ export async function logout() {
       if (error) throw error
 }
 
+/**
+ * Ubah password user yang sedang login.
+ * Verifikasi currentPassword dulu (re-auth) sebelum benar-benar mengubah,
+ * supaya field "Password Saat Ini" di UI bukan cuma hiasan.
+ */
+export async function changePassword(email, currentPassword, newPassword) {
+      if (!currentPassword) throw new Error('Password saat ini wajib diisi.')
+      if (!newPassword || newPassword.length < 6) throw new Error('Password baru minimal 6 karakter.')
+
+      // Verifikasi password saat ini benar
+      const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+      if (verifyError) throw new Error('Password saat ini salah.')
+
+      // Update ke password baru
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      if (updateError) throw new Error(updateError.message || 'Gagal mengubah password.')
+}
+
 export function getCurrentUser() {
       return null // Will be set via onAuthChange
 }
@@ -127,4 +145,4 @@ export function onAuthChange(callback) {
       return () => subscription.unsubscribe()
 }
 
-export const authService = { login, logout, getCurrentUser, isAuthenticated, onAuthChange }
+export const authService = { login, logout, getCurrentUser, isAuthenticated, onAuthChange, changePassword }
