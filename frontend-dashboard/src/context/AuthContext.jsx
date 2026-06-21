@@ -37,7 +37,9 @@ export function AuthProvider({ children }) {
       setUser(u)
       return { success: true, user: u }
     } catch (err) {
-      const msg = (err?.message || '').toLowerCase()
+      const rawMsg = err?.message || ''
+      const msg = rawMsg.toLowerCase()
+      const status = err?.status || err?.code || 0
       let error
       if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('email or password')) {
         error = 'Email atau password salah.'
@@ -51,8 +53,10 @@ export function AuthProvider({ children }) {
         error = 'Gagal terhubung ke server. Periksa koneksi internet.'
       } else if (msg.includes('api key') || msg.includes('unauthorized') || msg.includes('jwt')) {
         error = 'Konfigurasi server bermasalah. Hubungi administrator.'
+      } else if (Number(status) >= 500 || rawMsg === '{}' || rawMsg.trim() === '') {
+        error = 'Server sedang bermasalah (500). Coba lagi dalam beberapa saat, atau hubungi administrator.'
       } else {
-        error = `Terjadi kesalahan: ${err?.message || 'Coba lagi.'}`
+        error = `Login gagal: ${rawMsg}`
       }
       return { success: false, error }
     }
