@@ -23,7 +23,7 @@ export default function QueueManagementPage() {
   const [showResetModal, setShowResetModal] = useState(false)
   const prevQueueLen = useRef(0)
 
-  // Listen Firebase RTDB — play sound when new driver joins
+  // Listen queue realtime (Supabase) — play sound when new driver joins
   useEffect(() => {
     if (!branchId || branchId === 'all') {
       setQueue([])
