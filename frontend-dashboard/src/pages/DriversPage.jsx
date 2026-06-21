@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Search, RefreshCw, ExternalLink, PhoneCall, Check
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
-import { DRIVERS as INITIAL_DRIVERS, AIRPORTS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import { fetchAllDrivers } from '../services/sheetsService'
 import { useAuth } from '../context/AuthContext'
 import { listenAllDriverStatus, callDriverToQueue, updateQueueStatus } from '../services/realtimeService'
@@ -15,7 +15,7 @@ const emptyForm = {
 
 export default function DriversPage() {
   const { user } = useAuth()
-  const [drivers, setDrivers] = useState(INITIAL_DRIVERS)
+  const [drivers, setDrivers] = useState([])
   const [onlineNiks, setOnlineNiks] = useState({})
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
@@ -35,7 +35,7 @@ export default function DriversPage() {
 
   async function loadDrivers() {
     setLoading(true)
-    const { data, source } = await fetchAllDrivers(INITIAL_DRIVERS)
+    const { data, source } = await fetchAllDrivers()
     setDrivers(data)
     setDataSource(source)
     setLoading(false)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BarChart2, TrendingUp, Award } from 'lucide-react'
 import KPIChart from '../charts/KPIChart'
-import { KPI_DATA, AIRPORTS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import { useAuth } from '../context/AuthContext'
 import { gradeColor, scoreColor } from '../utils/formatters'
 
@@ -18,7 +18,7 @@ export default function KPIAnalyticsPage() {
   const [filterAirport, setFilterAirport] = useState(user.airportId || 'all')
   const [sortKey, setSortKey] = useState('totalScore')
 
-  const filtered = KPI_DATA
+  const filtered = []
     .filter(d => filterAirport === 'all' || d.airportId === filterAirport)
     .sort((a, b) => b[sortKey] - a[sortKey])
 

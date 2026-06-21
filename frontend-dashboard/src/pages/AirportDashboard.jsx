@@ -4,7 +4,6 @@ import StatsCard from '../components/StatsCard'
 import BarChart from '../charts/BarChart'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
-import { QUEUE_DATA, REPORT_DATA } from '../services/mockData'
 import { fetchAllDrivers } from '../services/sheetsService'
 import { formatRelativeTime } from '../utils/formatters'
 
@@ -26,7 +25,7 @@ export default function AirportDashboard() {
   const branchLabel = BRANCH_LABELS[currentBranchId] || currentBranchId
 
   useEffect(() => {
-    fetchAllDrivers([]).then(({ data }) => {
+    fetchAllDrivers().then(({ data }) => {
       const filtered = user.airportId
         ? data.filter(d => d.airportId === user.airportId)
         : data
@@ -34,7 +33,7 @@ export default function AirportDashboard() {
     }).catch(() => {})
   }, [user.airportId])
 
-  const aptQueue = QUEUE_DATA.filter(q => q.airportId === currentBranchId)
+  const aptQueue = []
 
   const onlineDrivers = aptDrivers.filter(d => d.status === 'online')
   const activeQueue = aptQueue.filter(q => ['WAITING', 'CALLED', 'PICKUP'].includes(q.status))
@@ -98,10 +97,10 @@ export default function AirportDashboard() {
         <div className="xl:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-semibold text-gray-800 mb-4">Tren Mingguan — Penjemputan & Antrian</h3>
           <BarChart
-            labels={REPORT_DATA.weekly.labels}
+            labels={['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']}
             datasets={[
-              { label: 'Penjemputan', data: REPORT_DATA.weekly.pickups.map(v => Math.round(v * (completedToday.length / 10 || 1))), color: '#3b82f6' },
-              { label: 'Antrian', data: REPORT_DATA.weekly.queues.map(v => Math.round(v * (activeQueue.length / 5 || 1))), color: '#10b981' },
+              { label: 'Penjemputan', data: [0, 0, 0, 0, 0, 0, 0], color: '#3b82f6' },
+              { label: 'Antrian', data: [0, 0, 0, 0, 0, 0, 0], color: '#10b981' },
             ]}
             height={260}
           />

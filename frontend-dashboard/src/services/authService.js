@@ -23,10 +23,8 @@ export const ROLE_PERMISSIONS = {
       staff:       ['airport_dashboard', 'drivers', 'queue', 'trips_history', 'attendance', 'settings'],
 }
 
-// Static role mapping for known admin accounts
+// Static role mapping for owner/admin accounts in database
 const STATIC_ROLES = {
-      'admin@radms.id':        { role: 'super_admin', name: 'Super Admin RIFIM', airportId: null, avatar: 'SA' },
-      'super@rifim.com':       { role: 'super_admin', name: 'Super Admin RIFIM', airportId: null, avatar: 'SA' },
       'rifim01@adminrifim.org':{ role: 'super_admin', name: 'Admin RIFIM',       airportId: null, avatar: 'AR' },
       'pipin@adminrifim.org':  { role: 'super_admin', name: 'Govinda',           airportId: null, avatar: 'GV' },
 }

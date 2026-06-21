@@ -2,7 +2,7 @@ import { Building2, Car, ClipboardList, CheckCircle, TrendingUp } from 'lucide-r
 import StatsCard from '../components/StatsCard'
 import BarChart from '../charts/BarChart'
 import NationalMap from '../maps/NationalMap'
-import { AIRPORTS, NATIONAL_STATS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import StatusBadge from '../components/StatusBadge'
 
 const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -36,7 +36,7 @@ export default function NationalDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatsCard
           title="Total Bandara Aktif"
-          value={NATIONAL_STATS.totalAirports}
+          value={AIRPORTS.length}
           subtitle="Di seluruh Indonesia"
           icon={Building2}
           color="blue"
@@ -44,7 +44,7 @@ export default function NationalDashboard() {
         />
         <StatsCard
           title="Driver Online Sekarang"
-          value={NATIONAL_STATS.totalDriversOnline}
+          value={0}
           subtitle="Dari 75 driver terdaftar"
           icon={Car}
           color="green"
@@ -52,7 +52,7 @@ export default function NationalDashboard() {
         />
         <StatsCard
           title="Antrian Aktif Hari Ini"
-          value={NATIONAL_STATS.totalQueuesToday}
+          value={0}
           subtitle="Menunggu + Dipanggil + Jemput"
           icon={ClipboardList}
           color="yellow"
@@ -60,7 +60,7 @@ export default function NationalDashboard() {
         />
         <StatsCard
           title="Total Penjemputan Hari Ini"
-          value={NATIONAL_STATS.totalPickupsToday}
+          value={0}
           subtitle="Completed trips today"
           icon={CheckCircle}
           color="purple"
@@ -79,10 +79,10 @@ export default function NationalDashboard() {
             <TrendingUp className="w-5 h-5 text-gray-300" />
           </div>
           <BarChart
-            labels={NATIONAL_STATS.airportNames}
+            labels={AIRPORTS.map(a => a.code)}
             datasets={[{
               label: 'Penjemputan',
-              data: NATIONAL_STATS.airportPickups,
+              data: AIRPORTS.map(() => 0),
               color: '#3b82f6',
             }]}
             height={260}
@@ -95,16 +95,16 @@ export default function NationalDashboard() {
             <p className="text-xs text-gray-400 mt-0.5">Hari ini</p>
           </div>
           <BarChart
-            labels={NATIONAL_STATS.airportNames}
+            labels={AIRPORTS.map(a => a.code)}
             datasets={[
               {
                 label: 'Driver Online',
-                data: AIRPORTS.map(a => a.driversOnline),
+                data: AIRPORTS.map(() => 0),
                 color: '#10b981',
               },
               {
                 label: 'Antrian Aktif',
-                data: AIRPORTS.map(a => a.queueCount),
+                data: AIRPORTS.map(() => 0),
                 color: '#f59e0b',
               },
             ]}

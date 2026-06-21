@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Download, FileText, Table, FileSpreadsheet } from 'lucide-react'
 import BarChart from '../charts/BarChart'
 import LineChart from '../charts/LineChart'
-import { REPORT_DATA, AIRPORTS, DRIVERS, KPI_DATA } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import { useAuth } from '../context/AuthContext'
 import { exportToCSV, exportToPDF, exportToExcel } from '../utils/exportUtils'
 
@@ -18,45 +18,19 @@ export default function ReportingPage() {
     { value: 'monthly', label: 'Bulanan' },
   ]
 
-  const currentData = REPORT_DATA[period]
+  // Charts show empty until real data is connected to Supabase
+  const currentData = { labels: [], pickups: [], queues: [] }
 
   function handleExportCSV() {
-    const data = currentData.labels.map((l, i) => ({
-      Periode: l,
-      Penjemputan: currentData.pickups[i],
-      Antrian: currentData.queues[i],
-    }))
-    exportToCSV(data, `laporan_${period}`)
+    exportToCSV([], `laporan_${period}`)
   }
 
   function handleExportDriverCSV() {
-    const data = DRIVERS.map(d => ({
-      Nama: d.name,
-      NIK: d.nik,
-      Telepon: d.phone,
-      Kendaraan: d.vehicle,
-      Plat: d.plateNumber,
-      Bandara: AIRPORTS.find(a => a.id === d.airportId)?.name,
-      Status: d.status,
-      TotalPenjemputan: d.totalPickups,
-      Rating: d.rating,
-    }))
-    exportToCSV(data, 'laporan_driver')
+    exportToCSV([], 'laporan_driver')
   }
 
   function handleExportKPI() {
-    const data = KPI_DATA.map(d => ({
-      Nama: d.driverName,
-      Bandara: AIRPORTS.find(a => a.id === d.airportId)?.name,
-      Kehadiran: d.attendance,
-      KepatuhanAntrian: d.queueCompliance,
-      AktivitasJemput: d.pickupActivity,
-      WaktuRespon: d.responseTime,
-      Pelanggaran: d.violation,
-      SkorTotal: d.totalScore,
-      Grade: d.grade,
-    }))
-    exportToCSV(data, 'laporan_kpi')
+    exportToCSV([], 'laporan_kpi')
   }
 
   return (

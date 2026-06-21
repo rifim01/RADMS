@@ -5,7 +5,6 @@ import {
 } from 'lucide-react'
 import { AIRPORT_BRANCHES, SHIFT_WINDOWS } from '../services/airportConfig'
 import { fetchAttendanceData, processAttendanceRecords, getLast7DaysData, determineAttendanceStatus, fetchJadwalKerja } from '../services/attendanceService'
-import { MOCK_ATTENDANCE_DATA } from '../services/mockData'
 import { useAuth } from '../context/AuthContext'
 
 // ---------------------------------------------------------------------------
@@ -182,7 +181,7 @@ export default function AttendancePage() {
       setLastUpdated(new Date())
     } catch (err) {
       console.warn('Google Sheets fetch failed, using demo data:', err.message)
-      const processed = processAttendanceRecords(MOCK_ATTENDANCE_DATA)
+      const processed = processAttendanceRecords([])
       setRecords(filterByBranch(processed))
       setDemoMode(true)
       setLastUpdated(new Date())

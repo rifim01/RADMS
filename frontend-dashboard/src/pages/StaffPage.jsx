@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Search, RefreshCw, ExternalLink } from 'lucide-re
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
-import { STAFF as INITIAL_STAFF, AIRPORTS } from '../services/mockData'
+import { AIRPORTS } from '../services/mockData'
 import { fetchAllStaff } from '../services/sheetsService'
 import { useAuth } from '../context/AuthContext'
 import { formatDate } from '../utils/formatters'
@@ -15,7 +15,7 @@ const emptyForm = {
 
 export default function StaffPage() {
   const { user } = useAuth()
-  const [staff, setStaff] = useState(INITIAL_STAFF)
+  const [staff, setStaff] = useState([])
   const [dataSource, setDataSource] = useState('mock')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -27,7 +27,7 @@ export default function StaffPage() {
 
   async function loadStaff() {
     setLoading(true)
-    const { data, source } = await fetchAllStaff(INITIAL_STAFF)
+    const { data, source } = await fetchAllStaff()
     setStaff(data)
     setDataSource(source)
     setLoading(false)
