@@ -23,6 +23,7 @@ import StaffPage from './pages/StaffPage'
 import AirportsPage from './pages/AirportsPage'
 import SettingsPage from './pages/SettingsPage'
 import TripsHistoryPage from './pages/TripsHistoryPage'
+import SSOCallback from './pages/SSOCallback'
 
 function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -129,6 +130,8 @@ function AppRoutes() {
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
+      {/* SSO callback — accessible before authentication */}
+      <Route path="/sso-callback" element={<SSOCallback />} />
       <Route
         path="/*"
         element={
