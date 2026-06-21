@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { MOCK_DRIVERS } from '../services/mockData.js';
 import { findDriverByNik } from '../services/sheetsService.js';
 import { setDriverOnlineStatus } from '../services/supabaseService.js';
 
@@ -57,15 +56,6 @@ export function AuthProvider({ children }) {
           }
         }
       } catch { /* fallback below */ }
-
-      // Fallback: mock data (for demo/development)
-      if (!foundDriver) {
-        const cleanNik  = nik.replace(/\D/g, '');
-        const mockFound = MOCK_DRIVERS.find(d => (d.nik || d.id || '').replace(/\D/g,'') === cleanNik);
-        if (mockFound) {
-          foundDriver = { id: mockFound.id, nik: mockFound.nik || mockFound.id, name: mockFound.name, airportId: mockFound.airportId, vehicle: mockFound.vehicle || '', plateNumber: mockFound.plateNumber || '' };
-        }
-      }
 
       if (!foundDriver) {
         const msg = 'ID Driver tidak ditemukan. Pastikan NIK sesuai data RIFIM.';

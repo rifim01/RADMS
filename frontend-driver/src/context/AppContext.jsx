@@ -14,14 +14,19 @@ import {
 } from '../services/geolocation.js';
 import { GeofenceMonitor, checkGeofence } from '../services/geofence.js';
 import {
-  generateQueueData,
-  generateNotifications,
-  generateOnlineDrivers,
   AIRPORTS,
   DEFAULT_AIRPORT_ID,
   resolveAirportKey,
 } from '../services/mockData.js';
-import { listenDriverTrips, listenMyQueueStatus, updateDriverLocation, setDriverOnlineStatus } from '../services/supabaseService.js';
+import {
+  listenDriverTrips,
+  listenQueue,
+  listenMyQueueStatus,
+  listenNotifications,
+  markNotificationRead as supabaseMarkNotifRead,
+  updateDriverLocation,
+  setDriverOnlineStatus,
+} from '../services/supabaseService.js';
 import { playCalled, playNotification, playPanic, playSuccess, unlockAudio } from '../services/soundService.js';
 
 const AppContext = createContext(null);
@@ -35,127 +40,114 @@ export function AppProvider({ children }) {
   const [geofenceDistance, setGeofenceDistance] = useState(null);
   const [queueData, setQueueData] = useState([]);
   const [myQueueEntry, setMyQueueEntry] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [localNotifications, setLocalNotifications] = useState([]);
+  const [dbNotifications, setDbNotifications] = useState([]);
   const [history, setHistory] = useState([]);
   const [onlineDrivers, setOnlineDrivers] = useState([]);
   const [panicActive, setPanicActive] = useState(false);
   const [panicCooldown, setPanicCooldown] = useState(false);
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
-  const [calledAlert, setCalledAlert] = useState(false); // full-screen CALLED overlay
+  const [calledAlert, setCalledAlert] = useState(false);
 
   const geofenceMonitorRef = useRef(null);
   const stopTrackingRef = useRef(null);
   const panicTimeoutRef = useRef(null);
-  const queueRefreshRef = useRef(null);
   const prevQueueStatusRef = useRef(null);
-  const lastFirebaseWriteRef = useRef(0); // throttle Firebase location writes
+  const lastSupabaseWriteRef = useRef(0);
 
   const airportKey = resolveAirportKey(driver?.airportId);
   const airport = AIRPORTS[airportKey];
 
-  // Init data
+  // ─── Merge notifications (local system events + DB) ────────────────────────
+  const notifications = [...localNotifications, ...dbNotifications];
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // ─── Derive myQueueEntry + CALLED detection from queueData ─────────────────
   useEffect(() => {
-    if (driver) {
-      const resolvedKey = resolveAirportKey(driver.airportId);
-      const queue = generateQueueData(resolvedKey, driver.id);
-      setQueueData(queue);
-      const myEntry = queue.find((q) => q.driverId === driver.id);
-      setMyQueueEntry(myEntry || null);
-
-      const notifs = generateNotifications();
-      setNotifications(notifs);
-      setUnreadCount(notifs.filter((n) => !n.read).length);
-
-      setHistory([]);
-
-      setOnlineDrivers(generateOnlineDrivers());
-
-      // Init geofence monitor using driver's actual airport
-      geofenceMonitorRef.current = new GeofenceMonitor(
-        resolvedKey,
-        handleGeofenceEnter,
-        handleGeofenceExit
+    if (!driver) return;
+    const entry = queueData.find((q) => q.driverId === driver.id) || null;
+    setMyQueueEntry(entry);
+    if (entry?.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
+      setCalledAlert(true);
+      addSystemNotificationRef.current?.(
+        'Anda Dipanggil!',
+        'Segera menuju zona penjemputan penumpang.',
+        'CALLED'
       );
-
-      // Set initial online status from driver data
-      setIsOnline(driver.online || false);
-
-      // Check if driver already has location
-      if (driver.lat && driver.lng) {
-        const loc = { lat: driver.lat, lng: driver.lng, speed: driver.speed || 0 };
-        setLocation(loc);
-        checkAndUpdateGeofence(loc.lat, loc.lng);
-      }
-
-      // GPS always-on: start tracking immediately regardless of online status
-      startTracking();
-
-      // Listen to real trips and queue status from Supabase
-      const unsubTrips = listenDriverTrips(driver.id, (trips) => {
-        setHistory(trips);
-      });
-
-      // Real-time queue status listener â shows CALLED alert to driver
-      let unsubQueue = () => {};
-      if (driver.airportId) {
-        unsubQueue = listenMyQueueStatus(driver.id, driver.airportId, (entry) => {
-          if (!entry) {
-            setMyQueueEntry(null);
-            prevQueueStatusRef.current = null;
-            return;
-          }
-          setMyQueueEntry(entry);
-          // Trigger CALLED alert when status transitions to CALLED
-          if (entry.status === 'CALLED' && prevQueueStatusRef.current !== 'CALLED') {
-            setCalledAlert(true);
-            addSystemNotification(
-              'Anda Dipanggil!',
-              'Segera menuju zona penjemputan penumpang.',
-              'CALLED'
-            );
-          }
-          prevQueueStatusRef.current = entry.status;
-        });
-      }
-
-      return () => {
-        unsubTrips();
-        unsubQueue();
-      };
     }
-  }, [driver?.id]);
+    prevQueueStatusRef.current = entry?.status || null;
+  }, [queueData, driver?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh queue simulasi setiap 30 detik
+  // Store addSystemNotification in ref so the queueData effect can call it
+  const addSystemNotificationRef = useRef(null);
+
+  // ─── Init data & real-time listeners ───────────────────────────────────────
   useEffect(() => {
-    if (!driver || !isOnline) return;
+    if (!driver) return;
 
-    queueRefreshRef.current = setInterval(() => {
-      // Simulasi pergerakan antrian
-      setQueueData((prev) => {
-        const updated = prev.map((entry) => {
-          if (entry.driverId === driver.id) return entry;
-          return entry;
-        });
-        return updated;
-      });
-    }, 30000);
+    const resolvedKey = resolveAirportKey(driver.airportId);
+
+    // Reset
+    setQueueData([]);
+    setMyQueueEntry(null);
+    setLocalNotifications([]);
+    setDbNotifications([]);
+    setHistory([]);
+    setOnlineDrivers([]);
+
+    geofenceMonitorRef.current = new GeofenceMonitor(
+      resolvedKey,
+      handleGeofenceEnter,
+      handleGeofenceExit
+    );
+    setIsOnline(driver.online || false);
+    if (driver.lat && driver.lng) {
+      const loc = { lat: driver.lat, lng: driver.lng, speed: driver.speed || 0 };
+      setLocation(loc);
+      checkAndUpdateGeofence(loc.lat, loc.lng);
+    }
+    startTracking();
+
+    // Real trips
+    const unsubTrips = listenDriverTrips(driver.id, setHistory);
+
+    // Full queue list (transforms Supabase rows into UI shape)
+    const unsubQueueList = driver.airportId
+      ? listenQueue(driver.airportId, (rows) => {
+          setQueueData(
+            rows.map((r, i) => ({
+              id: r.id || r.driver_id,
+              driverId: r.driver_id,
+              name: r.driver_name,
+              vehiclePlate: r.plate_number || '',
+              queueNumber: i + 1,
+              status: r.status,
+              joinedAt: r.joined_at,
+              zone: r.zone || '',
+            }))
+          );
+        })
+      : () => {};
+
+    // DB notifications
+    const unsubNotif = listenNotifications(driver.id, (rows) => {
+      setDbNotifications(rows);
+    });
 
     return () => {
-      if (queueRefreshRef.current) clearInterval(queueRefreshRef.current);
+      unsubTrips();
+      unsubQueueList();
+      unsubNotif();
     };
-  }, [driver?.id, isOnline]);
+  }, [driver?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Network status
+  // ─── Network status ────────────────────────────────────────────────────────
   useEffect(() => {
-    const handleOnline = () => setNetworkStatus(true);
-    const handleOffline = () => setNetworkStatus(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const on  = () => setNetworkStatus(true);
+    const off = () => setNetworkStatus(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
   const checkAndUpdateGeofence = useCallback((lat, lng) => {
@@ -167,8 +159,7 @@ export function AppProvider({ children }) {
 
   const handleGeofenceEnter = useCallback((result) => {
     setInGeofence(true);
-    // Auto-add to queue jika online
-    addSystemNotification(
+    addSystemNotificationRef.current?.(
       'Geofence Aktif',
       `Anda memasuki area ${result.airport?.name}. Nomor antrian akan diberikan otomatis.`,
       'GEOFENCE'
@@ -177,7 +168,7 @@ export function AppProvider({ children }) {
 
   const handleGeofenceExit = useCallback((result) => {
     setInGeofence(false);
-    addSystemNotification(
+    addSystemNotificationRef.current?.(
       'Keluar Geofence',
       `Anda telah meninggalkan area ${result.airport?.name}.`,
       'GEOFENCE'
@@ -185,19 +176,17 @@ export function AppProvider({ children }) {
   }, []);
 
   const addSystemNotification = useCallback((title, message, type = 'SYSTEM') => {
-    // Play sound based on notification type
-    if (type === 'CALLED')   playCalled()
-    else if (type === 'PANIC') playPanic()
-    else if (type === 'GEOFENCE') playSuccess()
-    else playNotification()
+    if (type === 'CALLED')        playCalled();
+    else if (type === 'PANIC')    playPanic();
+    else if (type === 'GEOFENCE') playSuccess();
+    else                          playNotification();
 
-    // Browser Notification API if permitted
     if (Notification.permission === 'granted') {
-      new Notification(title, { body: message, icon: '/icon-192.svg', badge: '/icon-192.svg' })
+      new Notification(title, { body: message, icon: '/icon-192.svg', badge: '/icon-192.svg' });
     }
 
     const newNotif = {
-      id: `notif-${Date.now()}`,
+      id: `notif-local-${Date.now()}`,
       title,
       message,
       type,
@@ -206,58 +195,39 @@ export function AppProvider({ children }) {
       createdAt: new Date().toISOString(),
       icon: type === 'GEOFENCE' ? 'map-pin' : 'bell',
     };
-    setNotifications((prev) => [newNotif, ...prev]);
-    setUnreadCount((prev) => prev + 1);
+    setLocalNotifications((prev) => [newNotif, ...prev]);
   }, []);
 
-  /**
-   * Toggle status online/offline driver
-   */
+  // Keep ref in sync
+  useEffect(() => {
+    addSystemNotificationRef.current = addSystemNotification;
+  }, [addSystemNotification]);
+
   const toggleOnlineStatus = useCallback(async () => {
     const newStatus = !isOnline;
     setIsOnline(newStatus);
     updateDriver?.({ online: newStatus });
-
-    // Update Supabase online status
-    if (driver?.id) {
-      setDriverOnlineStatus(driver.id, newStatus);
-    }
-
-    if (newStatus) {
-      addSystemNotification(
-        'Status Online',
-        'Anda sekarang online dan siap menerima penumpang.',
-        'STATUS'
-      );
-    } else {
-      // GPS tetap aktif saat offline â hanya update status
-      addSystemNotification(
-        'Status Offline',
-        'Anda sekarang offline. Lokasi tetap dipantau.',
-        'STATUS'
-      );
-    }
-  }, [isOnline, updateDriver, driver?.id]);
+    if (driver?.id) setDriverOnlineStatus(driver.id, newStatus);
+    addSystemNotification(
+      newStatus ? 'Status Online' : 'Status Offline',
+      newStatus
+        ? 'Anda sekarang online dan siap menerima penumpang.'
+        : 'Anda sekarang offline. Lokasi tetap dipantau.',
+      'STATUS'
+    );
+  }, [isOnline, updateDriver, driver?.id, addSystemNotification]);
 
   const startTracking = useCallback(() => {
-    if (stopTrackingRef.current) {
-      stopTrackingRef.current();
-    }
+    if (stopTrackingRef.current) stopTrackingRef.current();
 
     const handleLocationUpdate = (loc) => {
       setLocation(loc);
       setLocationError(null);
-      updateDriver?.({
-        lat: loc.lat,
-        lng: loc.lng,
-        speed: loc.speed || 0,
-        lastUpdate: new Date().toISOString(),
-      });
+      updateDriver?.({ lat: loc.lat, lng: loc.lng, speed: loc.speed || 0, lastUpdate: new Date().toISOString() });
       checkAndUpdateGeofence(loc.lat, loc.lng);
-      // Throttle Supabase writes to max once per 15 seconds (saves bandwidth for 400 drivers)
       const now = Date.now();
-      if (driver?.id && now - lastFirebaseWriteRef.current >= 15000) {
-        lastFirebaseWriteRef.current = now;
+      if (driver?.id && now - lastSupabaseWriteRef.current >= 15000) {
+        lastSupabaseWriteRef.current = now;
         updateDriverLocation(driver.id, driver.airportId, loc.lat, loc.lng, isOnline, loc.speed || 0);
       }
     };
@@ -265,60 +235,45 @@ export function AppProvider({ children }) {
     const handleLocationError = (err) => {
       setLocationError(err.message);
       console.warn('[AppContext] GPS error:', err.message);
-      // Do NOT fall back to simulation â show error state instead
     };
 
     if (isGeolocationAvailable()) {
-      const stopFn = startLocationTracking(handleLocationUpdate, handleLocationError);
-      stopTrackingRef.current = stopFn;
+      stopTrackingRef.current = startLocationTracking(handleLocationUpdate, handleLocationError);
     } else {
       setLocationError('Perangkat tidak mendukung GPS');
     }
-  }, [checkAndUpdateGeofence, updateDriver]);
+  }, [checkAndUpdateGeofence, updateDriver]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopTracking = useCallback(() => {
-    if (stopTrackingRef.current) {
-      stopTrackingRef.current();
-      stopTrackingRef.current = null;
-    }
+    if (stopTrackingRef.current) { stopTrackingRef.current(); stopTrackingRef.current = null; }
     stopLocationTracking();
   }, []);
 
-  // Cleanup saat unmount
   useEffect(() => {
     return () => {
       stopTracking();
       if (panicTimeoutRef.current) clearTimeout(panicTimeoutRef.current);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /**
-   * Tandai notifikasi sebagai dibaca
-   */
   const markNotificationRead = useCallback((notifId) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  }, []);
+    setLocalNotifications((prev) => prev.map((n) => n.id === notifId ? { ...n, read: true } : n));
+    setDbNotifications((prev) => prev.map((n) => n.id === notifId ? { ...n, read: true } : n));
+    if (!String(notifId).startsWith('notif-local-') && driver?.id) {
+      supabaseMarkNotifRead(driver.id, notifId).catch(() => {});
+    }
+  }, [driver?.id]);
 
   const markAllNotificationsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
+    setLocalNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setDbNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }, []);
 
-  /**
-   * Kirim Panic Button alert
-   */
   const triggerPanic = useCallback(async () => {
     if (panicCooldown) return;
-
     setPanicActive(true);
     setPanicCooldown(true);
-
-    // Simulasi kirim alert darurat
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     addSystemNotification(
       'DARURAT - Panic Alert Terkirim',
       `Sinyal darurat Anda telah diterima oleh operator. Bantuan sedang dalam perjalanan. Lokasi: ${
@@ -326,72 +281,26 @@ export function AppProvider({ children }) {
       }`,
       'PANIC'
     );
-
-    // Reset panic state setelah 5 detik
-    panicTimeoutRef.current = setTimeout(() => {
-      setPanicActive(false);
-    }, 5000);
-
-    // Cooldown 60 detik
-    setTimeout(() => {
-      setPanicCooldown(false);
-    }, 60000);
+    panicTimeoutRef.current = setTimeout(() => setPanicActive(false), 5000);
+    setTimeout(() => setPanicCooldown(false), 60000);
   }, [panicCooldown, location, addSystemNotification]);
 
-  /**
-   * Update posisi manual (untuk testing)
-   */
-  const updateLocation = useCallback(
-    (lat, lng) => {
-      const loc = { lat, lng, speed: 0, timestamp: Date.now() };
-      setLocation(loc);
-      checkAndUpdateGeofence(lat, lng);
-      updateDriver?.({ lat, lng, lastUpdate: new Date().toISOString() });
-    },
-    [checkAndUpdateGeofence, updateDriver]
-  );
+  const updateLocation = useCallback((lat, lng) => {
+    const loc = { lat, lng, speed: 0, timestamp: Date.now() };
+    setLocation(loc);
+    checkAndUpdateGeofence(lat, lng);
+    updateDriver?.({ lat, lng, lastUpdate: new Date().toISOString() });
+  }, [checkAndUpdateGeofence, updateDriver]);
 
   const value = {
-    // Location
-    location,
-    locationError,
-    updateLocation,
-    startTracking,
-    stopTracking,
-
-    // Status
-    isOnline,
-    toggleOnlineStatus,
-    networkStatus,
-
-    // Geofence
-    inGeofence,
-    geofenceDistance,
-    airport,
-
-    // Queue
-    queueData,
-    myQueueEntry,
-
-    // Notifications
-    notifications,
-    unreadCount,
-    markNotificationRead,
-    markAllNotificationsRead,
-    addSystemNotification,
-
-    // History
+    location, locationError, updateLocation, startTracking, stopTracking,
+    isOnline, toggleOnlineStatus, networkStatus,
+    inGeofence, geofenceDistance, airport,
+    queueData, myQueueEntry,
+    notifications, unreadCount, markNotificationRead, markAllNotificationsRead, addSystemNotification,
     history,
-
-    // Map
     onlineDrivers,
-
-    // Panic
-    panicActive,
-    panicCooldown,
-    triggerPanic,
-
-    // CALLED overlay
+    panicActive, panicCooldown, triggerPanic,
     calledAlert,
     dismissCalledAlert: () => setCalledAlert(false),
   };
@@ -401,8 +310,6 @@ export function AppProvider({ children }) {
 
 export function useApp() {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp harus digunakan di dalam AppProvider');
-  }
+  if (!context) throw new Error('useApp harus digunakan di dalam AppProvider');
   return context;
 }
