@@ -37,14 +37,22 @@ export function AuthProvider({ children }) {
       setUser(u)
       return { success: true, user: u }
     } catch (err) {
-      let error = 'Terjadi kesalahan. Coba lagi.'
       const msg = (err?.message || '').toLowerCase()
-      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
+      let error
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('email or password')) {
         error = 'Email atau password salah.'
-      } else if (msg.includes('not found') || msg.includes('user')) {
+      } else if (msg.includes('confirmed')) {
+        error = 'Email belum dikonfirmasi. Hubungi administrator.'
+      } else if (msg.includes('not found') || msg.includes('does not exist')) {
         error = 'Email tidak terdaftar di sistem.'
-      } else if (msg.includes('network') || msg.includes('fetch')) {
+      } else if (msg.includes('too many') || msg.includes('rate limit')) {
+        error = 'Terlalu banyak percobaan login. Coba lagi nanti.'
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) {
         error = 'Gagal terhubung ke server. Periksa koneksi internet.'
+      } else if (msg.includes('api key') || msg.includes('unauthorized') || msg.includes('jwt')) {
+        error = 'Konfigurasi server bermasalah. Hubungi administrator.'
+      } else {
+        error = `Terjadi kesalahan: ${err?.message || 'Coba lagi.'}`
       }
       return { success: false, error }
     }
