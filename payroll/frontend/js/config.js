@@ -46,7 +46,8 @@ window.APP_CONFIG = {
 
   // Link ke app lain
   APPS: {
-    ATTENDANCE: 'https://rifim-attendance.vercel.app'
+    ATTENDANCE: 'https://rifim01.github.io/rifim-attendance/',
+    RAOS: 'https://raos-ten.vercel.app'
   },
 
   BULAN: ['Januari','Februari','Maret','April','Mei','Juni',
