@@ -14,9 +14,14 @@ self.addEventListener('activate', e => {
 })
 
 self.addEventListener('fetch', e => {
+  // Only handle same-origin GET requests — let Supabase/external POSTs pass through
   if (e.request.method !== 'GET') return
+  const url = new URL(e.request.url)
+  if (url.origin !== self.location.origin) return
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).catch(() =>
+      caches.match(e.request).then(cached => cached || Response.error())
+    )
   )
 })
 
