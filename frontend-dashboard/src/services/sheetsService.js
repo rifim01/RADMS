@@ -26,13 +26,19 @@ export const SHEET_NAMES = {
   EXTERNAL_JAMBI:     'ID Rifim Jambi Luar',
 }
 
-async function fetchGviz(sheetId, sheetName) {
+async function fetchGviz(sheetId, sheetName, timeoutMs = 8000) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const text = await res.text()
-  const json = text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '')
-  return JSON.parse(json)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const text = await res.text()
+    const json = text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '')
+    return JSON.parse(json)
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 function cellVal(cell) {
