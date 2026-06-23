@@ -1,4 +1,4 @@
-const CACHE = 'radms-staff-v1'
+const CACHE = 'radms-staff-v3'
 const STATIC = ['/', '/index.html']
 
 self.addEventListener('install', e => {
